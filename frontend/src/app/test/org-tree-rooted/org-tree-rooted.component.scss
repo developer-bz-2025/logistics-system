@@ -1,0 +1,63 @@
+:host { display:block; }
+
+.tree-wrapper { background:#fff; border:1px solid #e5e7eb; border-radius:16px; box-shadow:0 1px 2px rgba(0,0,0,.04); }
+.header { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.5rem; padding:14px 16px; border-bottom:1px solid #e5e7eb; }
+.title { font-weight:600; }
+.roles .pill { margin-right:6px; }
+
+.tree { padding:16px; }
+
+/* classic connectors */
+.lvl { position:relative; margin:0; padding-left:28px; list-style:none; }
+.lvl::before {
+  content:''; position:absolute; left:12px; top:0; bottom:0; width:2px; background:#e5e7eb; /* vertical line */
+}
+.lvl > li { position:relative; margin:8px 0; }
+.lvl > li::before {
+  content:''; position:absolute; left:12px; top:16px; width:20px; height:2px; background:#e5e7eb; /* horizontal line to node */
+}
+
+/* nodes */
+.node {
+  position:relative; margin-left:28px;
+  border:1px solid #e5e7eb; background:#fff; border-radius:12px; padding:10px 12px;
+  display:inline-flex; align-items:center; gap:8px; line-height:1.2;
+  transition:background-color .15s ease, border-color .15s ease;
+}
+.node:hover { background:#f9fafb; }
+.node.root { background:#ecfdf5; border-color:#a7f3d0; color:#065f46; font-weight:600; }
+.node.entity { background:#f0f9ff; border-color:#bae6fd; color:#075985; }
+.node.country { background:#eef2ff; border-color:#c7d2fe; color:#3730a3; }
+.node.unit { background:#fff; border-color:#e5e7eb; color:#111827; display:block; }
+
+.badge {
+  display:inline-flex; align-items:center; gap:4px;
+  font-size:11px; padding:2px 6px; border-radius:8px; border:1px solid #e5e7eb; background:#f9fafb; color:#374151;
+}
+.badge.admin { background:#ecfdf5; border-color:#a7f3d0; color:#065f46; }
+.badge.std   { background:#f1f5f9; border-color:#e2e8f0; color:#334155; }
+
+.pill {
+  display:inline-flex; align-items:center;
+  padding:2px 8px; font-size:11px; border-radius:9999px; border:1px solid #e5e7eb; margin-left:4px;
+}
+.pill.head  { background:#f0f9ff; border-color:#bae6fd; color:#075985; }
+.pill.cdir  { background:#eef2ff; border-color:#c7d2fe; color:#4338ca; }
+.pill.admin { background:#ecfdf5; border-color:#a7f3d0; color:#065f46; }
+.pill.std   { background:#f1f5f9; border-color:#e2e8f0; color:#334155; }
+.pill.sa    { background:#fffbeb; border-color:#fde68a; color:#92400e; }
+.pill.cl    { background:#f5f3ff; border-color:#ddd6fe; color:#6d28d9; }
+.pill.muted { background:#fafafa; border-color:#e5e7eb; color:#6b7280; }
+
+/* unit card layout */
+.unit .unit-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px; }
+.unit .unit-body .row { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin:4px 0; }
+
+/* remove the vertical line when a branch has no children list */
+.lvl > li > .node + ul.lvl:empty::before { display:none; }
+
+/* small screens */
+@media (max-width: 480px) {
+  .node { display:block; }
+  .pill { margin-top:4px; }
+}

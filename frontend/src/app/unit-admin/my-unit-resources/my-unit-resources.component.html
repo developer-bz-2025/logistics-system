@@ -1,0 +1,21 @@
+<div class="max-w-7xl mx-auto p-6">
+  <h2 class="text-xl font-semibold mb-4">{{user.unit_name}} Resources</h2>
+  <h5 class="mb-6">{{user.country_name}} | {{user.entity_name}}</h5>
+  <!-- error -->
+  <div *ngIf="errorMsg" class="mb-4 px-4 py-3 rounded-lg border border-red-200 text-red-700 bg-red-50">
+    {{ errorMsg }}
+  </div>
+
+  <!-- loading -->
+  <div *ngIf="loading" class="mb-6 text-sm text-gray-500">Loading resources…</div>
+
+  <!-- content -->
+  <ng-container *ngIf="tree$ | async as tree">
+
+    <app-resource-tree [tree]="(tree$ | async) || []" [typeColors]="typeColors" [visColors]="visColors"
+      >
+    </app-resource-tree>
+
+
+  </ng-container>
+</div>

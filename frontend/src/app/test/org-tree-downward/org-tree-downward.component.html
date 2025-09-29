@@ -1,0 +1,159 @@
+<!-- Loading / Error -->
+<!-- <div *ngIf="loading" class="p-4 text-sm text-gray-600">Loading organization…</div> -->
+<div *ngIf="loading" class="mb-6 text-sm text-gray-500 loader"></div>
+<div *ngIf="!loading && error" class="p-4 text-sm text-red-600">{{ error }}</div>
+
+<div *ngIf="!loading && !error && org" class="wrap">
+  <!-- Header -->
+  <div class="header">
+    <div class="title">🌳 Structure Tree</div>
+    <span class="pill sa">Super Admin: 🧑‍💼👑 </span>
+    <span class="pill cl">Board 🧑‍💼🏛️ </span>
+    <span class="pill head">🧑‍💼🏢 Head Of entity</span>
+    <span class="pill cdir">🧑‍💼🌍 country Director</span>
+    <span class="pill admin">👨‍🔧🏢 unit admin</span>
+    <span class="pill std">👤 stanadrd</span>
+  </div>
+  
+  <div class="content">
+    <div class="roles mb-10">
+      <span class="pill sa" *ngFor="let sa of superAdmin()"> <a target="_blank" routerLink="/workspace/profile/{{sa.id}}">🧑‍💼👑 {{ sa.name }}</a></span>
+      <span class="pill cl" *ngFor="let c of cLevels()"><a target="_blank" routerLink="/workspace/profile/{{c.id}}">🧑‍💼🏛️ {{ c.name }}</a></span>
+    </div>
+    <!-- Level 0: Root -->
+    <div class="row center">
+      <button class="node root" (click)="clickRoot()" [attr.aria-expanded]="showEntities">
+        🌱 Organization
+        <span class="badge">{{ allEntities().length }} entities</span>
+      </button>
+      <div class="stem" [class.open]="showEntities"></div>
+    </div>
+
+    <!-- Level 1: Entities -->
+    <div class="reveal" [class.open]="showEntities">
+      <div class="label">Entities</div>
+      <div class="chips center">
+        <div class="chip-wrap" *ngFor="let e of allEntities(); trackBy: trackByEntity">
+          <button
+            class="node chip"
+            [class.active]="selectedEntityId===e.id"
+            (click)="clickEntity(e.id)">
+            🏢 {{ e.name }}
+            <span class="badge">{{ e.countriesCount }} {{ e.countriesCount===1 ? 'country' : 'countries' }}</span>
+      
+            <ng-container *ngIf="entityHead(e.id).length; else noHead">
+              <span class="pill head" *ngFor="let h of entityHead(e.id)">🧑‍💼🏢 {{ h.name }}</span>
+            </ng-container>
+            <ng-template #noHead><span class="pill muted">No head</span></ng-template>
+          </button>
+      
+          <!-- corner arrow (opens Head of Entity profile; does NOT toggle the chip) -->
+          <a *ngIf="headForEntity(e.id) as head"
+             class="corner-link"
+             [href]="profileUrl(head.id)"
+             (click)="$event.stopPropagation()"
+             target="_blank" rel="noopener"
+             title="Open head profile in new tab">
+            <!-- If using Angular Material icons -->
+            <mat-icon inline>open_in_new</mat-icon>
+            <!-- Or fallback text: ↗ -->
+          </a>
+        </div>
+      </div>
+      
+      <!-- <div class="chips center">
+        <button *ngFor="let e of allEntities(); trackBy: trackByEntity"
+                class="node chip"
+                [class.active]="selectedEntityId===e.id"
+                (click)="clickEntity(e.id)">
+          🏢 {{ e.name }}
+          <span class="badge">{{ e.countriesCount }} {{ e.countriesCount===1 ? 'country' : 'countries' }}</span>
+          <ng-container *ngIf="entityHead(e.id).length; else noHead">
+            <span class="pill head" *ngFor="let h of entityHead(e.id)">🧑‍💼🏢 {{ h.name }}</span>
+          </ng-container>
+          <ng-template #noHead><span class="pill muted">No head</span></ng-template>
+        </button>
+      </div> -->
+      <div class="stem small" [class.open]="!!selectedEntityId"></div>
+    </div>
+
+    <!-- Level 2: Countries (for selected entity) -->
+    <div class="reveal" [class.open]="!!selectedEntityId">
+      <div class="label">Countries for {{ entityName(selectedEntityId) }}</div>
+      <div class="chips center">
+        <div class="chip-wrap"
+             *ngFor="let c of countriesForEntity(selectedEntityId!); trackBy: trackByCountry">
+          <button
+            class="node chip"
+            [class.active]="selectedCountryId===c.id"
+            (click)="clickCountry(c.id)">
+            🌍 {{ c.name }}
+            <span class="badge">{{ unitsCountFor(selectedEntityId, c.id) }} units</span>
+      
+            <ng-container *ngIf="countryDirector(selectedEntityId, c.id).length; else noDir">
+              <span class="pill cdir" *ngFor="let d of countryDirector(selectedEntityId, c.id)">
+                🧑‍💼🌍 {{ d.name }}
+              </span>
+            </ng-container>
+            <ng-template #noDir><span class="pill muted">No director</span></ng-template>
+          </button>
+      
+          <!-- corner arrow (does NOT toggle the chip) -->
+          <a *ngIf="directorFor(selectedEntityId!, c.id) as dir"
+             class="corner-link"
+             [href]="profileUrl(dir.id)"
+             (click)="$event.stopPropagation()"
+             target="_blank" rel="noopener"
+             matTooltip="Open director profile">
+            <mat-icon inline>open_in_new</mat-icon>
+            <!-- Fallback if not using Material: ↗ -->
+          </a>
+        </div>
+      </div>
+      
+      <!-- <div class="chips center">
+        <button *ngFor="let c of countriesForEntity(selectedEntityId!); trackBy: trackByCountry"
+                class="node chip"
+                [class.active]="selectedCountryId===c.id"
+                (click)="clickCountry(c.id)">
+          🌍 {{ c.name }}
+          <span class="badge">{{ unitsCountFor(selectedEntityId, c.id) }} units</span>
+          <ng-container *ngIf="countryDirector(selectedEntityId, c.id).length; else noDir">
+            <span class="pill cdir" *ngFor="let d of countryDirector(selectedEntityId, c.id)">🧑‍💼🌍 {{ d.name }} <mat-icon inline>open_in_new</mat-icon></span>
+          </ng-container>
+          <ng-template #noDir><span class="pill muted">No director</span></ng-template>
+        </button>
+      </div> -->
+      <div class="stem small" [class.open]="!!selectedCountryId"></div>
+    </div>
+
+    <!-- Level 3: Units -->
+    <div class="reveal" [class.open]="!!selectedCountryId">
+      <div class="label">
+        Units in {{ countryNameForEntity(selectedEntityId, selectedCountryId) }} • {{ entityName(selectedEntityId) }}
+      </div>
+      <div class="units">
+        <div *ngFor="let u of unitsFor(selectedEntityId!, selectedCountryId!); trackBy: trackByUnit" class="unit-card">
+          <div class="unit-head">
+            <div class="name">🏷️ {{ u.name }}</div>
+            <div class="badge">{{ totalUsers(u) }} users</div>
+          </div>
+          <div class="unit-body">
+            <div class="row">
+              <span class="badge admin">Admins</span>
+              
+                <span class="pill admin" *ngFor="let a of u.unit_admins"><a target="_blank" routerLink="/workspace/profile/{{a.id}}"> {{ a.name }}</a></span>
+              
+              <span class="pill muted" *ngIf="!u.unit_admins.length">None</span>
+            </div>
+            <div class="row">
+              <span class="badge std">Standards</span>
+              <span class="pill std" *ngFor="let s of u.standards"><a target="_blank" routerLink="/workspace/profile/{{s.id}}">{{ s.name }}</a></span>
+              <span class="pill muted" *ngIf="!u.standards.length">None</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /Units -->
+  </div>
+</div>

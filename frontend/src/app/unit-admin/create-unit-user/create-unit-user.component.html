@@ -1,0 +1,179 @@
+<!-- Header / Guard -->
+<div class="mb-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <nav class="text-sm text-gray-500 mb-3 flex items-center gap-3">
+        <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M10 20a1 1 0 01-.707-.293l-8-8a1 1 0 011.414-1.414L10 17.586l7.293-7.293a1 1 0 011.414 1.414l-8 8A1 1 0 0110 20z"/>
+        </svg>
+        <span>User Management</span>
+        <span class="text-gray-400">/</span>
+        <span class="text-gray-800 font-medium">Create Unit User</span>
+      </nav>
+      <h1 class="text-2xl font-bold text-gray-900 mb-1">Create Unit User</h1>
+      <p class="text-sm text-gray-500">Assign a user to <strong>your unit</strong> only.</p>
+    </div>
+    <a routerLink="/dashboard"
+       class="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-md text-sm text-gray-700 bg-white shadow-sm hover:bg-gray-50 transition">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+      </svg>
+      Back
+    </a>
+  </div>
+  
+  <!-- Fatal blocker -->
+  <div *ngIf="fatalBlocker" class="bg-red-50 border border-red-100 text-red-700 p-4 rounded-lg">
+    {{ fatalBlocker }}
+  </div>
+  
+  <!-- Loading state -->
+  <div *ngIf="loading && !fatalBlocker" class="text-center p-8">
+    <svg class="animate-spin h-6 w-6 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+    </svg>
+    <div class="mt-2 text-sm text-gray-500">Loading…</div>
+  </div>
+  
+  <form *ngIf="!loading && !fatalBlocker" [formGroup]="form" (ngSubmit)="onSubmit()">
+  
+    <!-- Unit context (locked) -->
+    <div class="bg-emerald-50 border border-emerald-100 p-16 rounded-xl mb-6">
+      <div class="text-sm text-emerald-900">
+        <span class="font-semibold">Unit:</span> {{ adminUnitName }}
+        <span *ngIf="adminUnitMeta"> • {{ adminUnitMeta }}</span>
+        <span class="ml-2 inline-block text-xs px-2 py-0.5 rounded-full border border-emerald-200 bg-white text-emerald-700">Locked</span>
+      </div>
+    </div>
+  
+    <!-- Select Employee -->
+    <div class="bg-white rounded-2xl shadow border border-gray-100 p-6 mb-6 max-w-4xl mx-auto">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="bg-blue-100 text-blue-600 p-2 rounded-full">
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M8 9a3 3 0 100-6 3 3 0 000 6zm4 2H4a2 2 0 00-2 2v1a1 1 0 001 1h10a1 1 0 001-1v-1a2 2 0 00-2-2zM14 8h2a2 2 0 012 2v1h-3a3 3 0 00-1-.18V8z" />
+          </svg>
+        </div>
+        <div>
+          <h2 class="text-base font-semibold text-gray-800">Select Employee</h2>
+          <p class="text-sm text-gray-500">Choose the employee to assign into your unit</p>
+        </div>
+      </div>
+  
+      <input type="text"
+             [(ngModel)]="searchQuery"
+             (ngModelChange)="filterEmployees()"
+             [ngModelOptions]="{standalone: true}"
+             placeholder="Search employees…"
+             class="w-full border border-gray-300 p-3 rounded-lg mb-4 focus:ring-2 focus:ring-blue-400" />
+  
+      <div class="divide-y border border-gray-200 rounded-xl">
+        <div *ngIf="loadingEmployees" class="p-6 text-center">
+          <svg class="animate-spin h-6 w-6 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+          </svg>
+          <div class="mt-2 text-sm text-gray-500">Loading employees…</div>
+        </div>
+  
+        <div *ngFor="let emp of (searchQuery ? filteredEmployees : filteredEmployees.slice(0, 5))"
+             (click)="selectEmployee(emp)"
+             [class.bg-blue-50]="isSelected(emp.id)"
+             class="p-4 hover:bg-blue-50 cursor-pointer flex items-start gap-3 transition-all duration-150 mb-3 mt-3">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm bg-gradient-to-br from-[#E6DADA] to-[#274046] mt-2">
+            {{ emp.name.charAt(0).toUpperCase() }}
+          </div>
+          <div>
+            <div class="font-semibold text-gray-800">{{ emp.name }}</div>
+            <div class="text-sm text-gray-500">{{ emp.position }}</div>
+            <div class="text-sm text-gray-400">{{ emp.email }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Role cards (only 2) -->
+    <div class="bg-white rounded-2xl shadow border border-gray-100 p-6 mb-6 max-w-4xl mx-auto">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="bg-green-100 text-green-600 p-2 rounded-full">
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M13 7H7v6h6V7z" />
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 110-12 6 6 0 010 12z" clip-rule="evenodd" />
+          </svg>
+        </div>
+        <div>
+          <h2 class="text-base font-semibold text-gray-800">Assign Role</h2>
+          <p class="text-sm text-gray-500">Choose the role for this unit</p>
+        </div>
+      </div>
+  
+      <div class="grid sm:grid-cols-2 gap-5">
+        <div *ngFor="let role of roles"
+             (click)="selectRole($any(role.key))"
+             [ngClass]="{
+               'border-blue-500 ring-2 ring-blue-100': isRoleSelected(role.key),
+               'border-gray-200': !isRoleSelected(role.key)
+             }"
+             class="cursor-pointer p-5 border rounded-xl transition-all duration-200 hover:shadow-lg bg-white">
+  
+          <div class="mb-3">
+            <ng-container [ngSwitch]="role.icon">
+              <svg *ngSwitchCase="'users'" class="w-6 h-6 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M13 7a3 3 0 11-6 0 3 3 0 016 0zM3 14s1-3 7-3 7 3 7 3v1H3v-1z" />
+              </svg>
+              <svg *ngSwitchCase="'user'" class="w-6 h-6 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10 11a4 4 0 100-8 4 4 0 000 8zm-6 7a6 6 0 1112 0H4z" />
+              </svg>
+            </ng-container>
+          </div>
+  
+          <div class="font-semibold text-gray-800 mb-1">{{ role.title }}</div>
+          <p class="text-sm text-gray-600 mb-3">{{ role.description }}</p>
+  
+          <div class="flex flex-wrap gap-2">
+            <span *ngFor="let tag of role.tags" class="text-xs px-2 py-1 rounded-full" [ngClass]="tag.color">
+              {{ tag.label }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Summary -->
+    <div class="mt-6 bg-blue-50 border border-blue-100 p-6 rounded-lg text-sm text-blue-800">
+      <div class="font-semibold mb-2">Selected Assignments</div>
+      <div class="flex flex-col sm:flex-row flex-wrap gap-6">
+        <div *ngIf="selectedEmployee">🙋‍♂️ Employee: <strong>{{ selectedEmployee.name }}</strong></div>
+        <div *ngIf="form.value.role">👤 Role: <strong>{{ form.value.role | titlecase }}</strong></div>
+        <div>📦 Unit: <strong>{{ adminUnitName }}</strong> <span *ngIf="adminUnitMeta">({{ adminUnitMeta }})</span></div>
+      </div>
+    </div>
+  
+    <!-- Errors -->
+    <div *ngIf="serverErrors.length" class="mt-6 bg-red-50 border border-red-100 p-6 rounded-lg text-sm text-red-800">
+        <div class="font-semibold mb-2">We couldn’t complete this action</div>
+        <ul class="list-disc pl-5 space-y-1">
+          <li *ngFor="let msg of serverErrors">{{ msg }}</li>
+        </ul>
+      </div>
+    <!-- <div *ngIf="message" class="mt-6 bg-red-50 border border-red-100 p-6 rounded-lg text-sm text-red-800">
+      <div class="font-semibold mb-2">Error</div>
+      <p>{{ message }}</p>
+    </div> -->
+  
+    <!-- Actions -->
+    <div class="flex justify-end gap-3 pt-4">
+      <button type="button" routerLink="/dashboard" class="border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-100">
+        Cancel
+      </button>
+      <button type="submit"
+              class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 flex items-center justify-center"
+              [disabled]="form.invalid || submitting">
+        <ng-container *ngIf="submitting; else btnTxt">
+          <span class="loader mr-2"></span> Creating…
+        </ng-container>
+        <ng-template #btnTxt>+ Create User</ng-template>
+      </button>
+    </div>
+  </form>
+  

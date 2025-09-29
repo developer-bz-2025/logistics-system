@@ -1,0 +1,53 @@
+<div class="rounded-2xl border bg-white shadow-sm overflow-hidden">
+    <div class="px-5 py-4 border-b flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="h-9 w-9 rounded-xl bg-sky-50 border flex items-center justify-center text-sky-600 text-lg">🗺️</div>
+        <div>
+          <div class="font-semibold tracking-tight">Countries × Entities Matrix</div>
+          <div class="text-xs text-gray-500">Quick overview • Click a cell to inspect</div>
+        </div>
+      </div>
+      <input type="search"
+             placeholder="Search entity or country..."
+             class="px-3 py-2 border rounded-lg text-sm"
+             [(ngModel)]="search"/>
+    </div>
+  
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr>
+            <th class="p-3 text-left text-gray-500">Country</th>
+            <th *ngFor="let en of entityNames; trackBy: trackByEntityName"
+                class="p-3 text-left text-gray-500"
+                [class.hidden]="!matchesQuery(en)">
+              {{ en }}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let c of countries; trackBy: trackByCountry">
+            <td class="p-3 font-medium">{{ c.name }}</td>
+            <td *ngFor="let en of entityNames; trackBy: trackByEntityName"
+                [class.hidden]="!matchesQuery(c.name) || !matchesQuery(en)"
+                class="p-3">
+              <button class="px-2 py-1 rounded-lg border bg-gray-50 hover:bg-gray-100"
+                      [title]="usersCount(c.id,en) + ' users'"
+                      (click)="selectCell(c.id, en)">
+                {{ unitsCount(c.id,en) }} units
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  
+    <div *ngIf="selected.countryId && selected.entityName"
+         class="border-t p-4 bg-slate-50 text-sm">
+      <span class="font-medium">Selected:</span>
+      Country #{{ selected.countryId }} • Entity {{ selected.entityName }} —
+      Units: {{ unitsCount(selected.countryId!, selected.entityName!) }}
+      • Users: {{ usersCount(selected.countryId!, selected.entityName!) }}
+    </div>
+  </div>
+  

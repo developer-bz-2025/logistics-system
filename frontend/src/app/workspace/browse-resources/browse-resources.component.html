@@ -1,0 +1,205 @@
+<div class="max-w-7xl mx-auto p-6">
+    <h2 class="text-xl font-semibold mb-4">Browse Resources</h2>
+  
+<!-- Scope · modern card -->
+<div class="rounded-2xl border shadow-sm bg-gradient-to-br from-indigo-50/60 to-fuchsia-50/40 p-5 md:p-6 mb-6">
+    <div class="flex items-start justify-between mb-4">
+      <div class="flex items-center gap-3">
+        <div class="h-9 w-9 rounded-xl bg-white border flex items-center justify-center text-indigo-600 text-lg shadow-sm">🎯</div>
+        <div>
+          <div class="font-semibold tracking-tight">Pick scope</div>
+          <div class="text-xs text-gray-500">Choose <span class="font-medium">Country</span> → <span class="font-medium">Entity</span> → <span class="font-medium">Unit</span></div>
+        </div>
+      </div>
+      <button class="text-xs px-3 py-1.5 rounded-lg border bg-white hover:bg-gray-50 shadow-sm" (click)="onCountryChange('')">Reset</button>
+    </div>
+
+  <!-- stepper -->
+  <!-- <div class="flex items-center gap-2 text-xs mb-5">
+    <div class="flex items-center gap-2">
+      <span class="h-6 w-6 rounded-full flex items-center justify-center"
+            [class.bg-indigo-600]="!!scope$.value.country_id"
+            [class.text-white]="!!scope$.value.country_id"
+            [class.bg-white]="!scope$.value.country_id"
+            [class.text-gray-600]="!scope$.value.country_id"
+            [class.border]="!scope$.value.country_id">1</span>
+      <span [class.text-gray-900]="!!scope$.value.country_id" class="text-gray-500">Country</span>
+    </div>
+    <span class="h-px flex-1 bg-gray-200"></span>
+    <div class="flex items-center gap-2">
+      <span class="h-6 w-6 rounded-full flex items-center justify-center"
+            [class.bg-indigo-600]="!!scope$.value.entity_id"
+            [class.text-white]="!!scope$.value.entity_id"
+            [class.bg-white]="!scope$.value.entity_id"
+            [class.text-gray-600]="!scope$.value.entity_id"
+            [class.border]="!scope$.value.entity_id">2</span>
+      <span [class.text-gray-900]="!!scope$.value.entity_id" class="text-gray-500">Entity</span>
+    </div>
+    <span class="h-px flex-1 bg-gray-200"></span>
+    <div class="flex items-center gap-2">
+      <span class="h-6 w-6 rounded-full flex items-center justify-center"
+            [class.bg-indigo-600]="!!scope$.value.unit_id"
+            [class.text-white]="!!scope$.value.unit_id"
+            [class.bg-white]="!scope$.value.unit_id"
+            [class.text-gray-600]="!scope$.value.unit_id"
+            [class.border]="!scope$.value.unit_id">3</span>
+      <span [class.text-gray-900]="!!scope$.value.unit_id" class="text-gray-500">Unit</span>
+    </div>
+  </div> -->
+
+  <!-- inputs -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <!-- Country -->
+    <!-- COUNTRY -->
+<div class="relative">
+  <label class="block text-xs text-gray-500 mb-1">Country</label>
+  <span class="pointer-events-none absolute left-3 top-[30px] h-6 w-6 rounded-full bg-white border flex items-center justify-center">🌍</span>
+
+  <select #countrySel
+          class="w-full rounded-2xl border bg-white p-2.5 pl-11 pr-10 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/70"
+          [value]="scope$.value.country_id ?? ''"
+          (change)="onCountryChange(countrySel.value)">
+    <option value="">Select country</option>
+    <option *ngFor="let c of (countries$ | async)" [value]="c.id">{{ c.name }}</option>
+  </select>
+</div>
+
+<!-- ENTITY -->
+<div class="relative">
+  <label class="block text-xs text-gray-500 mb-1">Entity</label>
+  <span class="pointer-events-none absolute left-3 top-[30px] h-6 w-6 rounded-full bg-white border flex items-center justify-center">🏢</span>
+
+  <select #entitySel
+          class="w-full rounded-2xl border bg-white p-2.5 pl-11 pr-10 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/70 disabled:bg-gray-50 disabled:text-gray-400"
+          [attr.disabled]="(disableEntity$ | async) ? '' : null"
+          [value]="scope$.value.entity_id ?? ''"
+          (change)="onEntityChange(entitySel.value)">
+    <option value="">
+      {{ scope$.value.country_id ? ((isLoadingEntities$ | async) ? 'Loading entities…' : 'Select entity') : 'Pick a country first' }}
+    </option>
+    <option *ngFor="let e of (entities$ | async)" [value]="e.id">{{ e.name }}</option>
+  </select>
+
+  <!-- spinner -->
+  <svg *ngIf="(isLoadingEntities$ | async)"
+       class="animate-spin absolute right-8 top-[30px] h-4 w-4 text-indigo-500" viewBox="0 0 24 24">
+    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4A4 4 0 008 12H4z"></path>
+  </svg>
+</div>
+
+<!-- UNIT -->
+<div class="relative">
+  <label class="block text-xs text-gray-500 mb-1">Unit</label>
+  <span class="pointer-events-none absolute left-3 top-[30px] h-6 w-6 rounded-full bg-white border flex items-center justify-center">🏷️</span>
+
+  <select #unitSel
+          class="w-full rounded-2xl border bg-white p-2.5 pl-11 pr-10 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/70 disabled:bg-gray-50 disabled:text-gray-400"
+          [attr.disabled]="(disableUnit$ | async) ? '' : null"
+          [value]="scope$.value.unit_id ?? ''"
+          (change)="onUnitChange(unitSel.value)">
+    <option value="">
+      {{ scope$.value.entity_id ? ((isLoadingUnits$ | async) ? 'Loading units…' : 'Select unit') : 'Pick an entity first' }}
+    </option>
+    <option *ngFor="let u of (units$ | async)" [value]="u.id">{{ u.name }}</option>
+  </select>
+
+  <svg *ngIf="(isLoadingUnits$ | async)"
+       class="animate-spin absolute right-8 top-[30px] h-4 w-4 text-indigo-500" viewBox="0 0 24 24">
+    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4A4 4 0 008 12H4z"></path>
+  </svg>
+</div>
+
+    
+  </div>
+
+  <!-- selection chips -->
+
+  <!-- <div class="mt-4 flex flex-wrap items-center gap-2 text-xs">
+<ng-container *ngIf="countries$ | async as countries">
+    <div class="mt-4 flex flex-wrap items-center gap-2 text-xs">
+    <span class="px-2 py-1 rounded-full bg-white border text-gray-700">
+      Country: {{ nameById(countries, scope$.value.country_id) }}
+    </span>
+    </div>
+  </ng-container>
+  
+  <ng-container *ngIf="entities$ | async as entities">
+    <span class="px-2 py-1 rounded-full bg-white border text-gray-700">
+      Entity {{ nameById(entities, scope$.value.entity_id) }}
+    </span>
+  </ng-container>
+  
+  <ng-container *ngIf="units$ | async as units">
+    <span class="px-2 py-1 rounded-full bg-white border text-gray-700">
+      Unit {{ nameById(units, scope$.value.unit_id) }}
+    </span>
+  </ng-container>
+  </div> -->
+  <!-- <div class="mt-4 flex flex-wrap items-center gap-2 text-xs">
+    <span class="text-gray-500 mr-1">Selected:</span>
+    <span class="px-2 py-1 rounded-full bg-white border text-gray-700"
+          *ngIf="scope$.value.country_id; else ctyEmpty">
+      Country #{{ scope$.value.country_id }}
+    </span>
+    <ng-template #ctyEmpty>
+      <span class="px-2 py-1 rounded-full bg-gray-100 text-gray-400">Country —</span>
+    </ng-template>
+
+    <span class="px-2 py-1 rounded-full bg-white border text-gray-700"
+          *ngIf="scope$.value.entity_id; else entEmpty">
+      Entity #{{ scope$.value.entity_id }}
+    </span>
+    <ng-template #entEmpty>
+      <span class="px-2 py-1 rounded-full bg-gray-100 text-gray-400">Entity —</span>
+    </ng-template>
+
+    <span class="px-2 py-1 rounded-full bg-white border text-gray-700"
+          *ngIf="scope$.value.unit_id; else unitEmpty">
+      Unit #{{ scope$.value.unit_id }}
+    </span>
+    <ng-template #unitEmpty>
+      <span class="px-2 py-1 rounded-full bg-gray-100 text-gray-400">Unit —</span>
+    </ng-template>
+  </div> -->
+
+  <!-- <p class="mt-3 text-xs text-gray-500">
+    Resources load after you select a unit. Visibility is enforced by your role on the server.
+  </p> -->
+</div>
+
+  
+  
+    <!-- prompts -->
+    <div class="mb-6 text-sm text-gray-600" *ngIf="!scope$.value.country_id">Pick a country to start.</div>
+    <div class="mb-6 text-sm text-gray-600" *ngIf="scope$.value.country_id && !scope$.value.entity_id">Pick an entity.</div>
+    <div class="mb-6 text-sm text-gray-600" *ngIf="scope$.value.entity_id && !scope$.value.unit_id">Pick a unit.</div>
+  
+    <!-- Error / loading -->
+    <div *ngIf="errorMsg" class="mb-4 px-4 py-3 rounded-lg border border-red-200 text-red-700 bg-red-50">
+      {{ errorMsg }}
+    </div>
+    <div *ngIf="loading" class="mb-6 text-sm text-gray-500 loader"></div>
+  
+    <!-- Resource tree -->
+    <ng-container *ngIf="!loading && scope$.value.unit_id">
+        <ng-container *ngIf="(tree$ | async) as tree">
+          <ng-container *ngIf="tree.length; else emptyUnit">
+            <app-resource-tree
+              [tree]="tree"
+              [typeColors]="typeColors"
+              [visColors]="visColors">
+            </app-resource-tree>
+          </ng-container>
+          <ng-template #emptyUnit>
+            <div class="rounded-2xl border bg-white p-10 text-center text-gray-600">
+              <div class="text-3xl mb-2">🗂️</div>
+              <div class="font-medium">No resources in this unit yet</div>
+              <div class="text-sm text-gray-500 mt-1">Try another unit or check back later.</div>
+            </div>
+          </ng-template>
+        </ng-container>
+      </ng-container>
+  </div>
+  

@@ -1,0 +1,156 @@
+<ng-container *ngIf="role$ | async as role">
+    <div class="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- FILTERS -->
+        <aside class="lg:col-span-4 xl:col-span-3 space-y-5">
+            <h2 class="text-lg font-semibold">Browse Resources</h2>
+
+            <!-- Scope -->
+            <div *ngIf="role==='super_admin' || role==='c_level' || role==='country_dir'">
+                <label class="block text-sm font-medium">Country</label>
+                <select class="w-full border rounded-lg p-2" [disabled]="role==='country_dir'"
+                    (change)="set('country_id', $any($event.target).value ? +$any($event.target).value : undefined)">
+                    <option value="">All</option>
+                    <option *ngFor="let c of (countries$ | async)" [value]="c.id">{{ c.name }}</option>
+                </select>
+            </div>
+
+            <div *ngIf="role!=='standard'">
+                <label class="block text-sm font-medium">Entity</label>
+                <select class="w-full border rounded-lg p-2"
+                    [disabled]="role==='head_of_entity' || role==='country_dir'"
+                    (change)="set('entity_id', $any($event.target).value ? +$any($event.target).value : undefined)">
+                    <option value="">All</option>
+                    <option *ngFor="let e of (entities$ | async)" [value]="e.entity_id">{{ e.entity_name }}</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium">Unit</label>
+                <select class="w-full border rounded-lg p-2" [disabled]="role==='unit_admin' || role==='standard'"
+                    (change)="set('unit_id', $any($event.target).value ? +$any($event.target).value : undefined)">
+                    <option value="">All</option>
+                    <option *ngFor="let u of (units$ | async)" [value]="u.unit_id">{{ u.unit_name }}</option>
+                </select>
+            </div>
+
+            <!-- Types (from facets with counts) -->
+            <div>
+                <label class="block text-sm font-medium">Type</label>
+                <div class="flex flex-wrap gap-2 mt-2">
+                    <ng-container *ngIf="(facets$ | async) as f">
+                        <label *ngFor="let t of f.types"
+                            class="inline-flex items-center gap-2 border rounded-lg px-3 py-1.5">
+                            <input type="checkbox" [checked]="(query$.value.type_id || []).includes(t.id)"
+                                (change)="setTypeToggle(t.id)">
+                            <span>{{ t.name }} ({{ t.count }})</span>
+                        </label>
+                    </ng-container>
+                </div>
+            </div>
+
+            <!-- Visibility (facets reflect server-allowed options) -->
+            <div>
+                <label class="block text-sm font-medium">Visibility</label> 
+                <div class="flex flex-wrap gap-2 mt-2">
+                    <ng-container *ngIf="(facets$ | async) as f">
+                        <label *ngFor="let v of f.visibilities"
+                            class="inline-flex items-center gap-2 border rounded-lg px-3 py-1.5">
+                            <input type="checkbox" [checked]="(query$.value.visibility_id || []).includes(v.id)"
+                                (change)="setVisToggle(v.id)">
+                            <span>{{ v.name }} ({{ v.count }})</span>
+                        </label>
+                    </ng-container>
+                </div>
+            </div>
+
+            <!-- Tags -->
+            <div>
+                <label class="block text-sm font-medium">Tags</label>
+                <input class="w-full border rounded-lg p-2" placeholder="tag1, tag2" (blur)="onTagsBlur($event)">
+
+            </div>
+
+            <!-- Search -->
+            <div>
+                <label class="block text-sm font-medium">Search</label>
+                <input class="w-full border rounded-lg p-2" placeholder="Title, description, tags"
+                    (input)="setSearchImmediate($any($event.target).value)">
+            </div>
+
+            <!-- Dates -->
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium">From</label>
+                    <input type="date" class="w-full border rounded-lg p-2" (change)="onDateFromChange($event)">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium">To</label>
+                    <input type="date" class="w-full border rounded-lg p-2" (change)="onDateToChange($event)">
+                </div>
+            </div>
+        </aside>
+
+        <!-- RESULTS -->
+        <section class="lg:col-span-8 xl:col-span-9">
+            <div class="flex items-center justify-between mb-3">
+                <div class="text-sm text-gray-500">{{ (results$ | async)?.meta?.total | number }} results</div>
+                <div class="flex items-center gap-2">
+                    <label class="text-sm text-gray-500">Sort</label>
+                    <select class="border rounded-lg p-2" (change)="sortBy($any($event.target).value)">
+                        <option value="-created_at">Newest</option>
+                        <option value="created_at">Oldest</option>
+                        <option value="title">Title A–Z</option>
+                        <option value="-views">Most viewed</option>
+                    </select>
+
+                    <select class="border rounded-lg p-2" (change)="perPage(+$any($event.target).value)">
+                        <option [value]="10">10</option>
+                        <option [value]="20" selected>20</option>
+                        <option [value]="50">50</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="divide-y rounded-2xl bg-white border shadow-sm overflow-hidden">
+                <div *ngFor="let r of (results$ | async)?.data" class="px-5 py-4 flex items-start gap-4">
+                    <div class="h-10 w-10 rounded-lg flex items-center justify-center bg-gray-50 text-lg">{{ iconFor(r)
+                        }}</div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-3">
+                            <div class="font-medium truncate">{{ r.res_title }}</div>
+                            <span class="text-[10px] px-2 py-0.5 rounded-full border">{{ r.visibility }}</span>
+                            <span class="text-[10px] px-2 py-0.5 rounded-full border">{{ r.type }}</span>
+                        </div>
+                        <div class="text-sm text-gray-500 line-clamp-2" *ngIf="r.res_description">{{ r.res_description
+                            }}</div>
+                        <div class="text-xs text-gray-400 mt-1">
+                            {{ r.created_at | date:'mediumDate' }}
+                            <span *ngIf="r.tags?.length">• {{ r.tags?.join(', ') }}</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <a *ngIf="r.res_url" class="text-sm px-3 py-1.5 rounded-lg border hover:bg-gray-50"
+                            [href]="resolveUrl(r)" target="_blank" rel="noopener">Open</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Paginator -->
+            <ng-container *ngIf="(results$ | async) as res">
+                <div class="flex justify-end gap-2 mt-4">
+                  <button class="px-3 py-1 border rounded"
+                          (click)="pageTo((query$.value.page || 1) - 1)"
+                          [disabled]="(res.meta.current_page || 1) <= 1">Prev</button>
+              
+                  <div class="px-3 py-1 text-sm text-gray-600">
+                    Page {{ res.meta.current_page || 1 }} / {{ res.meta.last_page || 1 }}
+                  </div>
+              
+                  <button class="px-3 py-1 border rounded"
+                          (click)="pageTo((query$.value.page || 1) + 1)"
+                          [disabled]="(res.meta.current_page || 1) >= (res.meta.last_page || 1)">Next</button>
+                </div>
+              </ng-container>
+        </section>
+    </div>
+</ng-container>

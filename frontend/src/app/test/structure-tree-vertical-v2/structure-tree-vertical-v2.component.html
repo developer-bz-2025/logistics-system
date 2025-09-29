@@ -1,0 +1,164 @@
+<div class="rounded-2xl border bg-white shadow-sm overflow-hidden">
+    <!-- Header -->
+    <div class="px-5 py-4 border-b flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div class="flex items-center gap-3">
+        <div class="h-9 w-9 rounded-xl bg-indigo-50 border flex items-center justify-center text-indigo-600 text-lg">🌿</div>
+        <div>
+          <div class="font-semibold tracking-tight">Organization Explorer</div>
+          <div class="text-xs text-gray-500">Countries → Entities → Units. Click role badges to reveal names.</div>
+        </div>
+      </div>
+  
+      <div class="flex flex-wrap items-center gap-2">
+        <input
+          type="search"
+          [(ngModel)]="search"
+          placeholder="Search country, entity, or unit"
+          class="px-3 py-2 border rounded-lg text-sm w-64"
+          aria-label="Search"
+        />
+        <div class="hidden md:flex items-center gap-2">
+          <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs border bg-amber-50 text-amber-700 border-amber-200" title="Super Admin sees everything">
+            🧑‍💼👑 Super Admin
+          </span>
+          <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs border bg-violet-50 text-violet-700 border-violet-200" title="C-Level sees everything">
+            🧑‍💼🏛️ C-level
+          </span>
+        </div>
+        <div class="flex items-center gap-1">
+          <button class="px-2 py-1 text-xs rounded-lg border hover:bg-gray-50" (click)="expandAllCountries()">Expand countries</button>
+          <button class="px-2 py-1 text-xs rounded-lg border hover:bg-gray-50" (click)="collapseAllCountries()">Collapse countries</button>
+          <button class="px-2 py-1 text-xs rounded-lg border hover:bg-gray-50" (click)="expandAllEntities()">Expand entities</button>
+          <button class="px-2 py-1 text-xs rounded-lg border hover:bg-gray-50" (click)="collapseAllEntities()">Collapse entities</button>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Tree -->
+    <div class="p-5">
+      <ul class="tt-tree">
+        <li *ngFor="let c of data; trackBy: trackByCountry" [class.hidden]="!matchesQueryCountry(c)">
+          <!-- Country -->
+          <div class="tt-node">
+            <div class="rounded-xl border p-3 bg-white flex items-center justify-between gap-3"
+                 [class.ring-1]="openCountryIds.has(c.id)" [class.ring-indigo-100]="openCountryIds.has(c.id)">
+              <div class="flex items-center gap-3">
+                <span class="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 border text-indigo-600">🌍</span>
+                <div>
+                  <div class="font-medium">{{ c.name }}</div>
+                  <div class="text-xs text-gray-500">Country</div>
+                </div>
+  
+                <button type="button"
+                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] border bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100"
+                        (click)="toggleCountryDirs(c.id)"
+                        [attr.aria-expanded]="showCountryDirNames.has(c.id)">
+                  🧑‍💼🌍 Country Dir
+                </button>
+  
+                <div *ngIf="showCountryDirNames.has(c.id)" class="flex flex-wrap gap-1.5">
+                  <span *ngFor="let n of c.country_dirs" class="px-2 py-0.5 rounded-full text-[11px] bg-white border">{{ n }}</span>
+                </div>
+              </div>
+  
+              <button class="text-sm px-3 py-1 rounded-lg border text-gray-600 hover:bg-gray-50"
+                      (click)="toggleCountry(c.id)"
+                      [attr.aria-expanded]="openCountryIds.has(c.id)">
+                {{ openCountryIds.has(c.id) ? 'Collapse' : 'Expand' }}
+              </button>
+            </div>
+          </div>
+  
+          <!-- Entities -->
+          <div class="reveal" [class.open]="openCountryIds.has(c.id)">
+            <ul class="mt-3 space-y-2">
+              <li *ngFor="let e of c.entities; trackBy: trackByEntity" [class.hidden]="!matchesQueryEntity(e, c.name)">
+                <div class="tt-node">
+                  <div class="rounded-lg border p-3 bg-white flex items-center justify-between gap-3"
+                       [class.ring-1]="openEntityKeys.has(key(c.id,e.id))" [class.ring-sky-100]="openEntityKeys.has(key(c.id,e.id))">
+                    <div class="flex items-center gap-3">
+                      <span class="inline-flex h-6 w-6 items-center justify-center rounded-md bg-sky-50 border text-sky-600">🏢</span>
+                      <div>
+                        <div class="font-medium">{{ e.name }}</div>
+                        <div class="text-[11px] text-gray-500">
+                          <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border bg-gray-50 text-gray-700">
+                            🧩 {{ unitCount(e) }} units
+                          </span>
+                          <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border bg-gray-50 text-gray-700 ml-1">
+                            👥 {{ usersSum(e) }} users
+                          </span>
+                        </div>
+                      </div>
+  
+                      <button type="button"
+                              class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] border bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100"
+                              (click)="toggleEntityHeads(c.id, e.id)"
+                              [attr.aria-expanded]="showEntityHeadNames.has(key(c.id,e.id))">
+                        🧑‍💼🏢 Head
+                      </button>
+  
+                      <div *ngIf="showEntityHeadNames.has(key(c.id,e.id))" class="flex flex-wrap gap-1.5">
+                        <span *ngFor="let n of e.heads" class="px-2 py-0.5 rounded-full text-[11px] bg-white border">{{ n }}</span>
+                      </div>
+                    </div>
+  
+                    <button class="text-sm px-3 py-1 rounded-lg border text-gray-600 hover:bg-gray-50"
+                            (click)="toggleEntity(c.id, e.id)"
+                            [attr.aria-expanded]="openEntityKeys.has(key(c.id,e.id))">
+                      {{ openEntityKeys.has(key(c.id,e.id)) ? 'Hide units' : 'Show units' }}
+                    </button>
+                  </div>
+                </div>
+  
+                <!-- Units -->
+                <div class="reveal" [class.open]="openEntityKeys.has(key(c.id,e.id))">
+                  <ul class="mt-2 grid md:grid-cols-2 lg:grid-cols-3 gap-2">
+                    <li *ngFor="let u of e.units; trackBy: trackByUnit">
+                      <div class="tt-node">
+                        <div class="rounded-lg border p-3 bg-white hover:bg-gray-50 transition">
+                          <div class="flex items-center justify-between">
+                            <div class="font-medium">{{ u.name }}</div>
+                            <div class="text-xs text-gray-500">{{ (u.unit_admins.length + u.standards.length) || 0 }} users</div>
+                          </div>
+  
+                          <div class="mt-2 flex flex-wrap gap-1.5">
+                            <button type="button"
+                                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] border bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                                    (click)="toggleAdmins(u.id)"
+                                    [attr.aria-expanded]="showUnitAdmins.has(u.id)">
+                              🧑‍💼🛠️ Admins ({{ u.unit_admins.length }})
+                            </button>
+  
+                            <button type="button"
+                                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] border bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200"
+                                    (click)="toggleStand(u.id)"
+                                    [attr.aria-expanded]="showStandards.has(u.id)">
+                              👥 Standards ({{ u.standards.length }})
+                            </button>
+                          </div>
+  
+                          <div *ngIf="showUnitAdmins.has(u.id)" class="mt-2 flex flex-wrap gap-1.5">
+                            <span *ngFor="let n of u.unit_admins" class="px-2 py-0.5 rounded-full text-[11px] bg-emerald-50 border border-emerald-200 text-emerald-700">
+                              {{ n }}
+                            </span>
+                          </div>
+  
+                          <div *ngIf="showStandards.has(u.id)" class="mt-2 flex flex-wrap gap-1.5">
+                            <span *ngFor="let n of u.standards" class="px-2 py-0.5 rounded-full text-[11px] bg-slate-100 border border-slate-200 text-slate-700">
+                              {{ n }}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+  
+              </li>
+            </ul>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+  
