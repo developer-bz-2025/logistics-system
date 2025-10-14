@@ -15,9 +15,21 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        \Artisan::call('app:sync-employees');
+
+        $this->call([
+            StatusSeeder::class,
+            MaintenanceStatusSeeder::class,
+            ChangeStatusSeeder::class,
+            RoleSeeder::class,
+            CatalogWithAttributesFromExcelSeeder::class,
+            BrandsSuppliersManualSeeder::class,
         ]);
+
+
+        // User::factory()->create([
+        //     'name' => 'Test User',
+        //     'email' => 'test@example.com',
+        // ]);
     }
 }
