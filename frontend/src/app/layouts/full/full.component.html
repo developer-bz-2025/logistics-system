@@ -1,5 +1,5 @@
 <mat-sidenav-container
-  class="mainWrapper blue_theme  light-theme"
+  class="mainWrapper blue_theme light-theme "
   autosize
   autoFocus
   dir="ltr"
@@ -9,6 +9,7 @@
   <!-- ============================================================== -->
 
   <mat-sidenav
+  *ngIf="!isPrAdmin"
     #leftsidenav
     [mode]="isOver ? 'over' : 'side'"
     [opened]="!isOver"
@@ -37,6 +38,8 @@
       <!-- Outlet -->
       <!-- ============================================================== -->
       <router-outlet></router-outlet>
+      <app-toast-container></app-toast-container>
+
     </main>
   </mat-sidenav-content>
 </mat-sidenav-container>

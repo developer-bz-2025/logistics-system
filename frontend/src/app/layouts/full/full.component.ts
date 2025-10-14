@@ -2,6 +2,8 @@ import { BreakpointObserver } from '@angular/cdk/layout';
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { MatSidenav } from '@angular/material/sidenav';
+import { AuthService } from '../../core/services/auth.service';
+
 
 const MOBILE_VIEW = 'screen and (max-width: 768px)';
 const TABLET_VIEW = 'screen and (min-width: 769px) and (max-width: 1024px)';
@@ -13,6 +15,9 @@ const MONITOR_VIEW = 'screen and (min-width: 1024px)';
   styleUrls: [],
 })
 export class FullComponent implements OnInit {
+
+  isPrAdmin = false;
+
 
   @ViewChild('leftsidenav')
   public sidenav: MatSidenav;
@@ -28,7 +33,7 @@ export class FullComponent implements OnInit {
     return this.isMobileScreen;
   }
 
-  constructor(private breakpointObserver: BreakpointObserver) {
+  constructor(private breakpointObserver: BreakpointObserver,private auth: AuthService) {
     this.htmlElement = document.querySelector('html')!;
     this.layoutChangesSubscription = this.breakpointObserver
       .observe([MOBILE_VIEW, TABLET_VIEW, MONITOR_VIEW])
@@ -41,7 +46,11 @@ export class FullComponent implements OnInit {
       });
   }
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.auth.ensureUserLoaded().subscribe(() => {
+      this.isPrAdmin = this.auth.hasAnyRole(['pr_admin']); // case-insensitive in your helper
+    });
+  }
 
   ngOnDestroy() {
     this.layoutChangesSubscription.unsubscribe();

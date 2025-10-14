@@ -11,11 +11,11 @@ export class RoleRedirectComponent implements OnInit {
     if (!this.auth.isLoggedIn()) return this.router.navigateByUrl('/authentication/login');
 
     // order matters: super_admin > unit_admin > workspace viewers
-    if (this.auth.hasAnyRole(['super_admin'])) return this.router.navigateByUrl('/pages/dashboard');
-    if (this.auth.hasAnyRole(['c_level'])) return this.router.navigateByUrl('/pages/dashboard');
-    if (this.auth.hasAnyRole(['unit_admin']))  return this.router.navigateByUrl('/unit-admin');
+    if (this.auth.hasAnyRole(['pr_admin'])) return this.router.navigateByUrl('/pr');
+    if (this.auth.hasAnyRole(['super_admin'])) return this.router.navigateByUrl('/dashboard');
+    if (this.auth.hasAnyRole(['log_admin']))  return this.router.navigateByUrl('/dashboard');
 
     // fall back to workspace for viewer roles
-    return this.router.navigateByUrl('/workspace/browse-resource');
+    return this.router.navigateByUrl('/dashboard');
   }
 }

@@ -1,0 +1,36 @@
+<div class="relative">
+    <input
+      type="text"
+      class="w-full border rounded-xl px-3 py-2 bg-white"
+      [placeholder]="placeholder"
+      [value]="(inputText$ | async) || ''"
+      (input)="onInput($any($event.target).value)"     
+      (focus)="open$.next(true)"
+      (keydown)="keydown($event, currentResults)"       
+    />
+  
+    <!-- loading spinner -->
+    <div *ngIf="loading$ | async" class="absolute right-3 top-2.5 text-gray-400 animate-pulse text-xs">…</div>
+  
+    <!-- dropdown -->
+    <ng-container *ngIf="open$ | async">
+      <div class="absolute z-50 mt-1 w-full bg-white border border-green-200 rounded-xl shadow-lg overflow-hidden">
+        <ng-container *ngIf="(results$ | async) as results; else empty">
+          <button
+            *ngFor="let s of results; let i = index"
+            type="button"
+            class="w-full text-left px-3 py-2 hover:bg-green-50"
+            [class.bg-green-100]="i === highlighted"
+            (mousedown)="$event.preventDefault()"
+            (click)="pick(s)"
+          >
+            {{ s.name }}
+          </button>
+        </ng-container>
+        <ng-template #empty>
+          <div class="px-3 py-2 text-sm text-gray-500">No results</div>
+        </ng-template>
+      </div>
+    </ng-container>
+  </div>
+  

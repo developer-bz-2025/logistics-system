@@ -1,3 +1,23 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Global page background + text color */
+@layer base {
+    html, body, app-root { height: 100%; }
+    body { @apply bg-gray-50 text-gray-800; }
+  }
+  
+  /* Reusable white card + header shadows */
+  @layer components {
+    .app-card {
+      @apply bg-white rounded-2xl border border-gray-300 shadow-[0_6px_24px_rgba(0,0,0,0.06)] p-5 md:p-6;
+    }
+    .app-card-soft {
+      @apply bg-white rounded-2xl border border-gray-100 shadow-sm p-4;
+    }
+    .app-header {
+      @apply sticky top-0 z-50 bg-white border-b border-gray-200 shadow-[0_4px_16px_rgba(0,0,0,0.05)];
+    }
+  }
+  

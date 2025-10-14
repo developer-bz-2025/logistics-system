@@ -1,0 +1,20 @@
+:host {
+    display: block;
+  }
+  /* pr-create.component.css */
+.input {
+  @apply w-full h-11 rounded-xl bg-white border border-gray-300 px-3
+         placeholder:text-gray-400
+         focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500
+         transition-shadow shadow-[inset_0_0_0_9999px_rgba(255,255,255,1)];
+}
+.btn-primary {
+  @apply inline-flex items-center gap-2 px-4 h-10 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm;
+}
+
+.input { @apply w-full rounded-xl bg-white border border-gray-300 px-3 h-11
+  placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500; }
+.input-lg { @apply h-12 text-[15px]; }
+.label { @apply block text-sm font-medium mb-1; }
+.req { @apply text-rose-500; }
+.btn-primary { @apply inline-flex items-center gap-2 px-4 h-10 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm; }

@@ -1,0 +1,172 @@
+<div class="app-card">
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="text-xl font-semibold">Purchase Requests</h2>
+    <div class="relative">
+      <input
+        class="border rounded-xl pl-9 pr-3 py-2 w-72"
+        placeholder="Search PRs…"
+        [(ngModel)]="q"
+        (keyup.enter)="searchEnter()"
+      />
+      <svg class="w-4 h-4 absolute left-3 top-2.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <circle cx="11" cy="11" r="7" stroke-width="2"></circle>
+        <path d="M21 21l-3.5-3.5" stroke-width="2"></path>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div *ngIf="loading$ | async" class="text-sm text-gray-500 py-8">Loading…</div>
+
+  <div *ngIf="!(loading$ | async)">
+    <table class="w-full">
+      <thead>
+        <tr class="text-sm text-gray-500 border-b">
+          <th class="py-3 text-left w-12">#</th>
+          <th class="py-3 text-left">PR Code</th>
+          <th class="py-3 text-left">PR Date</th>
+          <th class="py-3 text-left">Total Price</th>
+          <th class="py-3 text-left">Items (Expected)</th>
+          <th class="py-3 text-left">PR Document</th>
+          <th class="py-3 text-left w-20">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y">
+        <tr *ngFor="let r of (rows$ | async); let i = index" class="align-top">
+          <td class="py-4">  {{ ((((currentPage$ | async) || 1) - 1) * per_page) + i + 1 }}
+          </td>
+          <td class="py-4">
+            <div class="font-semibold text-gray-800">{{ r.pr_code }}</div>
+          </td>
+          <td class="py-4 text-gray-700">{{ r.pr_date.slice(0, 10) }}</td>
+          <td class="py-4">
+            <div class="text-gray-800">
+              {{ r.total_price}} $
+            </div>
+          </td>
+          <td class="py-4">
+            <button class="text-emerald-600 hover:underline" (click)="openItemsModal(r)">
+              View Items
+            </button>
+          </td>
+          <td class="py-4">
+            <!-- <a *ngIf="docUrl(r) as url" class="text-emerald-600 hover:underline" [href]="url" target="_blank">
+              View Document
+            </a> -->
+            <!-- <a *ngIf="docUrl(r) as url" [href]="url" target="_blank" class="text-emerald-600 hover:underline">
+              View Document
+            </a> -->
+
+            <a *ngIf="docUrl(r) as url" [href]="url" target="_blank" class="text-emerald-600 hover:underline">
+              View Document
+            </a>
+
+            <!-- <button class="text-emerald-600 hover:underline" (click)="download(r)">
+              View Document
+            </button> -->
+            <span *ngIf="!docUrl(r)" class="text-gray-400">—</span>
+          </td>
+          <td class="py-4">
+            <button class="p-2 rounded hover:bg-gray-100" title="Open">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M9 18l6-6-6-6" stroke-width="2"></path>
+              </svg>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Footer / Pagination -->
+    <div class="mt-4 flex items-center justify-between">
+      <ng-container *ngIf="(currentPage$ | async) as cp">
+        <ng-container *ngIf="(total$ | async) as total">
+          <div class="text-sm text-gray-500">
+            Showing {{ ((cp - 1) * per_page) + 1 }}
+            to {{ pageEnd(cp, total) }}
+            of {{ total }} results
+          </div>
+        </ng-container>
+      </ng-container>
+    
+      <ng-container *ngIf="(currentPage$ | async) as cp">
+        <ng-container *ngIf="(lastPage$ | async) as lp">
+          <div class="flex items-center gap-2">
+            <button class="px-4 h-10 rounded-xl border hover:bg-gray-50 disabled:opacity-50"
+                    (click)="prev()" [disabled]="cp <= 1">
+              Previous
+            </button>
+            <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white grid place-items-center">
+              {{ cp }}
+            </div>
+            <button class="px-4 h-10 rounded-xl border hover:bg-gray-50 disabled:opacity-50"
+                    (click)="next()" [disabled]="cp >= lp">
+              Next
+            </button>
+          </div>
+        </ng-container>
+      </ng-container>
+    </div>
+    
+  </div>
+</div>
+
+<!-- ITEMS MODAL -->
+<!-- ITEMS MODAL -->
+<div *ngIf="itemsModalOpen$ | async" class="fixed inset-0 z-50">
+  <div class="absolute inset-0 bg-black/40" (click)="closeItemsModal()"></div>
+
+  <div class="absolute inset-x-0 top-20 mx-auto max-w-3xl app-card">
+    <div class="flex items-start justify-between mb-3">
+      <div>
+        <div class="text-lg font-semibold">PR Items</div>
+        <div class="text-sm text-gray-500">{{ modalPr?.pr_code }} • {{ modalPr?.pr_date?.slice(0,10) }}</div>
+      </div>
+      <button class="p-2 rounded hover:bg-gray-100" (click)="closeItemsModal()">✕</button>
+    </div>
+
+    <div *ngIf="modalLoading$ | async" class="text-sm text-gray-500 py-6">Loading items…</div>
+
+    <ng-container *ngIf="!(modalLoading$ | async)">
+      <ng-container *ngIf="(modalItems$ | async) as items">
+        <table class="w-full" *ngIf="items.length; else noItems">
+          <thead>
+            <tr class="text-sm text-gray-500 border-b">
+              <th class="py-2 text-left w-12">#</th>
+              <th class="py-2 text-left">Item</th>
+              <th class="py-2 text-left">Supplier</th>
+              <th class="py-2 text-right">Qty</th>
+              <th class="py-2 text-right">Unit Cost</th>
+              <th class="py-2 text-right">Total</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y">
+            <tr *ngFor="let it of items; let i = index">
+              <td class="py-3">{{ i + 1 }}</td>
+              <td class="py-3">{{ it.fixed_item_name || it.fixed_item_id }}</td>
+              <td class="py-3">{{ it.supplier_name || it.supplier_id }}</td>
+              <td class="py-3 text-right">{{ it.qty }}</td>
+              <td class="py-3 text-right">{{ it.unit_cost | number:'1.2-2' }} {{ it.currency }}</td>
+              <td class="py-3 text-right">{{ (it.qty * it.unit_cost) | number:'1.2-2' }} {{ it.currency }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <ng-template #noItems>
+          <div class="text-sm text-gray-500 py-6">No items for this PR.</div>
+        </ng-template>
+
+        <div class="mt-4 text-right text-gray-800">
+          <span class="mr-3 text-sm text-gray-500">Grand Total</span>
+          <span class="font-semibold">
+            <!-- {{ items.reduce((s, r) => s + (r.qty * r.unit_cost), 0) | number:'1.2-2' }} -->
+            {{ sumItems(modalItems$ | async) | number:'1.2-2' }}
+          </span>
+        </div>
+      </ng-container>
+    </ng-container>
+  </div>
+</div>
+
+
+

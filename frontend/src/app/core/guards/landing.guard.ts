@@ -17,16 +17,16 @@ export class LandingGuard implements CanActivate {
     // ensure roles/user are loaded (you already have this)
     return this.auth.ensureUserLoaded().pipe(
       map(() => {
-        if (this.auth.hasAnyRole(['super_admin', 'c_level'])) {
-          return this.router.createUrlTree(['/pages/dashboard']);
+        if (this.auth.hasAnyRole(['pr_admin'])) {
+          return this.router.createUrlTree(['/pr']);
         }
-        if (this.auth.hasAnyRole(['unit_admin'])) {
-          return this.router.createUrlTree(['/unit-admin']);
+        if (this.auth.hasAnyRole(['log_admin'])) {
+          return this.router.createUrlTree(['/dashboard']);
         }
         if (this.auth.hasAnyRole(['standard'])) {
           return this.router.createUrlTree(['/unit-admin/my-unit-resources']);
         }
-        return this.router.createUrlTree(['/workspace/browse-resource']);
+        return this.router.createUrlTree(['/dashboard']);
       })
     );
   }

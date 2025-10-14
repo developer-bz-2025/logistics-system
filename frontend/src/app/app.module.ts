@@ -10,6 +10,9 @@ import { AppComponent } from './app.component';
 import { TablerIconsModule } from 'angular-tabler-icons';
 import * as TablerIcons from 'angular-tabler-icons/icons';
 
+import { HTTP_INTERCEPTORS } from '@angular/common/http';
+import { AuthInterceptor } from './core/interceptors/jwt.interceptor';
+
 //Import all material modules
 import { MaterialModule } from './material.module';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -23,20 +26,8 @@ import { SidebarComponent } from './layouts/full/sidebar/sidebar.component';
 import { HeaderComponent } from './layouts/full/header/header.component';
 import { BrandingComponent } from './layouts/full/sidebar/branding.component';
 import { AppNavItemComponent } from './layouts/full/sidebar/nav-item/nav-item.component';
-
-
-import { HTTP_INTERCEPTORS } from '@angular/common/http';
-import { AuthInterceptor } from './core/interceptors/jwt.interceptor';
-import { ConfirmDialogComponent } from './shared/confirm-dialog/confirm-dialog.component';
-import { RoleRedirectComponent } from './core/role-redirect/role-redirect.component';
-import { TestComponent } from './test/test.component';
-import { StructureTreeVerticalComponent } from './test/structure-tree/structure-tree-vertical.component';
-import { StructureMatrixComponent } from './test/structure-matrix/structure-matrix.component';
-import { TreeComponent } from './test/tree/tree.component';
-import { RoleLensComponent } from './test/role-lens/role-lens.component';
-import { StructureTreeVerticalV2Component } from './test/structure-tree-vertical-v2/structure-tree-vertical-v2.component';
-import { OrgTreeRootedComponent } from './test/org-tree-rooted/org-tree-rooted.component';
-import { OrgTreeDownwardComponent } from './test/org-tree-downward/org-tree-downward.component';
+import { PrAdminModule } from './features/pr-admin/pr-admin.module';
+import { ToastContainerComponent } from './core/shared/components/toast-container/toast-container/toast-container.component';
 
 @NgModule({
   declarations: [
@@ -47,16 +38,7 @@ import { OrgTreeDownwardComponent } from './test/org-tree-downward/org-tree-down
     HeaderComponent,
     BrandingComponent,
     AppNavItemComponent,
-    ConfirmDialogComponent,
-    RoleRedirectComponent,
-    TestComponent,
-    StructureTreeVerticalComponent,
-    StructureMatrixComponent,
-    TreeComponent,
-    RoleLensComponent,
-    StructureTreeVerticalV2Component,
-    OrgTreeRootedComponent,
-    OrgTreeDownwardComponent,
+    ToastContainerComponent,
   ],
   imports: [
     BrowserModule,
@@ -67,6 +49,7 @@ import { OrgTreeDownwardComponent } from './test/org-tree-downward/org-tree-down
     ReactiveFormsModule,
     MaterialModule,
     TablerIconsModule.pick(TablerIcons),
+    PrAdminModule,
   ],
   providers: [
     {
@@ -75,8 +58,7 @@ import { OrgTreeDownwardComponent } from './test/org-tree-downward/org-tree-down
       multi: true
     }
   ],
-  exports: [TablerIconsModule,],
+  exports: [TablerIconsModule],
   bootstrap: [AppComponent],
 })
-
 export class AppModule {}

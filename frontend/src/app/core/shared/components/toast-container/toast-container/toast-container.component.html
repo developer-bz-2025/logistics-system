@@ -1,0 +1,19 @@
+<div class="fixed inset-x-0 top-4 z-[9999] flex flex-col items-center gap-2 px-4 pointer-events-none">
+    <ng-container *ngIf="toasts$ | async as toasts">
+      <div *ngFor="let t of toasts"
+           class="pointer-events-auto w-full max-w-md rounded-xl border shadow-lg p-3 pr-10 relative"
+           [ngClass]="{
+             'bg-green-50 border-green-200 text-green-800': t.type === 'success',
+             'bg-rose-50 border-rose-200 text-rose-800': t.type === 'error',
+             'bg-blue-50 border-blue-200 text-blue-800': t.type === 'info'
+           }">
+        <div class="text-sm font-semibold" *ngIf="t.title">{{ t.title }}</div>
+        <div class="text-sm">{{ t.message }}</div>
+        <button class="absolute right-2 top-2 text-xs opacity-60 hover:opacity-100"
+                (click)="toast.dismiss(t.id)">
+          ✕
+        </button>
+      </div>
+    </ng-container>
+  </div>
+  

@@ -1,4 +1,4 @@
-<mat-toolbar class="topbar">
+<mat-toolbar class="topbar app-card" style="background-color: #F9FAFB;">
   <!-- Mobile Menu -->
   <button mat-icon-button (click)="toggleMobileNav.emit()" *ngIf="!showToggle">
     <i-tabler name="menu-2" class="icon-20 d-flex"></i-tabler>
@@ -14,7 +14,7 @@
   </button> -->
 
   
-  <div class="relative justify-self-center w-full max-w-md ml-28">
+  <!-- <div class="relative justify-self-center w-full max-w-md ml-28">
     <input type="text" [formControl]="q" placeholder="Search resources, descriptions, or #tag" (keyup.enter)="submit()"
       (keyup.escape)="clear()" (input)="onInput()"
       class="w-full border border-gray-300 rounded-lg px-3 py-2 pr-24 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm" />
@@ -28,7 +28,7 @@
     Search
     </button>
   </div>
-  <span class="flex-1-auto"></span>
+  <span class="flex-1-auto"></span> -->
 
   <!-- --------------------------------------------------------------- -->
   <!-- profile Dropdown -->
@@ -38,7 +38,7 @@
   <button mat-icon-button [matMenuTriggerFor]="profilemenu" aria-label="Profile"
     class="flex items-center justify-center">
     <span class="inline-flex w-8 h-8 items-center justify-center rounded-full text-white font-bold text-sm"
-      [ngClass]="getGradientClass(user?.role)">
+      [ngClass]="getGradientClass(user?.role.name)">
 
       {{ user?.name?.charAt(0).toUpperCase() }}
     </span>
@@ -54,11 +54,11 @@
       <div class="font-semibold text-gray-800 text-base">{{ user?.name }}</div>
       <div class="text-sm text-gray-500 truncate">{{ user?.email }}</div>
       <div class="text-xs font-medium mt-1 inline-block px-2 py-1 rounded-full text-white mt-4"
-        [ngClass]="getGradientClass(user?.role)">
-        {{ user?.role?.replace('_', ' ') | titlecase }}
+        [ngClass]="getGradientClass(user?.role.name)">
+        {{ user?.role?.name.replace('_', ' ') | titlecase }}
       </div>
-      <div class="text-sm text-gray-500 truncate mt-4" *ngIf="user?.role!='super_admin' && user?.role!='c_level'">{{
-        user?.unit_name }}, {{ user?.country_name }}, {{ user?.entity_name }}</div>
+      <!-- <div class="text-sm text-gray-500 truncate mt-4" *ngIf="user?.role!='super_admin' && user?.role!='c_level'">{{
+        user?.unit_name }}, {{ user?.country_name }}, {{ user?.entity_name }}</div> -->
 
     </div>
 

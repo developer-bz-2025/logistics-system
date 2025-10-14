@@ -3,7 +3,7 @@ import { Component } from '@angular/core';
 @Component({
   selector: 'app-branding',
   template: `
-    <!-- <div class="branding">
+    <div class="branding">
       <a href="/">
         <img
           src="./assets/images/logos/dark-logo.svg"
@@ -11,7 +11,7 @@ import { Component } from '@angular/core';
           alt="logo"
         />
       </a>
-    </div> -->
+    </div>
   `,
 })
 export class BrandingComponent {

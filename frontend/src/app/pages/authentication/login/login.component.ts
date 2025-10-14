@@ -3,6 +3,8 @@ import { FormBuilder, Validators, FormGroup } from '@angular/forms';
 import { AuthService } from 'src/app/core/services/auth.service';
 import { JwtService } from 'src/app/core/services/jwt.service';
 import { Router } from '@angular/router';
+import { extractRoles } from '../role.util';
+
 
 @Component({
   selector: 'app-login',
@@ -43,21 +45,23 @@ export class AppSideLoginComponent {
 
     this.auth.login(this.loginForm.value).subscribe({
       next: (res) => {
-        console.log('[Login] Login success, token length:', res?.access_token?.length ?? 0);
+        console.log('[Login] Login success, token length:', res?.access_token ?? 0);
         const prePayload = this.jwt.getPayload<any>();
         console.log('[Login] Decoded payload before hydrate:', prePayload);
         this.auth.initializeFromToken(res.access_token).subscribe((user) => {
           console.log('[Login] User loaded after hydrate:', user);
-          const payload = this.jwt.getPayload<any>();
-          const payloadRoles = (payload?.roles ?? payload?.role ?? []) as any;
-          const rolesRaw = user?.roles ?? (user as any)?.role ?? this.auth.user()?.roles ?? payloadRoles;
-          const rolesArr: string[] = Array.isArray(rolesRaw) ? rolesRaw : (rolesRaw ? [rolesRaw] : []);
-          const roles = rolesArr.map(r => String(r).toLowerCase());
-          console.log('[Login] Computed roles:', roles);
-          if (roles.includes('super_admin') || roles.includes('c_level')) this.router.navigateByUrl('/pages/dashboard');
-          else if (roles.includes('unit_admin')) this.router.navigateByUrl('/unit-admin/dashboard');
-          else if (roles.includes('standard')) this.router.navigateByUrl('/unit-admin/my-unit-resources');
-          else this.router.navigateByUrl('/workspace/browse-resource');
+          const roles = extractRoles(user);
+          console.log('[Login] roles:', roles);
+          // const payload = this.jwt.getPayload<any>();
+          // const payloadRoles = (payload?.roles ?? payload?.role ?? []) as any;
+          // const rolesRaw = user?.role ?? (user as any)?.role ?? this.auth.user()?.role ?? payloadRoles;
+          // const rolesArr: string[] = Array.isArray(rolesRaw) ? rolesRaw : (rolesRaw ? [rolesRaw] : []);
+          // const roles = rolesArr.map(r => String(r).toLowerCase());
+          console.log('[Login] Computed roles:', roles.includes('pr_admin'));
+          if (roles.includes('super_admin')) this.router.navigateByUrl('/dashboard');
+          else if (roles.includes('pr_admin')) this.router.navigateByUrl('/pr');
+          else if (roles.includes('log_admin')) this.router.navigateByUrl('/dashboard');
+          else this.router.navigateByUrl('/');
           console.log('[Login] Navigation attempted based on roles');
         });
         // console.log(res)

@@ -1,8 +1,0 @@
-/* Clamp helper if Tailwind line-clamp plugin is not enabled */
-.line-clamp-2 {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    overflow: hidden;
-  }
-  

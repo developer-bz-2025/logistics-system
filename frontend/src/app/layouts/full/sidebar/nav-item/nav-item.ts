@@ -12,5 +12,5 @@ export interface NavItem {
     route?: string;
     children?: NavItem[];
     ddType?: string;
-    roles?: string[]; // allowed roles; omit for all
+    roles?: string[];
 }

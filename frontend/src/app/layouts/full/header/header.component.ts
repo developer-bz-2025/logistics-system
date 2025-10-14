@@ -97,8 +97,8 @@ export class HeaderComponent {
 
   roleGradientMap: { [key: string]: string } = {
     super_admin: 'from-[#F2709C] to-[#FF9400]',
-    country_dir: 'from-[#72C6EF] to-[#004E8F]',    // Cyan to Teal bg-gradient-to-br from-[#72C6EF] to-[#004E8F]
-    head_of_entity: 'from-[#00416A] to-[#E4E5E6]',      // Orange bg-gradient-to-br from-[#00416A] to-[#E4E5E6]
+    log_admin: 'from-[#72C6EF] to-[#0D9488]',    // Cyan to Teal bg-gradient-to-br from-[#72C6EF] to-[#004E8F]
+    pr_admin: 'from-[#00416A] to-[#E4E5E6]',      // Orange bg-gradient-to-br from-[#00416A] to-[#E4E5E6]
     unit_admin: 'from-[#215F00] to-[#E4E4D9]',          // Blue bg-gradient-to-br from-[#215F00] to-[#E4E4D9]
     standard: 'from-[#FCE38A] to-[#F38181]',            // Yellow to Red
     c_level: 'from-[#F2709C] to-[#FF9400]',             // Purple gradient bg-gradient-to-br from-[#F2709C] to-[#FF9472]

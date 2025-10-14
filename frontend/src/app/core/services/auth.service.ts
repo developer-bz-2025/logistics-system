@@ -8,8 +8,7 @@ import { JwtService } from './jwt.service';
 export interface AppUser {
   id: number;
   email: string;
-  roles: string[];
-  unit_id?: number; entity_id?: number; country_id?: number;
+  role: string[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -68,71 +67,60 @@ export class AuthService {
 
   user() { return this._user$.value; }
   
-  hasAnyRole(roles: string[]) {
-    if (!roles?.length) return true;
-    const payload: any = this.jwt.getPayload<any>();
-    const userRolesRaw = this._user$.value?.roles ?? (this._user$.value as any)?.role ?? (payload?.roles ?? payload?.role ?? []);
-    const userRoles: string[] = Array.isArray(userRolesRaw) ? userRolesRaw : (userRolesRaw ? [userRolesRaw] : []);
-    const normalizedUserRoles = userRoles.map(r => String(r).toLowerCase());
-    const normalizedRequired = roles.map(r => String(r).toLowerCase());
-    console.log('[AuthService] hasAnyRole? userRoles=', normalizedUserRoles, 'required=', normalizedRequired);
-    return normalizedRequired.some(r => normalizedUserRoles.includes(r));
+  // auth.service.ts
+
+private extractRole(val: any): string | null {
+  if (!val) return null;
+  if (typeof val === 'string') return val;
+  if (typeof val === 'object') {
+    // common shapes: { name: 'pr_admin' } | { code: 'PR_ADMIN' } | { slug: 'pr_admin' }
+    if (typeof val.name === 'string') return val.name;
+    if (typeof val.code === 'string') return val.code;
+    if (typeof val.slug === 'string') return val.slug;
+    // sometimes role is nested: { role: { name: 'pr_admin' } }
+    if (val.role && typeof val.role === 'object') return this.extractRole(val.role);
   }
-  primaryRole() { return this._user$.value?.roles?.[0] ?? null; }
+  return null;
+}
 
-  // setSession(token: string, user: Partial<AuthUser>) {
-  //   this.saveToken(token);
-  //   const finalUser: AuthUser = {
-  //     roles: user.roles ?? [],
-  //     id: user.id,
-  //     email: user.email,
-  //     unit_id: user.unit_id,
-  //     entity_id: user.entity_id,
-  //     country_id: user.country_id,
-  //   };
-  //   this._user = finalUser;
-  //   localStorage.setItem(this.USER_KEY, JSON.stringify(finalUser));
-  // }
+hasAnyRole(roles: string[]) {
+  if (!roles?.length) return true;
 
-  // saveToken(token: string) {
-  //   localStorage.setItem('access_token', token);
-  // }
+  console.log(roles)
 
-  // getToken(): string | null {
-  //   return localStorage.getItem('access_token');
-  // }
+  const payload: any = this.jwt.getPayload<any>();
+  // Accept a lot of shapes: user.roles[], user.role, payload.roles, payload.role
+  const raw =
+    this._user$.value?.role ??
+    this._user$.value?.role ??
+    payload?.roles ??
+    payload?.role ??
+    [];
 
-  // logout() {
-  //   localStorage.removeItem('access_token');
-  //   localStorage.removeItem(this.USER_KEY);
-  //   this._user = null;
-  // }
+  const arr = Array.isArray(raw) ? raw : [raw];
 
-  // isAuthenticated(): boolean {
-  //   return !!this.getToken();
-  // }
+  const normalizedUserRoles = arr
+    .map(r => this.extractRole(r))
+    .filter((r): r is string => !!r)
+    .map(r => r.toLowerCase());
 
-  //  // ---- User / Roles ----
-  //  user(): AuthUser | null {
-  //   return this._user;
-  // }
-  // hasRole(role: string): boolean {
-  //   return !!this._user?.roles?.includes(role);
-  // }
-  // hasAnyRole(roles: string[]): boolean {
+  const normalizedRequired = roles.map(r => String(r).toLowerCase());
+
+  console.log('[AuthService] hasAnyRole? userRoles=', normalizedUserRoles, 'required=', normalizedRequired);
+
+  return normalizedRequired.some(r => normalizedUserRoles.includes(r));
+}
+
+  // hasAnyRole(roles: string[]) {
   //   if (!roles?.length) return true;
-  //   const userRoles = this._user?.roles ?? [];
-  //   return roles.some(r => userRoles.includes(r));
+  //   const payload: any = this.jwt.getPayload<any>();
+  //   const userRolesRaw = this._user$.value?.role ?? (this._user$.value as any)?.role ?? (payload?.roles ?? payload?.role ?? []);
+  //   const userRoles: string[] = Array.isArray(userRolesRaw) ? userRolesRaw : (userRolesRaw ? [userRolesRaw] : []);
+  //   const normalizedUserRoles = userRoles.map(r => String(r).toLowerCase());
+  //   const normalizedRequired = roles.map(r => String(r).toLowerCase());
+  //   console.log('[AuthService] hasAnyRole? userRoles=', normalizedUserRoles, 'required=', normalizedRequired);
+  //   return normalizedRequired.some(r => normalizedUserRoles.includes(r));
   // }
-  // primaryRole(): string | null {
-  //   return this._user?.roles?.[0] ?? null;
-  // }
+  primaryRole() { return this._user$.value?.role?.[0] ?? null; }
 
-  // // ---- Persistence ----
-  // private loadFromStorage() {
-  //   const raw = localStorage.getItem(this.USER_KEY);
-  //   if (raw) {
-  //     try { this._user = JSON.parse(raw) as AuthUser; } catch { this._user = null; }
-  //   }
-  // }
 }
