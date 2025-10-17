@@ -8,6 +8,7 @@ import { PrFiltersComponent } from './components/pr-filters/pr-filters.component
 import { PrItemTableComponent } from './components/pr-item-table/pr-item-table.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { SupplierTypeaheadComponent } from './components/supplier-typeahead/supplier-typeahead.component';
+import { PrEditComponent } from './pages/pr-edit/pr-edit.component';
 
 
 
@@ -18,7 +19,8 @@ import { SupplierTypeaheadComponent } from './components/supplier-typeahead/supp
     PrDetailComponent,
     PrFiltersComponent,
     PrItemTableComponent,
-    SupplierTypeaheadComponent
+    SupplierTypeaheadComponent,
+    PrEditComponent
   ],
   imports: [
     CommonModule,

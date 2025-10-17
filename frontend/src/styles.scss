@@ -2,3 +2,4 @@
 /* Your previous font defaults (optional) */
 html, body { font-family: Roboto, "Helvetica Neue", sans-serif}
  
+.btn-primary { @apply inline-flex items-center gap-2 px-4 h-10 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm; }

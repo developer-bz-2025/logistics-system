@@ -1,4 +1,5 @@
 export interface PrItem {
+  id:number;
   supplier_id: number;
   fixed_item_id: number;
   qty: number;
@@ -7,6 +8,8 @@ export interface PrItem {
   // Optional denormalized labels if your API sends them
   supplier_name?: string;
   fixed_item_name?: string;
+  category_id:number;
+  sub_category_id: number;
 }
 
 export interface PrRow {

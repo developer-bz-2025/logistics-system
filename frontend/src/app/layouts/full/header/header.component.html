@@ -33,17 +33,20 @@
   <!-- --------------------------------------------------------------- -->
   <!-- profile Dropdown -->
   <!-- --------------------------------------------------------------- -->
-  <span class="font-bold text-sm">Welcome {{ user?.name?.split(' ')[0] }}!</span>
-  <!-- Profile Button -->
-  <button mat-icon-button [matMenuTriggerFor]="profilemenu" aria-label="Profile"
+  <div class="">
+
+    <span class="font-bold text-sm">Welcome {{ user?.name?.split(' ')[0] }}!</span>
+    <!-- Profile Button -->
+    <button mat-icon-button [matMenuTriggerFor]="profilemenu" aria-label="Profile"
     class="flex items-center justify-center">
     <span class="inline-flex w-8 h-8 items-center justify-center rounded-full text-white font-bold text-sm"
-      [ngClass]="getGradientClass(user?.role.name)">
-
-      {{ user?.name?.charAt(0).toUpperCase() }}
-    </span>
-
-  </button>
+    [ngClass]="getGradientClass(user?.role.name)">
+    
+    {{ user?.name?.charAt(0).toUpperCase() }}
+  </span>
+  
+</button>
+</div>
 
   <!-- Profile Dropdown -->
 

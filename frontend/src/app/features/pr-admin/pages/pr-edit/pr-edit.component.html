@@ -1,0 +1,330 @@
+<div class="w-[100%] max-w-[1800px] mx-auto px-6 py-8" *ngIf="!isLoading; else loadingTpl">
+  <div class="w-full max-w-12xl px-8 md:px-6 py-8 app-card">
+    <!-- Header -->
+    <div class="flex items-start justify-between gap-4 mb-6">
+      <div>
+        <h1 class="text-2xl md:text-3xl font-semibold tracking-tight">Edit Purchase Request</h1>
+        <p class="text-sm text-gray-500 mt-1">
+          Update PR details and items. You may optionally replace the PR document.
+        </p>
+      </div>
+      <a routerLink="/pr/list"
+        class="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-md text-sm text-gray-700 bg-white shadow-sm hover:bg-gray-50 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+        Back
+      </a>
+    </div>
+
+    <!-- Main grid -->
+    <div class="w-[100%] max-w-[1800px] mx-auto px-4 md:px-16 py-6">
+      <div class="form-grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <!-- Left -->
+        <section class="lg:col-span-8 space-y-6">
+          <form class="w-full" [formGroup]="form" (ngSubmit)="submit()">
+            <!-- PR meta -->
+            <div class="bg-white rounded-2xl shadow-sm p-5 app-card mb-8">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+                <div class="md:col-span-1">
+                  <label class="block text-sm font-medium mb-1">PR Code <span class="text-rose-500">*</span></label>
+                  <input type="text" class="input" placeholder="PR-2025-001" formControlName="pr_code" />
+                  <p *ngIf="form.get('pr_code')?.touched && form.get('pr_code')?.invalid"
+                    class="text-xs text-rose-600 mt-1">
+                    PR code is required.
+                  </p>
+                  <p class="text-xs text-gray-500 mt-1">Current: <span class="font-medium">{{ original.pr_code }}</span>
+                  </p>
+                </div>
+
+                <div class="md:col-span-1">
+                  <label class="block text-sm font-medium mb-1">PR Date <span class="text-rose-500">*</span></label>
+                  <input type="date" class="input" formControlName="pr_date" />
+
+                  <p *ngIf="form.get('pr_date')?.touched && form.get('pr_date')?.invalid"
+                    class="text-xs text-rose-600 mt-1">
+                    PR date is required.
+                  </p>
+                  <p class="text-xs text-gray-500 mt-1">Current: <span class="font-medium">{{ original.pr_date.slice(0,
+                      10) }}</span>
+                  </p>
+                </div>
+
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-medium mb-1">Current Document</label>
+                  <div class="flex items-center justify-between rounded-xl border border-gray-200 p-3 bg-gray-50">
+                    <div class="text-sm truncate font-medium">
+                      {{ fileBaseName(original.pr_path) }}
+                    </div>
+                    <a *ngIf="original?.pr_path" [href]="original.pr_path" target="_blank"
+                      class="px-3 h-9 rounded-lg border hover:bg-gray-100">Open</a>
+                  </div>
+                  <div class="text-xs text-gray-500 mt-1">Upload below only if you want to replace it.</div>
+                </div>
+
+              </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm p-5 app-card">
+              <h3 class="text-lg font-semibold mb-3">Replace PR Document (optional)</h3>
+              <label
+                class="block rounded-2xl border-2 border-dashed p-6 text-center cursor-pointer transition hover:bg-emerald-50">
+                <input type="file" class="hidden" (change)="onFileChange($event)" />
+                <div class="flex flex-col items-center gap-2">
+                  <div class="text-sm text-gray-600">Click to upload or drag & drop</div>
+                  <div class="text-xs text-gray-400">PDF/DOC up to 10MB</div>
+                </div>
+              </label>
+
+              <div *ngIf="form.get('pr_file')?.value as f"
+                class="mt-3 flex items-center justify-between rounded-xl border p-3">
+                <div class="text-sm">
+                  <div class="font-medium">{{ f.name }}</div>
+                  <div class="text-gray-500 text-xs">{{ f.size | number }} bytes</div>
+                </div>
+                <button class="px-3 h-9 rounded-lg border hover:bg-gray-50"
+                  (click)="form.patchValue({ pr_file: null })">Remove</button>
+              </div>
+            </div>
+
+            <!-- Items -->
+            <div class="rounded-2xl p-6 mt-6 mb-8 app-card" formArrayName="items">
+              <div class="flex items-center justify-between mb-5 m-10">
+                <h2 class="text-lg font-semibold">Items</h2>
+                <button type="button" (click)="addItemRow()" class="btn-primary">＋ Add Item</button>
+              </div>
+
+              <div class="space-y-5 m-10">
+                <div *ngFor="let _ of itemsFA.controls; let i = index" [formGroupName]="i"
+                  class="rounded-2xl border border-emerald-200/60 bg-emerald-300/20 p-5">
+
+                  <!-- EXISTING ROW (read-only) -->
+                  <ng-container *ngIf="isExisting(i); else newRowTpl">
+                    <!-- Row 1: category / sub / item (read-only) -->
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                      <div class="col-span-12 md:col-span-4">
+                        <label class="label">Category</label>
+                        <div class="input input-lg bg-gray-50 border-gray-200">
+                          {{ getCategoryName(getOrigItem(i)?.category_id ?? row(i).get('category_id')?.value) }}
+                        </div>
+                      </div>
+
+                      <div class="col-span-12 md:col-span-4">
+                        <label class="label">Sub-Category</label>
+                        <div class="input input-lg bg-gray-50 border-gray-200">
+                          {{ getSubCategoryName(getOrigItem(i)?.sub_category_id ?? row(i).get('sub_category_id')?.value)
+                          }}
+                        </div>
+                      </div>
+
+                      <div class="col-span-12 md:col-span-4">
+                        <label class="label">Item</label>
+                        <div class="input input-lg bg-gray-50 border-gray-200">
+                          {{ getItemName(getOrigItem(i)?.fixed_item_id ?? row(i).get('fixed_item_id')?.value) }}
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Row 2: supplier (editable) / price (read-only) / remove -->
+                    <div class="grid grid-cols-12 gap-4 mt-3 items-end">
+                      <div class="col-span-12 sm:col-span-6 lg:col-span-6">
+                        <label class="label">Supplier<span class="req">*</span></label>
+                        <div class="relative">
+                          <input type="text" class="input input-lg" placeholder="Search supplier…"
+                            formControlName="supplier_query" />
+                          <button type="button"
+                            class="absolute right-2 top-1/2 -translate-y-1/2 text-xs px-2 py-1 border rounded-md"
+                            (click)="clearSupplier(i)">Clear</button>
+
+                          <div
+                            class="absolute left-0 right-0 mt-1 z-20 bg-white border border-gray-200 rounded-xl shadow-sm max-h-60 overflow-auto"
+                            *ngIf="rowOptions[i]?.supplierResults?.length">
+                            <button type="button" class="w-full text-left px-3 py-2 hover:bg-gray-50"
+                              *ngFor="let s of rowOptions[i].supplierResults" (click)="chooseSupplier(i, s)">{{ s.name
+                              }}</button>
+                          </div>
+
+                          <!-- <div class="text-xs text-gray-400 mt-1" *ngIf="row(i).get('supplier_id')?.value">
+                            Chosen ID: {{ row(i).get('supplier_id')?.value }}
+                          </div> -->
+                        </div>
+                      </div>
+
+                      <div class="col-span-12 sm:col-span-4 lg:col-span-4">
+                        <label class="label">Unit Cost (USD)</label>
+                        <div class="input input-lg bg-gray-50 border-gray-200">
+                          {{ (getOrigItem(i)?.unit_cost ?? row(i).get('unit_cost')?.value) | number:'1.2-2' }}
+                        </div>
+                      </div>
+
+                      <div class="col-span-12 sm:col-span-2 lg:col-span-2 flex lg:justify-end">
+                        <button type="button" (click)="removeRow(i)" [disabled]="itemsFA.length === 1"
+                          class="w-full lg:w-auto px-4 h-11 rounded-xl border border-gray-300 hover:bg-gray-50 disabled:opacity-50">
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  </ng-container>
+
+                  <!-- NEW ROW (editable) -->
+                  <ng-template #newRowTpl>
+                    <!-- Row 1: category / sub / item -->
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 m-10">
+                      <div class="col-span-12 md:col-span-4">
+                        <label class="label">Category<span class="req">*</span></label>
+                        <select class="input input-lg" formControlName="category_id">
+                          <option [ngValue]="null" disabled>Select category..</option>
+                          <option *ngFor="let c of categories" [ngValue]="c.id">{{ c.name }}</option>
+                        </select>
+                      </div>
+
+                      <div class="col-span-12 md:col-span-4">
+                        <label class="label">Sub-Category<span class="req">*</span></label>
+                        <select class="input input-lg" formControlName="sub_category_id">
+                          <option [ngValue]="null" disabled>Select sub-category..</option>
+                          <option *ngFor="let s of rowOptions[i]?.subCategories" [ngValue]="s.id">{{ s.name }}</option>
+                        </select>
+                      </div>
+
+                      <div class="col-span-12 md:col-span-4">
+                        <label class="label">Item<span class="req">*</span></label>
+                        <select class="input input-lg" formControlName="fixed_item_id">
+                          <option [ngValue]="null" disabled>Select item..</option>
+                          <option *ngFor="let it of rowOptions[i]?.items" [ngValue]="it.id">{{ it.name }}</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <!-- Row 2: supplier / price / remove -->
+                    <div class="grid grid-cols-12 gap-4 mt-3 m-10">
+                      <div class="col-span-12 md:col-span-4">
+                        <label class="label">Supplier<span class="req">*</span></label>
+                        <div class="relative">
+                          <input type="text" class="input input-lg" placeholder="Search supplier…"
+                            formControlName="supplier_query" />
+                          <button type="button"
+                            class="absolute right-2 top-1/2 -translate-y-1/2 text-xs px-2 py-1 border rounded-md mb-8"
+                            (click)="clearSupplier(i)">Clear</button>
+
+                          <div
+                            class="absolute left-0 right-0 mt-1 z-20 bg-white border border-gray-200 rounded-xl shadow-sm max-h-60 overflow-auto"
+                            *ngIf="rowOptions[i]?.supplierResults?.length">
+                            <button type="button" class="w-full text-left px-3 py-2 hover:bg-gray-50"
+                              *ngFor="let s of rowOptions[i].supplierResults" (click)="chooseSupplier(i, s)">{{ s.name
+                              }}</button>
+                          </div>
+
+                          <!-- <div class="text-xs text-gray-400 mt-1" *ngIf="row(i).get('supplier_id')?.value">
+                            Chosen ID: {{ row(i).get('supplier_id')?.value }}
+                          </div> -->
+                        </div>
+                      </div>
+
+                      <div class="col-span-12 sm:col-span-4 lg:col-span-4">
+                        <label class="label">Unit Cost (USD)<span class="req">*</span></label>
+                        <input type="number" min="0" step="0.01" class="input input-lg" formControlName="unit_cost" />
+                      </div>
+
+                      <div class="col-span-12 sm:col-span-2 lg:col-span-2 flex lg:justify-end items-end">
+                        <button type="button" (click)="removeRow(i)" [disabled]="itemsFA.length === 1"
+                          class="w-full lg:w-auto px-4 h-11 rounded-xl border border-gray-300 hover:bg-gray-50 disabled:opacity-50">
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  </ng-template>
+
+
+                </div>
+              </div>
+
+              <!-- Current total -->
+              <!-- <div class="flex items-center justify-end mt-6">
+                <div class="text-sm text-gray-500 mr-3">Current Total</div>
+                <div class="text-2xl font-semibold">{{ original.total_price | number:'1.2-2' }}</div>
+              </div> -->
+
+              <!-- Totals -->
+              <div class="flex flex-col sm:flex-row sm:items-center justify-end mt-6 gap-2 sm:gap-3">
+                <div class="text-sm text-gray-500">Current Total</div>
+                <div class="text-xl font-semibold">{{ original.total_price | number:'1.2-2' }}</div>
+
+                <span class="hidden sm:inline text-gray-300">•</span>
+
+                <div class="text-sm text-gray-500">New Total</div>
+                <div class="text-xl font-semibold"
+                  [ngClass]="{ 'text-emerald-700': totalDelta <= 0, 'text-rose-700': totalDelta > 0 }">
+                  {{ newTotal | number:'1.2-2' }}
+                </div>
+
+                <div class="text-xs px-2 py-1 rounded-lg" [ngClass]="{
+         'bg-emerald-100 text-emerald-700': totalDelta < 0,
+         'bg-gray-100 text-gray-600': totalDelta === 0,
+         'bg-rose-100 text-rose-700': totalDelta > 0
+       }">
+                  {{ totalDelta >= 0 ? '+' : ''}}{{ totalDelta | number:'1.2-2' }}
+                </div>
+              </div>
+
+            </div>
+
+            <div class="text-xs text-rose-600"
+              *ngIf="itemsFA.hasError('minItems') && (itemsFA.dirty || itemsFA.touched || form.touched)">
+              At least one item is required.
+            </div>
+
+            <div class="bg-white rounded-2xl app-card p-5 mb-10">
+              <h3 class="text-lg font-semibold mb-3">Summary of Changes</h3>
+              <ul class="text-sm text-gray-700 list-disc pl-5 space-y-1">
+                <li *ngFor="let line of summaryLines">{{ line }}</li>
+              </ul>
+            </div>
+
+            <!-- Submit (desktop) -->
+            <div class="hidden md:flex items-center gap-3"> {{form.invalid}}
+              <button type="button" class="px-4 h-10 rounded-xl border border-gray-200 hover:bg-gray-50"
+                (click)="cancel()">Cancel</button>
+              <button class="px-5 h-10 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm
+                             disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
+                [disabled]="form.invalid || !hasChanges || isSubmitting" type="submit">
+                <svg *ngIf="isSubmitting" class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" opacity=".2" />
+                  <path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" stroke-width="4" />
+                </svg>
+                <span>{{ isSubmitting ? 'Submitting…' : 'Submit Changes' }}</span>
+              </button>
+            </div>
+
+
+            <!-- Submit (mobile) -->
+            <div class="md:hidden mt-4">
+              <button
+                class="w-full h-12 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700
+                             disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+                [disabled]="form.invalid || !hasChanges || isSubmitting" type="submit">
+                <svg *ngIf="isSubmitting" class="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" opacity=".2" />
+                  <path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" stroke-width="4" />
+                </svg>
+                <span>{{ isSubmitting ? 'Submitting…' : 'Submit Changes' }}</span>
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <!-- Right -->
+        <aside class="lg:col-span-4 space-y-6">
+          <!-- Upload replacement -->
+
+
+          <!-- Summary -->
+
+        </aside>
+      </div>
+    </div>
+  </div>
+</div>
+
+<ng-template #loadingTpl>
+  <div class="text-gray-600">Loading PR…</div>
+</ng-template>
