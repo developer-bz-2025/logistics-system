@@ -6,17 +6,26 @@ export class DiffService {
   buildSummary(original: PRDto, current: any): string[] {
     const lines: string[] = [];
 
-    if (original.pr_date !== current.pr_date)
-      lines.push(`PR Date: ${original.pr_date} → ${current.pr_date}`);
+    // if (original.pr_date !== current.pr_date)
+    //   lines.push(`PR Date: ${original.pr_date} → ${current.pr_date}`);
+
+    const fmt = (d: any) => (d ? String(d).slice(0, 10) : '');
+
+    const oldDate = fmt(original.pr_date);
+    const newDate = fmt(current.pr_date);
+
+    if (oldDate !== newDate) {
+      lines.push(`PR Date: ${oldDate} → ${newDate}`);
+    }
 
     if (original.pr_code !== current.pr_code)
       lines.push(`PR Code: ${original.pr_code} → ${current.pr_code}`);
 
     const origItems = original.items ?? [];
-    const curItems  = (current.items ?? []) as any[];
+    const curItems = (current.items ?? []) as any[];
 
     const origByFixed = new Map(origItems.map(i => [i.fixed_item_id, i]));
-    const curByFixed  = new Map(curItems.map((i:any) => [i.fixed_item_id, i]));
+    const curByFixed = new Map(curItems.map((i: any) => [i.fixed_item_id, i]));
 
     for (const it of origItems) {
       const cur = curByFixed.get(it.fixed_item_id);

@@ -4,6 +4,8 @@ import { AbstractControl, ValidatorFn, FormArray, FormBuilder, FormControl, Form
 import { ActivatedRoute, Router } from '@angular/router';
 import { debounceTime, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators';
 import { Observable, of, Subject, combineLatest } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
+
 
 // Local service + models imports (see files below in this doc)
 import { PrService } from '../../services/pr.service';
@@ -42,6 +44,9 @@ export class PrEditComponent {
   original!: PRDto;
 
   hasChanges = false;
+
+  apiErrorMessage: string | null = null;                 // top banner message
+apiFieldErrors: Record<string, string[]> = {};  
 
 
   isLoading :boolean= true;
@@ -88,6 +93,92 @@ private setupTotalWatcher() {
   this.totalDelta = this.newTotal - Number(this.original?.total_price ?? 0);
 }
 
+
+private clearServerErrors(ctrl: AbstractControl = this.form): void {
+  const asAny = ctrl as any;
+  if (asAny.controls) {
+    const controls = asAny.controls;
+    if (Array.isArray(controls)) {
+      controls.forEach(c => this.clearServerErrors(c));
+    } else {
+      Object.keys(controls).forEach(k => this.clearServerErrors(controls[k]));
+    }
+  }
+  const errs = ctrl.errors || {};
+  if ('server' in errs) {
+    delete errs['server'];
+    ctrl.setErrors(Object.keys(errs).length ? errs : null);
+  }
+}
+
+// Set one control's "server" error
+private setServerErrorOn(path: string, messages: string[]) {
+  const ctrl = this.resolvePath(path);
+  if (!ctrl) return;
+  const prev = ctrl.errors || {};
+  ctrl.setErrors({ ...prev, server: messages });
+  ctrl.markAsTouched();
+}
+
+// Resolve Laravel-like dotted paths to a control
+// e.g. "pr_code", "pr_date", "items.0.unit_cost"
+private resolvePath(path: string): AbstractControl | null {
+  const parts = path.replace(/\[(\d+)\]/g, '.$1').split('.');
+  let ctrl: AbstractControl | null = this.form;
+  for (const p of parts) {
+    if (!ctrl) return null;
+    if (ctrl instanceof FormGroup) {
+      ctrl = ctrl.get(p);
+    } else if (ctrl instanceof FormArray) {
+      const idx = Number(p);
+      ctrl = isFinite(idx) ? ctrl.at(idx) : null;
+    } else {
+      return null;
+    }
+  }
+  return ctrl;
+}
+
+// Centralized handler for HttpErrorResponse
+private handleHttpError(err: HttpErrorResponse) {
+  // Reset previous
+  this.apiErrorMessage = null;
+  this.apiFieldErrors = {};
+  this.clearServerErrors();
+
+  // Prefer backend human message if present
+  const backendMsg = (err.error && (err.error.message || err.error.error)) || err.message;
+
+  // 409 Conflict → show blocking banner with backend message
+  if (err.status === 409) {
+    this.apiErrorMessage = backendMsg || 'Conflict. Please try again later.';
+  }
+
+  // 422 Unprocessable Entity → map field errors to controls
+  const errors = err.error?.errors as Record<string, string[]> | undefined;
+  if (errors && typeof errors === 'object') {
+    this.apiFieldErrors = errors;
+
+    // Map each error key to a control; support items.X.Y
+    Object.entries(errors).forEach(([key, msgs]) => {
+      // Normalize keys like "items[0].unit_cost" → "items.0.unit_cost"
+      const norm = key.replace(/\[(\d+)\]/g, '.$1');
+      this.setServerErrorOn(norm, msgs);
+    });
+
+    // Also show a concise banner if no 409 already set
+    if (!this.apiErrorMessage) {
+      this.apiErrorMessage = backendMsg || 'Please review the highlighted fields.';
+    }
+  }
+
+  // Fallback for other HTTP codes
+  if (!this.apiErrorMessage) {
+    this.apiErrorMessage = backendMsg || 'Unexpected error. Please try again.';
+  }
+
+  this.cdr.markForCheck();
+}
   
 
   get itemsFA() { return this.form.get('items') as FormArray; }
@@ -129,7 +220,9 @@ private setupTotalWatcher() {
 
   // Existing rows are those that came from the original PR payload (usually have an id)
 isExisting(i: number): boolean {
-  return !!this.original?.items?.[i]?.id;
+  // return !!this.original?.items?.[i]?.id;
+  return !!(this.itemsFA.at(i) as FormGroup).get('pr_item_id')?.value;
+
 }
 
   getCategoryName(id?: number) {
@@ -153,6 +246,7 @@ isExisting(i: number): boolean {
   // ---------------------------------------------
   private createItemGroup(): FormGroup {
     return this.fb.group({
+      pr_item_id: [null],
       category_id: [null, Validators.required],
       sub_category_id: [null, Validators.required],
       fixed_item_id: [null, Validators.required],
@@ -178,6 +272,7 @@ isExisting(i: number): boolean {
   private addItemRowFromExisting(item: PRItemDto, idx: number): void {
     const fg = this.createItemGroup();
     fg.patchValue({
+      pr_item_id: item.pr_item_id,
       category_id: item.category_id ?? null,
       sub_category_id: item.sub_category_id ?? null,
       fixed_item_id: item.fixed_item_id,
@@ -263,19 +358,35 @@ isExisting(i: number): boolean {
   private setupSupplierTypeaheadForRow(i: number): void {
     const row = this.itemsFA.at(i) as FormGroup;
     const qCtrl = row.get('supplier_query') as FormControl<string>;
+  
     qCtrl.valueChanges.pipe(
-      startWith(qCtrl.value ?? ''),
+      startWith(qCtrl.value ?? ''),      // will fetch when user starts typing
       debounceTime(200),
       distinctUntilChanged(),
       switchMap(q => {
-        if (!q || String(q).trim().length < 1) { this.rowOptions[i].supplierResults = []; return of([]); }
-        this.rowOptions[i].supplierLoading = true; this.cdr.markForCheck();
-        return this.supplierService.search(q!, { per_page: 8, category_id: row.get('category_id')!.value }).pipe(tap(() => {
-          this.rowOptions[i].supplierLoading = false; this.cdr.markForCheck();
-        }));
+        const term = (q || '').trim();
+        if (!term) { 
+          this.rowOptions[i].supplierResults = []; 
+          return of([]); 
+        }
+        this.rowOptions[i].supplierLoading = true; 
+        this.cdr.markForCheck();
+  
+        // ⬇️ Removed category_id from options
+        return this.supplierService.search(term, { per_page: 8 }).pipe(
+          tap(() => {
+            this.rowOptions[i].supplierLoading = false; 
+            this.cdr.markForCheck();
+          })
+        );
       })
-    ).subscribe(list => { this.rowOptions[i].supplierResults = list; this.cdr.markForCheck(); });
+    )
+    .subscribe(list => { 
+      this.rowOptions[i].supplierResults = list; 
+      this.cdr.markForCheck(); 
+    });
   }
+  
 
   // chooseSupplier(i: number, sup: Supplier) {
   //   const row = this.itemsFA.at(i) as FormGroup;
@@ -345,13 +456,21 @@ isExisting(i: number): boolean {
       return;
     }
 
+    this.apiErrorMessage = null;
+    this.apiFieldErrors = {};
+    this.clearServerErrors();
+
     const fd = new FormData();
     const v = this.form.value;
+    const formattedDate = v.pr_date ? String(v.pr_date).slice(0, 10) : '';
     fd.append('pr_code', v.pr_code);
-    fd.append('pr_date', v.pr_date);
+    fd.append('pr_date', formattedDate);
+    // fd.append('pr_date', v.pr_date);
     fd.append('reason', v.reason);
 
     (v.items as any[]).forEach((it, idx) => {
+      fd.append(`items[${idx}][pr_item_id]`, it.pr_item_id != null ? String(it.pr_item_id) : '');
+
       fd.append(`items[${idx}][supplier_id]`, String(it.supplier_id));
       fd.append(`items[${idx}][fixed_item_id]`, String(it.fixed_item_id));
       fd.append(`items[${idx}][qty]`, '1');
@@ -361,15 +480,19 @@ isExisting(i: number): boolean {
 
     if (v.pr_file) fd.append('pr_file', v.pr_file);
 
+    console.log("fd",fd)
+
     this.isSubmitting=true;
     const id = this.original.id;
     this.prService.update(id, fd).subscribe({
       next: (updated) => {
         this.isSubmitting=false;
         this.toast.success('PR updated successfully.');
-        this.router.navigate(['/prs', updated.id]);
+        this.router.navigate(['/pr/list']);
       },
-      error: (err) => {
+      error: (err:HttpErrorResponse) => {
+        console.log("Err",err)
+        this.handleHttpError(err);                  // ⬅️ map + show errors
         this.isSubmitting=false;
         this.toast.error('Failed to update PR.');
         this.cdr.markForCheck();

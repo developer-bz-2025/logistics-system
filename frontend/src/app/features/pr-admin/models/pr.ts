@@ -1,5 +1,5 @@
 export interface PrItem {
-  id:number;
+  pr_item_id:number;
   supplier_id: number;
   fixed_item_id: number;
   qty: number;

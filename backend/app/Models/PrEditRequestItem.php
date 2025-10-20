@@ -11,7 +11,18 @@ class PrEditRequestItem extends Model
 
     protected $table = 'pr_edit_request_items';
     protected $fillable = [
-        'pr_edit_request_id','pr_item_id','old_supplier_id','new_supplier_id','action'
+        'pr_edit_request_id',
+        'pr_item_id',
+        'old_supplier_id',
+        'new_supplier_id',
+        'old_unit_cost',
+        'new_unit_cost',
+        'action', // 'add' | 'delete' | 'update_supplier' | 'update_cost'
+    ];
+
+    protected $casts = [
+        'old_unit_cost' => 'float',
+        'new_unit_cost' => 'float',
     ];
 
     public function request()   { return $this->belongsTo(PrEditRequest::class, 'pr_edit_request_id'); }

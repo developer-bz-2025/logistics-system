@@ -14,7 +14,7 @@ export class PrService {
   constructor(private http: HttpClient) {}
 
   getById(id: number) { return this.http.get<PrRow>(`${this.base}/${id}?include=items`); }
-update(id: number, fd: FormData): Observable<PrRow> { return this.http.put<PrRow>(`${this.base}/${id}`, fd); }
+update(id: number, fd: FormData): Observable<PrRow> { return this.http.post<PrRow>(`${this.base}/${id}/pr-edit-requests`, fd); }
 
   list(options?: { search?: string; page?: number; per_page?: number; include?: string }): Observable<PrListResponse> {
     let params = new HttpParams();
