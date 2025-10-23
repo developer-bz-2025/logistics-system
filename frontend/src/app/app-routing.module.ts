@@ -27,6 +27,8 @@ const routes: Routes = [
         canMatch: [AuthGuard],
         data: { roles: ['log_admin','super_admin'] }
       },
+
+      
       // {
       //   path: 'dashboard',
       //   loadChildren: () =>

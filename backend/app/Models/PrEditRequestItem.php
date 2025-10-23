@@ -17,6 +17,7 @@ class PrEditRequestItem extends Model
         'new_supplier_id',
         'old_unit_cost',
         'new_unit_cost',
+        'new_fixed_item_id',
         'action', // 'add' | 'delete' | 'update_supplier' | 'update_cost'
     ];
 
@@ -25,8 +26,26 @@ class PrEditRequestItem extends Model
         'new_unit_cost' => 'float',
     ];
 
-    public function request()   { return $this->belongsTo(PrEditRequest::class, 'pr_edit_request_id'); }
-    public function prItem()    { return $this->belongsTo(PrItem::class, 'pr_item_id'); }
-    public function oldSupplier(){ return $this->belongsTo(Supplier::class, 'old_supplier_id'); }
-    public function newSupplier(){ return $this->belongsTo(Supplier::class, 'new_supplier_id'); }
+    public function request()
+    {
+        return $this->belongsTo(PrEditRequest::class, 'pr_edit_request_id');
+    }
+    public function prItem()
+    {
+        return $this->belongsTo(PrItem::class, 'pr_item_id');
+    }
+    public function oldSupplier()
+    {
+        return $this->belongsTo(Supplier::class, 'old_supplier_id');
+    }
+    public function newSupplier()
+    {
+        return $this->belongsTo(Supplier::class, 'new_supplier_id');
+    }
+
+    public function newFixedItem()
+    {
+        // If FixedItem uses SoftDeletes, keep withTrashed(); otherwise remove it.
+        return $this->belongsTo(FixedItem::class, 'new_fixed_item_id');
+    }
 }

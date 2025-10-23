@@ -27,9 +27,18 @@ Route::middleware(['jwt.auth'])->group(function () {
 
     Route::get('/prs/{pr}', [PrController::class, 'show'])->whereNumber('pr');
     // Route::put('/prs/{pr}', [PrController::class, 'update'])->whereNumber('pr');
-        Route::post('/prs/{pr}/pr-edit-requests', [PrEditRequestController::class, 'store'])
+    Route::post('/prs/{pr}/pr-edit-requests', [PrEditRequestController::class, 'store']) //by pr admin
         ->whereNumber('pr');
 
+});
+
+
+Route::middleware(['jwt.auth'])->group(function () { //to add super admin middleware later
+    Route::get('/pr-edit-requests', [PrEditRequestController::class, 'index']);
+    Route::get('/pr-edit-requests/{id}', [PrEditRequestController::class, 'show']);
+
+    Route::post('/pr-edit-requests/{id}/approve', [PrEditRequestController::class, 'approve']);
+    Route::post('/pr-edit-requests/{id}/reject', [PrEditRequestController::class, 'reject']);
 });
 
 Route::get('/categories', [CategoryController::class, 'index']);

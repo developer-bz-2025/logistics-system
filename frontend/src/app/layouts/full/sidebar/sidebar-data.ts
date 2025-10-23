@@ -10,6 +10,17 @@ export const navItems: NavItem[] = [
     route: '/dashboard',
     roles: ['super_admin','log_admin']
   },
+
+  {
+    navCap: 'Managment',
+    roles: ['super_admin']
+  },
+  {
+    displayName: 'PR Edit Requests',
+    iconName: 'layout-dashboard',
+    route: '/dashboard/pr-edit-requests',
+    roles: ['super_admin']
+  },
   // {
   //   navCap: 'Ui Components',
   // },

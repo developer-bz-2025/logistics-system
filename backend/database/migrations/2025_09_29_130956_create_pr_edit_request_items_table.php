@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('pr_edit_request_id')->constrained('pr_edit_requests')->cascadeOnDelete();
-            $table->foreignId('pr_item_id')->constrained('pr_items')->cascadeOnDelete();
+            $table->foreignId('pr_item_id')->nullable()->constrained('pr_items')->cascadeOnDelete();
 
             $table->foreignId('old_supplier_id')->nullable()->constrained('suppliers')->nullOnDelete();
             $table->foreignId('new_supplier_id')->nullable()->constrained('suppliers')->nullOnDelete();

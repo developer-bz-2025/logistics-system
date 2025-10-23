@@ -469,6 +469,9 @@ isExisting(i: number): boolean {
     fd.append('reason', v.reason);
 
     (v.items as any[]).forEach((it, idx) => {
+      console.log(`fixed item is:`,it.fixed_item_id);
+
+
       fd.append(`items[${idx}][pr_item_id]`, it.pr_item_id != null ? String(it.pr_item_id) : '');
 
       fd.append(`items[${idx}][supplier_id]`, String(it.supplier_id));
@@ -492,7 +495,7 @@ isExisting(i: number): boolean {
       },
       error: (err:HttpErrorResponse) => {
         console.log("Err",err)
-        this.handleHttpError(err);                  // ⬅️ map + show errors
+        this.handleHttpError(err);                  
         this.isSubmitting=false;
         this.toast.error('Failed to update PR.');
         this.cdr.markForCheck();

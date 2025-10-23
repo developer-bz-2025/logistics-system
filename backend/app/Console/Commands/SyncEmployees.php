@@ -120,10 +120,10 @@ class SyncEmployees extends Command
                     $user->password = \Hash::make('welcome123');
                 }
 
-                // if (!$emp_email) {
-                //     $this->warn("⚠ Skipping {$emp_name} — no valid email");
-                //     continue;
-                // }
+                if (!$emp_email) {
+                    $this->warn("⚠ Skipping {$emp_name} — no valid email");
+                    continue;
+                }
 
                 $user->save();
                 $now=Now();

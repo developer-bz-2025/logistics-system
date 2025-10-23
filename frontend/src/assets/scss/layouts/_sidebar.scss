@@ -52,10 +52,12 @@
         width: 20px;
         height: 20px;
         fill: transparent !important;
-        color: $textPrimary;
+        // color: $textPrimary;
+        color: $white;
       }
 
       .mdc-list-item__primary-text {
+        color: $white;
         display: flex;
         align-items: center;
         justify-content: space-between;

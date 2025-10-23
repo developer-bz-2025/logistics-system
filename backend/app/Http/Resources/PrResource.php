@@ -14,34 +14,43 @@ class PrResource extends JsonResource
      *
      * @return array<string, mixed>
      */
-    public function toArray(Request $request): array
+    public function toArray($request)
     {
-        $include = collect(explode(',', (string) $request->query('include')))->map(fn($s)=>trim($s))->filter()->all();
-        $withItems = in_array('items', $include, true);
+        $items = PrItemResource::collection($this->whenLoaded('items'));
 
-        $documentUrl = $this->pr_path ? Storage::url($this->pr_path) : null;
-
-        // convenience primary supplier name = first item's supplier (if loaded)
-        $primarySupplierName = null;
+        // compute totals (overall and per currency)
+        $totalsByCurrency = [];
         if ($this->relationLoaded('items')) {
-            $first = $this->items->first();
-            $primarySupplierName = optional(optional($first)->supplier)->name;
+            foreach ($this->items as $it) {
+                $c = $it->currency ?? 'USD';
+                $totalsByCurrency[$c] = ($totalsByCurrency[$c] ?? 0)
+                    + ((float)$it->qty * (float)$it->unit_cost);
+            }
         }
 
         return [
-            'id'            => $this->id,
-            'pr_code'       => $this->pr_code,
-            'pr_date'       => $this->pr_date,
-            'total_price'   => (float) $this->total_price,
-            'pr_path'       => $this->pr_path,
-            'document_url'  => $documentUrl,
-            'supplier_name' => $primarySupplierName, // optional convenience
+            'id'          => $this->id,
+            'pr_code'     => $this->pr_code,
+            'pr_date'     => optional($this->pr_date)->toDateString(),
+            'total_price' => (float)$this->total_price,
+            'pr_path'     => $this->pr_path,
+            'url'         => $this->pr_path ? Storage::disk('public')->url($this->pr_path) : null,
 
-            // include items only if requested
-            'items'         => $withItems && $this->relationLoaded('items')
-                                ? PrItemResource::collection($this->items)
-                                : null,
+            'created_by'  => $this->created_by,
+            'created_at'  => optional($this->created_at)->toDateTimeString(),
+            'updated_at'  => optional($this->updated_at)->toDateTimeString(),
+
+            'items'       => $items,
+
+            'totals'      => [
+                'by_currency' => $totalsByCurrency,
+                // If you want to trust DB total_price, expose it as 'declared':
+                'declared_total_price' => (float)$this->total_price,
+                // Or recompute overall in a default currency if all lines share the same:
+                'recomputed_if_single_currency' => count($totalsByCurrency) === 1
+                    ? reset($totalsByCurrency)
+                    : null,
+            ],
         ];
-    
     }
 }

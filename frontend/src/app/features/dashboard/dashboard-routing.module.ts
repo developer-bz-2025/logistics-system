@@ -9,7 +9,13 @@ import { DashboardComponent } from './dashboard/dashboard.component';
 const routes: Routes = [
 //   { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
   { path: '', component: DashboardComponent },
-//   { path: 'dashboard', component: DashboardComponent },
+
+  {
+    path: 'pr-edit-requests',
+    loadChildren: () =>
+    import('../super-admin/super-admin.module').then(m => m.SuperAdminModule),              
+    data: { roles: ['super_admin'] }
+  },
 
 
 ];

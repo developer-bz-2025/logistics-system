@@ -1,0 +1,271 @@
+<div class="space-y-4">
+    <a routerLink="/dashboard/pr-edit-requests" class="text-sm text-indigo-600 hover:underline">← Back to list</a>
+
+    <div *ngIf="loading" class="text-gray-500">Loading…</div>
+    <div *ngIf="error" class="rounded-xl bg-rose-50 text-rose-700 px-3 py-2">{{ error }}</div>
+
+    <ng-container *ngIf="!loading && detail as d">
+        <!-- Header -->
+        <div class="flex items-center justify-between">
+            <h1 class="text-xl font-semibold">PR Edit Request #{{ d.id }}</h1>
+            <span class="inline-flex items-center rounded-full px-3 py-1 text-xs" [ngClass]="statusClass()">
+                {{ d.status }}
+            </span>
+        </div>
+
+        <!-- Who/When -->
+        <div class="app-card grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+            <div>
+              <div class="text-gray-500">Requested By</div>
+              <div class="font-medium">{{ d.requested_by.name }}</div>
+            </div>
+          
+            <div>
+              <div class="text-gray-500">Requested At</div>
+              <div class="font-medium">{{ d.request_date | date:'medium' }}</div>
+            </div>
+          
+            <div>
+              <div class="text-gray-500">Status</div>
+              <span class="inline-flex items-center rounded-full px-3 py-1 text-xs" [ngClass]="statusClass()">
+                {{ d.status }}
+              </span>
+            </div>
+          </div>
+          
+        <!-- Header diffs -->
+        <div class="grid md:grid-cols-2 gap-4">
+            <div class="app-card">
+                <h2 class="font-medium mb-3">Original</h2>
+                <div *ngIf="detail as d" class="text-sm space-y-1">
+                    <div><span class="text-gray-500">PR Code:</span> {{ d.header_diffs.pr_code.old || '—' }}</div>
+                    <div><span class="text-gray-500">Date:</span> {{ dateStr(d.header_diffs.acquisition_date.old) }}
+                    </div>
+                    <div><span class="text-gray-500">Total:</span> {{ money(d.header_diffs.total_price.old) }}</div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-gray-500">File:</span>
+                        <a *ngIf="d.header_diffs.pr_path.old_url" [href]="d.header_diffs.pr_path.old_url"
+                            target="_blank" rel="noopener" class="text-indigo-600 hover:underline">Open</a>
+                        <span *ngIf="!d.header_diffs.pr_path.old_url">—</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Header — Proposed (null-safe) -->
+            <div class="app-card">
+                <h2 class="font-medium mb-3">Proposed</h2>
+                <div *ngIf="detail as d" class="text-sm space-y-1">
+                    <!-- Code -->
+                    <div>
+                        <span class="text-gray-500">PR Code: </span>
+                        <ng-container
+                            *ngIf="showChanged(d.header_diffs.pr_code.old, d.header_diffs.pr_code.new); else codeSingle">
+                            <span class="line-through text-gray-500"> {{ d.header_diffs.pr_code.old || '—' }}</span> →
+                            <span class="font-medium"> {{ d.header_diffs.pr_code.new || '—' }}</span>
+                        </ng-container>
+                        <ng-template #codeSingle>
+                            <span>{{ pref(d.header_diffs.pr_code.old, d.header_diffs.pr_code.new) }}</span>
+                        </ng-template>
+                    </div>
+
+                    <!-- Date -->
+                    <div>
+                        <span class="text-gray-500">Date:</span>
+                        <ng-container
+                            *ngIf="showChanged(d.header_diffs.acquisition_date.old, d.header_diffs.acquisition_date.new); else dateSingle">
+                            <span class="line-through text-gray-500">{{ dateStr(d.header_diffs.acquisition_date.old)
+                                }}</span> →
+                            <span class="font-medium">{{ dateStr(d.header_diffs.acquisition_date.new) }}</span>
+                        </ng-container>
+                        <ng-template #dateSingle>
+                            <span>{{ dateStr(prefDate(d.header_diffs.acquisition_date.old, d.header_diffs.acquisition_date.new)) }}</span>
+
+                        </ng-template>
+                    </div>
+
+                    <div>
+                        <span class="text-gray-500">Total:</span>
+                        <ng-container
+                            *ngIf="showChanged(d.header_diffs.total_price.old, d.header_diffs.total_price.new); else totalSingle">
+                            <span class="line-through text-gray-500">{{ money(d.header_diffs.total_price.old) }}</span>
+                            →
+                            <span class="font-medium">{{ money(d.header_diffs.total_price.new) }}</span>
+                            <span class="ml-2 text-xs"
+                                [ngClass]="deltaClass(delta(d.header_diffs.total_price.old, d.header_diffs.total_price.new))">
+                                Δ {{ money(delta(d.header_diffs.total_price.old, d.header_diffs.total_price.new)) }}
+                            </span>
+                        </ng-container>
+                        <ng-template #totalSingle>
+                            <span>{{ money(prefNum(d.header_diffs.total_price.old, d.header_diffs.total_price.new)) }}</span>
+
+                        </ng-template>
+                    </div>
+
+                    <!-- File -->
+                    <div class="flex items-center gap-2">
+                        <span class="text-gray-500">File:</span>
+                        <a *ngIf="d.header_diffs.pr_path.new_url" [href]="d.header_diffs.pr_path.new_url"
+                            target="_blank" rel="noopener" class="text-indigo-600 hover:underline">Open</a>
+                        <span *ngIf="!d.header_diffs.pr_path.new_url">—</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Item Changes table (always show values; null-safe) -->
+        <div class="app-card">
+            <h2 class="font-medium mb-3">Item Changes</h2>
+            <div *ngIf="detail as d" class="flex flex-wrap gap-2 text-xs">
+                <span class="rounded-full bg-indigo-50 text-indigo-700 px-3 py-1">Add: {{ d.items_counts.add }}</span>
+                <span class="rounded-full bg-rose-50 text-rose-700 px-3 py-1">Delete: {{ d.items_counts.delete }}</span>
+                <span class="rounded-full bg-amber-50 text-amber-700 px-3 py-1">Update Supplier: {{
+                    d.items_counts.update_supplier }}</span>
+                <span class="rounded-full bg-emerald-50 text-emerald-700 px-3 py-1">Update Cost: {{
+                    d.items_counts.update_cost }}</span>
+            </div>
+
+            <div class="overflow-x-auto mt-3">
+                <table class="min-w-full text-sm" *ngIf="detail as d">
+                    <thead class="text-left text-gray-500">
+                        <tr>
+                            <th class="py-2 pr-4">Action</th>
+                            <th class="py-2 pr-4">PR Item</th>
+                            <th class="py-2 pr-4">Supplier</th>
+                            <th class="py-2 pr-4">Unit Cost</th>
+                            <!-- <th class="py-2 pr-4">Qty</th>
+                            <th class="py-2 pr-4">Currency</th> -->
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let it of d.items_diffs; trackBy: trackDiff" class="border-t">
+                            <td class="py-2 pr-4">
+                                <span class="rounded px-2 py-0.5 text-xs" [ngClass]="{
+                      'bg-indigo-100 text-indigo-700': it.action==='add',
+                      'bg-rose-100 text-rose-700': it.action==='delete',
+                      'bg-amber-100 text-amber-700': it.action==='update_supplier',
+                      'bg-emerald-100 text-emerald-700': it.action==='update_cost'
+                    }">
+                                    {{ it.action }}
+                                </span>
+                            </td>
+
+                            <td class="py-2 pr-4">
+                                <div class="font-medium">
+                                    <!-- {{it | json}} -->
+                                  {{ it.item_name || it.old_item_name || '—' }} # {{it.new_fixed_item_id}}
+                                </div>
+                                <!-- <div class="text-xs text-gray-500">PR Item: {{ it.pr_item_id ?? '—' }}</div> -->
+                              </td>
+
+                            <td class="py-2 pr-4">
+                                <ng-container *ngIf="it.action==='update_supplier'; else supplierSingle">
+                                  <span class="line-through text-gray-500">
+                                    {{ supplierOld(it.old_supplier, it.old_supplier_id) }}
+                                  </span>
+                                  →
+                                  <span class="font-medium">
+                                    {{ supplierNew(it.new_supplier, it.new_supplier_id) }}
+                                  </span>
+                                </ng-container>
+                              
+                                <ng-template #supplierSingle>
+                                  <span>{{it.old_supplier}}
+                                    <!-- {{ supplierNew(it.new_supplier, it.new_supplier_id) || supplierOld(it.old_supplier, it.old_supplier_id) }} -->
+                                  </span>
+                                </ng-template>
+                              </td>
+
+                            <td class="py-2 pr-4">
+                                <ng-container *ngIf="it.action==='update_cost'; else costSingle">
+                                    <span class="line-through text-gray-500">{{ money(it.old_unit_cost) }}</span> →
+                                    <span class="font-medium">{{ money(it.new_unit_cost) }}</span>
+                                </ng-container>
+                                <ng-template #costSingle>
+                                    <span>{{ money(it.new_unit_cost ?? it.old_unit_cost) }}</span>
+                                </ng-template>
+                            </td>
+
+                            <!-- <td class="py-2 pr-4">{{ it.qty ?? '—' }}</td>
+                            <td class="py-2 pr-4">{{ it.currency ?? '—' }}</td> -->
+                        </tr>
+
+                        <tr *ngIf="!d.items_diffs?.length">
+                            <td class="py-6 text-gray-500" colspan="6">No item changes.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Preview After (what PR will look like if approved) -->
+        <!-- Snapshots (null-safe display) -->
+        <!-- <div class="grid md:grid-cols-2 gap-4">
+            <div class="app-card" *ngIf="detail as d">
+                <h2 class="font-medium mb-3">Original Snapshot</h2>
+                <div class="text-sm space-y-1">
+                    <div><span class="text-gray-500">PR Code:</span> {{ d.pr_snapshot.pr_code || '—' }}</div>
+                    <div><span class="text-gray-500">Date:</span> {{ dateStr(d.pr_snapshot.pr_date) }}</div>
+                    <div class="flex justify-between border-t pt-2">
+                        <span class="text-gray-500">Total</span>
+                        <span class="font-semibold">{{ money(d.pr_snapshot.total_price) }}</span>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="font-medium mb-1">Items</div>
+                    <ul class="space-y-1 text-sm">
+                        <li *ngFor="let i of d.pr_snapshot.items; trackBy: trackIdx" class="flex justify-between">
+                            <span>
+                                {{ i.item_name || ('Item #' + i.fixed_item_id) }}
+                                × {{ i.qty }} @ {{ money(i.unit_cost) }} {{ i.currency }}
+                              </span>
+                            <span class="font-medium">{{ money(i.qty * i.unit_cost) }}</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+
+            <div class="app-card" *ngIf="detail as d">
+                <h2 class="font-medium mb-3">Preview After Approval</h2>
+                <div class="text-sm space-y-1">
+                    <div><span class="text-gray-500">PR Code:</span> {{ d.preview_after.header_after.pr_code || '—' }}
+                    </div>
+                    <div><span class="text-gray-500">Date:</span> {{ dateStr(d.preview_after.header_after.pr_date) }}
+                    </div>
+                    <div class="flex justify-between border-t pt-2">
+                        <span class="text-gray-500">Total</span>
+                        <span class="font-semibold">{{ money(d.preview_after.header_after.total_price) }}</span>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="font-medium mb-1">Items</div>
+                    <ul class="space-y-1 text-sm">
+                        <li *ngFor="let i of d.preview_after.items_after; trackBy: trackIdx"
+                            class="flex justify-between"
+                            [ngClass]="{ 'bg-amber-50 rounded px-1': isTouched(i,'unit_cost') }">
+                            <span>
+                                {{ i.item_name || ('Item #' + i.fixed_item_id) }}
+                              </span>
+                            <span class="font-medium">{{ (i.qty != null ? money(i.qty * (i.unit_cost ?? 0)) : '—')
+                                }}</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div> -->
+
+        <!-- Actions -->
+        <div class="app-card flex flex-col gap-3 md:flex-row md:items-center md:justify-between" *ngIf="d.status=='Pending'">
+            <div class="flex-1">
+                <label class="text-sm font-medium">Rejection reason (optional)</label>
+                <textarea class="mt-1 w-full rounded-xl border px-3 py-2" rows="2" [(ngModel)]="reason"></textarea>
+            </div>
+            <div class="flex gap-2">
+                <button class="rounded-xl bg-rose-600 text-white px-4 py-2 hover:bg-rose-700 disabled:opacity-60"
+                    [disabled]="saving" (click)="reject()">Reject</button>
+                <button class="rounded-xl bg-green-600 text-white px-4 py-2 hover:bg-green-700 disabled:opacity-60"
+                    [disabled]="saving" (click)="approve()">Approve</button>
+            </div>
+        </div>
+    </ng-container>
+</div>

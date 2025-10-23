@@ -13,7 +13,7 @@ class PrEditRequest extends Model
     protected $fillable = [
         'pr_id','requested_by_admin_id','status_id','request_date',
         'old_pr_code','new_pr_code','old_acquisition_date','new_acquisition_date',
-        'old_pr_path','new_pr_path','old_total_price','new_total_price'
+        'old_pr_path','new_pr_path','old_total_price','new_total_price','reason',
     ];
 
     protected $casts = [

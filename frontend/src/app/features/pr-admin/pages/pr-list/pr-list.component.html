@@ -143,7 +143,7 @@
           <tbody class="divide-y">
             <tr *ngFor="let it of items; let i = index">
               <td class="py-3">{{ i + 1 }}</td>
-              <td class="py-3">{{ it.fixed_item_name || it.fixed_item_id }}</td>
+              <td class="py-3">{{ it.fixed_item || it.fixed_item_id }}</td>
               <td class="py-3">{{ it.supplier_name || it.supplier_id }}</td>
               <td class="py-3 text-right">{{ it.qty }}</td>
               <td class="py-3 text-right">{{ it.unit_cost | number:'1.2-2' }} {{ it.currency }}</td>
