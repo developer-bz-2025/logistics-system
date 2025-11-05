@@ -1,5 +1,5 @@
-import { Component } from '@angular/core';
-
+import { Component, OnInit } from '@angular/core';
+import { AssetService } from 'src/app/core/services/category.service';
 
 type Card = {
   key: 'furniture' | 'appliances' | 'machines' | 'vehicles' | 'electronics' | 'it';
@@ -13,18 +13,51 @@ type Card = {
   templateUrl: './dashboard-cards.component.html',
   styleUrls: ['./dashboard-cards.component.scss']
 })
-
-
-export class DashboardCardsComponent {
+export class DashboardCardsComponent implements OnInit {
 
   cards: Card[] = [
-    { key: 'furniture',  label: 'Furniture',    count: 1247, tint: 'indigo' },
-    { key: 'appliances', label: 'Appliances',   count: 892,  tint: 'green'  },
-    { key: 'machines',   label: 'Machines',     count: 456,  tint: 'violet' },
-    { key: 'vehicles',   label: 'Vehicles',     count: 9,    tint: 'orange' },
-    { key: 'electronics',label: 'Electronics',  count: 634,  tint: 'rose'   },
-    { key: 'it',         label: 'IT Equipment', count: 1123, tint: 'teal'   },
+    { key: 'furniture',  label: 'Furniture',    count: 0, tint: 'indigo' },
+    { key: 'appliances', label: 'Appliances',   count: 0,  tint: 'green'  },
+    { key: 'machines',   label: 'Machines',     count: 0,  tint: 'violet' },
+    { key: 'vehicles',   label: 'Vehicles',     count: 0,    tint: 'orange' },
+    { key: 'electronics',label: 'Electronics',  count: 0,  tint: 'rose'   },
+    { key: 'it',         label: 'IT Equipment', count: 0, tint: 'teal'   },
   ];
+
+  isLoading = true;
+
+  constructor(private assetService: AssetService) {}
+
+  ngOnInit(): void {
+    this.loadDashboardStats();
+  }
+
+  private loadDashboardStats(): void {
+    this.isLoading = true;
+    this.assetService.getDashboardStats().subscribe({
+      next: (response: any) => {
+        const stats = response.data || response;
+
+        // Update card counts based on API response
+        this.cards.forEach(card => {
+          // Try different possible key formats from API
+          const count = stats[card.key] ||
+                       stats[card.key.replace('_', ' ')] ||
+                       stats[card.label.toLowerCase()] ||
+                       stats[card.label.toLowerCase().replace(' ', '_')] ||
+                       0;
+          card.count = count;
+        });
+
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Failed to load dashboard stats:', error);
+        this.isLoading = false;
+        // Keep default counts of 0 on error
+      }
+    });
+  }
 
   // Tailwind color classes for the icon pill
   tintClass(t: 'indigo'|'green'|'violet'|'orange'|'rose'|'teal') {

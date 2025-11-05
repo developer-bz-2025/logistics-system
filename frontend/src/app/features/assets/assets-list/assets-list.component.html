@@ -1,0 +1,244 @@
+<!-- src/app/features/assets/assets-list/assets-list.component.html -->
+<div class="p-4 md:p-6">
+  <div class="app-card mb-6">
+    <!-- Page Header -->
+    <div class="flex justify-between items-center mb-6">
+      <div>
+        <h2 class="text-2xl font-semibold">
+          {{ currentCategoryId ? (currentCategoryName === 'Loading...' ? 'Loading...' : currentCategoryName + ' Assets') : 'All Assets' }}
+        </h2>
+        <p class="text-gray-500">
+          Manage and track {{ currentCategoryId ? (currentCategoryName ? currentCategoryName.toLowerCase() : 'category') : 'asset' }} inventory
+        </p>
+      </div>
+      <div class="flex gap-3">
+        <button mat-raised-button color="default" (click)="onPick(fileInput)">Import Excel</button>
+<input #fileInput type="file" accept=".xlsx,.xls" (change)="onFileSelected($event)" hidden>
+
+<div *ngIf="isUploading" style="margin-top:8px;width:320px;height:10px;background:#eee;border-radius:6px;overflow:hidden;">
+  <div [style.width.%]="progress" style="height:100%;background:#0D9185;"></div>
+</div>
+
+<div *ngIf="message" style="margin-top:8px;">{{ message }}</div>
+        <!-- <button mat-raised-button color="default" (click)="import()">
+          <mat-icon class="mr-1">upload</mat-icon>
+          Import
+        </button> -->
+        <button mat-raised-button color="primary" [routerLink]="['/assets/new']">
+          <mat-icon class="mr-1">add</mat-icon>
+          Create Asset
+        </button>
+      </div>
+    </div>
+
+    <!-- Filters Row 1 -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Sub-Category</mat-label>
+        <mat-select [formControl]="form.controls.sub_category_id" (selectionChange)="updateUrl({page:1})" [disabled]="isLoadingCategories">
+          <mat-option [value]="null">All Sub-Categories</mat-option>
+          <mat-option *ngFor="let s of subs" [value]="s.id">{{ s.name }}</mat-option>
+        </mat-select>
+        <mat-hint *ngIf="isLoadingCategories">Loading sub-categories...</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Item</mat-label>
+        <mat-select [formControl]="form.controls.fixed_item_id" (selectionChange)="updateUrl({page:1})">
+          <mat-option [value]="null">All Items</mat-option>
+          <mat-option *ngFor="let f of fixedItems" [value]="f.id">{{ f.name }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Status</mat-label>
+        <mat-select [formControl]="form.controls.status_id" (selectionChange)="updateUrl({page:1})">
+          <mat-option [value]="null">All Status</mat-option>
+          <mat-option *ngFor="let s of statuses" [value]="s.id">{{ s.name }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Location</mat-label>
+        <mat-select [formControl]="form.controls.location_id" (selectionChange)="updateUrl({page:1})">
+          <mat-option [value]="null">All Locations</mat-option>
+          <mat-option *ngFor="let l of locations" [value]="l.id">{{ l.name }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <!-- Filters Row 2 -->
+    <!-- <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Floor</mat-label>
+        <mat-select [formControl]="form.controls.floor_id" (selectionChange)="updateUrl({page:1})">
+          <mat-option [value]="null">All Floors</mat-option>
+          <mat-option *ngFor="let f of floors" [value]="f.id">{{ f.name }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Supplier</mat-label>
+        <mat-select [formControl]="form.controls.supplier_id" (selectionChange)="updateUrl({page:1})">
+          <mat-option [value]="null">All Suppliers</mat-option>
+          <mat-option *ngFor="let s of suppliers" [value]="s.id">{{ s.name }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Holder</mat-label>
+        <mat-select [formControl]="form.controls.holder_user_id" (selectionChange)="updateUrl({page:1})">
+          <mat-option [value]="null">All Holders</mat-option>
+          <mat-option *ngFor="let h of holders" [value]="h.id">{{ h.name || h.email }}</mat-option>
+        </mat-select>
+        <input matInput placeholder="Search employee...">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Search</mat-label>
+        <input matInput placeholder="Serial number, description..." [formControl]="form.controls.search" (keyup.enter)="onSearchEnter()">
+        <button matSuffix mat-icon-button aria-label="Search" (click)="onSearchEnter()">
+          <mat-icon>search</mat-icon>
+        </button>
+      </mat-form-field>
+    </div> -->
+
+    <!-- Dynamic Attributes Row (if any) -->
+    <div *ngIf="dynamicAttributes.length > 0" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+      <ng-container *ngFor="let attr of dynamicAttributes">
+        <mat-form-field appearance="outline" class="w-full" *ngIf="form.get(attr.field_name)">
+          <mat-label>{{ attr.name }}</mat-label>
+          <mat-select *ngIf="attr.type === 'select'" [formControl]="$any(form.get(attr.field_name))" (selectionChange)="updateUrl({page:1})">
+            <mat-option [value]="null">All</mat-option>
+            <mat-option *ngFor="let opt of attr.options" [value]="opt.id">{{ opt.label }}</mat-option>
+          </mat-select>
+          <input *ngIf="attr.type === 'text'" matInput [formControl]="$any(form.get(attr.field_name))" (change)="updateUrl({page:1})">
+          <input *ngIf="attr.type === 'number'" matInput type="number" [formControl]="$any(form.get(attr.field_name))" (change)="updateUrl({page:1})">
+        </mat-form-field>
+      </ng-container>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="app-card">
+    <!-- Loading Progress Bar -->
+    <div *ngIf="isLoadingAssets" class="mb-4">
+      <div class="w-full bg-gray-200 rounded-full h-2">
+        <div class="bg-green-500 h-2 rounded-full animate-pulse" style="width: 100%"></div>
+      </div>
+      <p class="text-sm text-gray-600 mt-2">Loading assets...</p>
+    </div>
+
+    <div class="overflow-x-auto">
+      <!-- No assets message -->
+      <div *ngIf="!isLoadingAssets && data.length === 0" class="text-center py-12">
+        <div class="text-gray-400 mb-4">
+          <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2M4 13h2m8-5v2m0 0v2m0-2h2m-2 0h-2"/>
+          </svg>
+        </div>
+        <h3 class="text-lg font-medium text-gray-900 mb-2">No assets found</h3>
+        <p class="text-gray-500">
+          {{ currentCategoryId ? 'There are no assets in the ' + (currentCategoryName ? currentCategoryName.toLowerCase() : 'selected category') + ' category yet.' : 'There are no assets in the system yet.' }}
+        </p>
+        <div class="mt-6">
+          <button mat-raised-button color="primary" [routerLink]="['/assets/new']">
+            <mat-icon class="mr-2">add</mat-icon>
+            Create First Asset
+          </button>
+        </div>
+      </div>
+
+      <!-- Assets table -->
+      <table *ngIf="!isLoadingAssets && data.length > 0" mat-table [dataSource]="data" matSort (matSortChange)="sortChange($event)" class="w-full">
+        <ng-container matColumnDef="id">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="id">ID</th>
+          <td mat-cell *matCellDef="let r">{{ r.id }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="sn">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="sn">Serial Number</th>
+          <td mat-cell *matCellDef="let r">{{ r.sn || '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="fixed_item">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="fixed_item_name">Item</th>
+          <td mat-cell *matCellDef="let r">{{ r.fixed_item_name }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="acquisition_date">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="acquisition_date">Acquisition Date</th>
+          <td mat-cell *matCellDef="let r">{{ r.acquisition_date | date:'yyyy-MM-dd' }}</td>
+        </ng-container>
+
+        <!-- Dynamic attribute columns -->
+        <ng-container *ngFor="let attr of dynamicAttributes" [matColumnDef]="attr.field_name">
+          <th mat-header-cell *matHeaderCellDef>{{ attr.name }}</th>
+          <td mat-cell *matCellDef="let r">
+            <span *ngIf="r.attributes && r.attributes[attr.field_name]">
+              {{ r.attributes[attr.field_name] }}
+            </span>
+            <span *ngIf="!r.attributes || !r.attributes[attr.field_name]">—</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="status_name">Status</th>
+          <td mat-cell *matCellDef="let r">
+            <span *ngIf="r.status_name"
+                  class="px-2 py-1 rounded text-xs font-medium"
+                  [ngClass]="{
+                    'bg-green-100 text-green-800': r.status_name === 'Functional' || r.status_name === 'New',
+                    'bg-yellow-100 text-yellow-800': r.status_name === 'In Storage',
+                    'bg-red-100 text-red-800': r.status_name === 'Damaged' || r.status_name === 'Lost' || r.status_name === 'Stolen',
+                    'bg-blue-100 text-blue-800': r.status_name === 'Donated' || r.status_name === 'Transferred',
+                    'bg-gray-100 text-gray-800': r.status_name === 'Under Maintenance'
+                  }">
+              {{ r.status_name }}
+            </span>
+            <span *ngIf="!r.status_name">—</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="location">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="location_name">Location</th>
+          <td mat-cell *matCellDef="let r">
+            <span *ngIf="r.location_name"
+                  class="px-2 py-1 rounded text-xs font-medium"
+                  [ngClass]="{
+                    'bg-blue-100 text-blue-800': r.location_name === 'HQ',
+                    'bg-green-100 text-green-800': r.location_name === 'Bekaa',
+                    'bg-yellow-100 text-yellow-800': r.location_name === 'Shatila',
+                    'bg-purple-100 text-purple-800': r.location_name === 'Nabaa',
+                    'bg-pink-100 text-pink-800': r.location_name === 'Burj',
+                    'bg-indigo-100 text-indigo-800': r.location_name === 'Tripoli',
+                    'bg-orange-100 text-orange-800': r.location_name === 'Akkar',
+                    'bg-gray-100 text-gray-800': true
+                  }">
+              {{ r.location_name }}
+            </span>
+            <span *ngIf="!r.location_name">—</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="brand">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="brand_name">Brand</th>
+          <td mat-cell *matCellDef="let r">{{ r.brand_name || '—' }}</td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+            class="cursor-pointer hover:bg-gray-50"
+            [routerLink]="['/assets', row.id]"></tr>
+      </table>
+    </div>
+
+    <mat-paginator 
+      [length]="total" 
+      [pageSize]="form.value.pageSize || 10" 
+      [pageSizeOptions]="[10,25,50,100]" 
+      (page)="pageChange($event)"
+      showFirstLastButtons>
+    </mat-paginator>
+  </div>
+</div>

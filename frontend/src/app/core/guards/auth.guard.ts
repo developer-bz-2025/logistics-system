@@ -32,12 +32,10 @@ export class AuthGuard implements CanActivate {
       map(() => {
         const allowed = this.auth.hasAnyRole(roles);
         console.log('[Guard:canMatch] hasAnyRole =', allowed);
-        return allowed ? true : this.router.createUrlTree(['/']);
-        // return allowed ? true : this.router.createUrlTree(['/authentication/login']);
+        return allowed ? true : this.router.createUrlTree(['/authentication/login']);
       })
     );
   }
 
 
 }
-

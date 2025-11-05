@@ -21,58 +21,10 @@ export const navItems: NavItem[] = [
     route: '/dashboard/pr-edit-requests',
     roles: ['super_admin']
   },
-  // {
-  //   navCap: 'Ui Components',
-  // },
-  // {
-  //   displayName: 'Badge',
-  //   iconName: 'rosette',
-  //   route: '/ui-components/badge',
-  // },
-  // {
-  //   displayName: 'Chips',
-  //   iconName: 'poker-chip',
-  //   route: '/ui-components/chips',
-  // },
-  // {
-  //   displayName: 'Lists',
-  //   iconName: 'list',
-  //   route: '/ui-components/lists',
-  // },
-  // {
-  //   displayName: 'Menu',
-  //   iconName: 'layout-navbar-expand',
-  //   route: '/ui-components/menu',
-  // },
-  // {
-  //   displayName: 'Tooltips',
-  //   iconName: 'tooltip',
-  //   route: '/ui-components/tooltips',
-  // },
-  // {
-  //   navCap: 'Auth',
-  // },
-  // {
-  //   displayName: 'Login',
-  //   iconName: 'lock',
-  //   route: '/authentication/login',
-  // },
-  // {
-  //   displayName: 'Register',
-  //   iconName: 'user-plus',
-  //   route: '/authentication/register',
-  // },
-  // {
-  //   navCap: 'Extra',
-  // },
-  // {
-  //   displayName: 'Icons',
-  //   iconName: 'mood-smile',
-  //   route: '/extra/icons',
-  // },
-  // {
-  //   displayName: 'Sample Page',
-  //   iconName: 'aperture',
-  //   route: '/extra/sample-page',
-  // },
+
+  { navCap: 'Assets' },
+  { displayName: 'All Assets', iconName: 'package', route: '/assets', roles: ['super_admin','log_admin'] },
+
+  { displayName: 'Categories', iconName: 'users', expandable: true, expanded: true, roles: ['super_admin','log_admin'], children: [] },
+
 ];

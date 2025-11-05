@@ -11,6 +11,11 @@ class MaintenanceStatusSeeder extends Seeder
 {
     public function run(): void
     {
+        // Truncate existing data for fresh seeding
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        DB::table('maintenance_status')->truncate();
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
         $rows = [
             ['name' => 'In Progress'],
             ['name' => 'Completed'],
@@ -18,7 +23,7 @@ class MaintenanceStatusSeeder extends Seeder
             ['name' => 'Cancelled'],
         ];
 
-        // Idempotent: unique key is on `name`
-        DB::table('maintenance_status')->upsert($rows, ['name'], []);
+        // Insert fresh data
+        DB::table('maintenance_status')->insert($rows);
     }
 }

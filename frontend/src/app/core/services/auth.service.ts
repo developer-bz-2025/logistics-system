@@ -8,7 +8,8 @@ import { JwtService } from './jwt.service';
 export interface AppUser {
   id: number;
   email: string;
-  role: string[];
+  role?: string[];
+  roles?: string[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -89,13 +90,15 @@ hasAnyRole(roles: string[]) {
   console.log(roles)
 
   const payload: any = this.jwt.getPayload<any>();
-  // Accept a lot of shapes: user.roles[], user.role, payload.roles, payload.role
+  console.log('[AuthService] hasAnyRole payload:', payload);
+  // Accept a lot of shapes: payload.roles, payload.role, user.roles[], user.role
   const raw =
-    this._user$.value?.role ??
-    this._user$.value?.role ??
     payload?.roles ??
     payload?.role ??
+    this._user$.value?.roles ??
+    this._user$.value?.role ??
     [];
+  console.log('[AuthService] hasAnyRole raw:', raw);
 
   const arr = Array.isArray(raw) ? raw : [raw];
 

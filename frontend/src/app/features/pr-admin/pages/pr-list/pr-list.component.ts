@@ -114,9 +114,27 @@ export class PrListComponent implements OnInit {
   //   });
   // }
 
+  // docUrl(row: PrRow): string | null {
+  //   console.log(row)
+  //   return row.pr_path ? String(row.pr_path) : null; // must be absolute
+  // }
+
   docUrl(row: PrRow): string | null {
-    console.log(row)
-    return row.pr_path ? String(row.pr_path) : null; // must be absolute
+    const raw = (row?.pr_path || '').trim();
+    if (!raw) return null;
+  
+    // If backend already sent an absolute URL, just return it.
+    if (/^https?:\/\//i.test(raw)) return raw;
+  
+    // Normalize: remove leading slashes
+    const path = raw.replace(/^\/+/, '');
+  
+    // For Laravel public disk, the public URL is usually /storage/<path>
+    // If the value doesn't already begin with 'storage/', prefix it.
+    const rel = path.startsWith('storage/') ? path : `storage/${path}`;
+  
+    // Build an absolute URL based on current domain (localhost in dev, real domain in prod)
+    return new URL(rel, window.location.origin + '/').toString();
   }
 
   pageRowNumber(i: number, currentPage: number | null | undefined): number {

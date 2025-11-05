@@ -27,7 +27,11 @@ export class AppNavItemComponent implements OnChanges {
 
   onItemSelected(item: NavItem) {
     if (!item.children || !item.children.length) {
-      this.router.navigate([item.route]);
+      if (item.queryParams) {
+        this.router.navigate([item.route], { queryParams: item.queryParams });
+      } else {
+        this.router.navigate([item.route]);
+      }
     }
 
     // scroll

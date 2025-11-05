@@ -23,7 +23,8 @@ class PrEditRequestItemResource extends JsonResource
             'old_supplier' => $this->oldSupplier?->name,
             // 'old_supplier' => $this->whenLoaded('oldSupplier', fn() => ['id' => $this->oldSupplier?->id, 'name' => $this->oldSupplier?->name]),
             'new_supplier_id' => $this->new_supplier_id,
-            'new_supplier' => $this->whenLoaded('newSupplier', fn() => ['id' => $this->newSupplier?->id, 'name' => $this->newSupplier?->name]),
+            'new_supplier' => $this->newSupplier?->name,
+            // 'new_supplier' => $this->whenLoaded('newSupplier', fn() => ['id' => $this->newSupplier?->id, 'name' => $this->newSupplier?->name]),
 
             'old_unit_cost' => $this->old_unit_cost,
             'new_unit_cost' => $this->new_unit_cost,

@@ -22,8 +22,11 @@ class DatabaseSeeder extends Seeder
             MaintenanceStatusSeeder::class,
             ChangeStatusSeeder::class,
             RoleSeeder::class,
-            CatalogWithAttributesFromExcelSeeder::class,
+            CatalogWithAttributesFromJsonSeeder::class,
             BrandsSuppliersManualSeeder::class,
+            LocationSeeder::class,
+            FloorSeeder::class,
+            ColorSeeder::class,
         ]);
 
 

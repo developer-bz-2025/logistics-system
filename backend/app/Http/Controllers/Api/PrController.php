@@ -49,17 +49,17 @@ class PrController extends Controller
         $newFileName = "{$safeCode}_{$datePart}.{$ext}";
         // This stores in storage/app/prs/<filename>
         $path = $request->file('pr_file')->storeAs('prs', $newFileName,'public');
-        $documentUrl = Storage::disk('public')->url($path);
+        // $documentUrl = Storage::disk('public')->url($path);
 
         // ==============================
         // 💾 2) Save PR + items in transaction
         // ==============================
-        $pr = DB::transaction(function () use ($data, $items, $total, $documentUrl, $userId) {
+        $pr = DB::transaction(function () use ($data, $items, $total, $path, $userId) {
             $pr = Pr::create([
                 'pr_code'     => $data['pr_code'],
                 'pr_date'     => $data['pr_date'],
                 'total_price' => $total,
-                'pr_path'     => $documentUrl,
+                'pr_path'     => $path,
                 'created_by'  => $userId,
             ]);
 

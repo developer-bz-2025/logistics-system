@@ -9,6 +9,14 @@ class BrandsSuppliersManualSeeder extends Seeder
 {
     public function run(): void
     {
+        // Truncate existing data for fresh seeding
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        DB::table('supplier_category')->truncate();
+        DB::table('brand_category')->truncate();
+        DB::table('suppliers')->truncate();
+        DB::table('brands')->truncate();
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
         // ----------------------------
         // 0) Category aliases (be flexible with names)
         // ----------------------------

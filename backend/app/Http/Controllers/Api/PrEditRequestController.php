@@ -127,7 +127,7 @@ class PrEditRequestController extends Controller
             if (abs(((float) $old->unit_cost) - ((float) $newRow['unit_cost'])) >= 0.01) {
                 $reqItemRows[] = [
                     'pr_item_id' => (int) $old->id,
-                    'old_supplier_id' => null,
+                    'old_supplier_id' => (int) $old->supplier_id,
                     'new_supplier_id' => null,
                     'old_unit_cost' => (float) $old->unit_cost,
                     'new_unit_cost' => (float) $newRow['unit_cost'],

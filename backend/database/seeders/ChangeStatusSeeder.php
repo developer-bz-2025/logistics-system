@@ -11,6 +11,10 @@ class ChangeStatusSeeder extends Seeder
 {
     public function run(): void
     {
+        // Truncate existing data for fresh seeding
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        DB::table('change_status')->truncate();
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
         $rows = [
             ['value' => 'Pending'],
@@ -18,9 +22,7 @@ class ChangeStatusSeeder extends Seeder
             ['value' => 'Rejected'],
         ];
 
-        // Idempotent: unique key is on `name`
-        DB::table('change_status')->upsert($rows, ['value'], []);
-
-     
+        // Insert fresh data
+        DB::table('change_status')->insert($rows);
     }
 }

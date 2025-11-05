@@ -1,0 +1,315 @@
+[
+  {
+    "category": "Furniture",
+    "attributes": ["Material - brand - fixture", "Size/Capacity"],
+    "sub_categories": [
+      {
+        "name": "chair",
+        "items": [
+          "single Student chair with table",
+          "single Student chair without table",
+          "double Student chair with table",
+          "Fixed chair",
+          "Wheelchair with hands",
+          "Wheelchair without hands",
+          "Kids chair Assorted color",
+          "Rocking chair"
+        ],
+        "options": {
+          "Material - brand - fixture": ["NA", "Wood", "Quadruple reception chair", "bar", "plastic", "fabric", "leather"],
+          "Size/Capacity": ["NA", "single", "medium", "large", "Double", "small"]
+        }
+      },
+      {
+        "name": "Cabinet",
+        "items": ["Cabinet with lock", "Cabinet with drawers", "Cabinet with open shelves", "Customize Cabinet"],
+        "options": {
+          "Material - brand - fixture": ["NA", "Iron", "Wood", "Iron & Wood", "Aluminum", "Glass&wood", "Stainless Steel"],
+          "Size/Capacity": ["NA", "2 shelves", "4 shelves", "2 drawers", "3 drawers", "4 drawers", "3 shelves"]
+        }
+      },
+      {
+        "name": "Table",
+        "items": ["Table", "Meeting table", "Table for computer", "double student table"],
+        "options": {
+          "Material - brand - fixture": ["NA", "Plastic", "Wood", "iron", "Iron & Wood", "Glass&wood"],
+          "Size/Capacity": ["NA", "Small", "medium", "Large"]
+        }
+      },
+      {
+        "name": "Desk",
+        "items": ["Desk with drawers", "Desk without drawers"],
+        "options": {
+          "Material - brand - fixture": ["NA", "wood", "Glass&wood", "Iron&Wood", "iron"],
+          "Size/Capacity": ["NA", "small", "medium", "large"]
+        }
+      },
+      {
+        "name": "Sofa",
+        "items": ["Sofa with hand", "Sofa without hands"],
+        "options": {
+          "Material - brand - fixture": ["NA", "leather&wood", "Wood&fabric"],
+          "Size/Capacity": ["NA", "Single", "two-seater", "three-seater"]
+        }
+      },
+      {
+        "name": "Curtain",
+        "items": ["Rollers shades Curtains", "Curtains block"],
+        "options": {
+          "Material - brand - fixture": ["NA", "Cotton", "fabric"],
+          "Size/Capacity": ["NA", "160m width 160m length", "150m width 215m length"]
+        }
+      },
+      {
+        "name": "Diesel_Tank",
+        "items": ["Tank"],
+        "options": {
+          "Material - brand - fixture": ["NA", "Plastic", "Iron"],
+          "Size/Capacity": ["NA", "500 L", "1000 L", "2000 L"]
+        }
+      },
+      {
+        "name": "Cork_Board",
+        "items": ["cork board"],
+        "options": {
+          "Material - brand - fixture": ["NA", "Wood", "Aluminum"],
+          "Size/Capacity": ["NA", "small", "medium", "large"]
+        }
+      },
+      {
+        "name": "White_Board",
+        "items": ["Whitboard 1 side", "Whiteboard 2 side"],
+        "options": {
+          "Material - brand - fixture": ["NA", "Wood", "Aluminum&stainless"],
+          "Size/Capacity": ["NA", "small", "medium", "large"]
+        }
+      }
+    ]
+  },
+  {
+    "category": "appliances",
+    "attributes": ["Material - brand - fixture", "Size/Capacity"],
+    "sub_categories": [
+      {
+        "name": "AC",
+        "items": ["AC inverter", "AC non inverter"],
+        "options": {
+          "Material - brand - fixture": ["NA", "Portable", "No portable", "brand"],
+          "Size/Capacity": ["NA", "9000", "12000", "18000", "24000"]
+        }
+      },
+      {
+        "name": "Stove",
+        "items": ["Stove", "Stove and gas oven"],
+        "options": {
+          "Material - brand - fixture": ["NA", "Stainless Steel", "brand"],
+          "Size/Capacity": ["Stove with 2 Burners", "Stove with 3 Burners", "Stove with 4 Burners", "Stove with5 Burners", "NA"]
+        }
+      },
+      {
+        "name": "Microwave",
+        "items": ["Microwave"],
+        "options": {
+          "Material - brand - fixture": ["NA", "brand"],
+          "Size/Capacity": ["Small Microwaves- 14 to 25 liters", "Medium Microwaves - 28 to 42 liters", "Large Microwaves - 45 liters or more", "NA"]
+        }
+      },
+      {
+        "name": "Refrigerator",
+        "items": ["Refrigerator"],
+        "options": {
+          "Material - brand - fixture": ["NA", "brand"],
+          "Size/Capacity": ["Small Fridges 100 to 200 liters", "Medium Fridges 200 to 400 liters", "Large Fridges exceeding 400 liters"]
+        }
+      },
+      {
+        "name": "Fire_extinguisher",
+        "items": ["Foam fire extinguisher", "Powder fire extinguisher", "Carbon dioxide (CO2) fire extinguisher"],
+        "options": {
+          "Material - brand - fixture": ["NA", "Stainless Steel"],
+          "Size/Capacity": ["2 Kg", "4 kg", "6 kg", "9 kg", "12 kg"]
+        }
+      },
+      {
+        "name": "Heater",
+        "items": ["Electric heaters", "Diesel Heaters", "Portable Heaters", "Gas and electric heater", "Electric and Diesel Heaters", "Gaz Heaters"],
+        "options": {
+          "Material - brand - fixture": ["NA", "Stainless Steel"],
+          "Size/Capacity": ["NA", "Small", "Large"]
+        }
+      },
+      {
+        "name": "Fan",
+        "items": ["Ceiling fan", "Wall fan", "Stand fan"],
+        "options": {
+          "Material - brand - fixture": ["NA", "brand"],
+          "Size/Capacity": ["16 (40 cm)", "18 (45 cm)", "36(91 cm)", "42(107 cm)", "48(122 cm)"]
+        }
+      },
+      {
+        "name": "Battery",
+        "items": ["Gel battery", "Lithium battery", "Lead-acid battery"],
+        "options": {
+          "Material - brand - fixture": ["NA", "Brand"],
+          "Size/Capacity": ["100 AM", "200 AM", "250 AM", "10 KW"]
+        }
+      },
+      {
+        "name": "Gaz_bottle",
+        "items": ["Gaz_bottle"],
+        "options": {
+          "Material - brand - fixture": ["NA", "Metal"],
+          "Size/Capacity": ["Small", "Medium", "Large", "32 kg", "10 kg"]
+        }
+      },
+      {
+        "name": "water_cooler",
+        "items": ["Hot and Cold Water Dispensers"],
+        "options": {
+          "Material - brand - fixture": ["NA", "Plastic", "Stainless Steel"],
+          "Size/Capacity": ["5 Gallon", "10 Gallon"]
+        }
+      },
+      {
+        "name": "TV",
+        "items": ["Smart TV", "LED TV", "LCD TV"],
+        "options": {
+          "Material - brand - fixture": ["NA", "Plastic", "Metal"],
+          "Size/Capacity": ["32 inch", "42 inch", "50 inch", "55 inch"]
+        }
+      }
+    ]
+  },
+  {
+    "category": "Machine",
+    "attributes": ["Material - brand - fixture", "Size/Capacity"],
+    "sub_categories": [
+      {
+        "name": "Money_Counter",
+        "items": ["Money_Counter"],
+        "options": {
+          "Material - brand - fixture": ["Stainless Steel", "iron", "NA"],
+          "Size/Capacity": ["Small", "Big", "NA"]
+        }
+      },
+      {
+        "name": "Overlock_Machines",
+        "items": ["Sewing Machine"],
+        "options": {
+          "Material - brand - fixture": ["NA"],
+          "Size/Capacity": ["small", "home use", "non-industrial"]
+        }
+      },
+      {
+        "name": "Shredder",
+        "items": ["Shredder"],
+        "options": {
+          "Material - brand - fixture": ["NA", "Plastic", "Metal", "Plastic & stainless"],
+          "Size/Capacity": ["Small", "Medium", "Large", "N/A"]
+        }
+      }
+    ]
+  },
+  {
+    "category": "vehicle",
+    "attributes": ["Cyllenders", "cubic capacity CC", "Load weight", "Number of Passengers"],
+    "sub_categories": [
+      {
+        "name": "Moto",
+        "items": ["Scooter", "Part"],
+        "options": {
+          "Cyllenders": ["NA"],
+          "cubic capacity CC": ["150 cc", "200 cc", "250 cc", "NA"],
+          "Load weight": ["NA"],
+          "Number of Passengers": ["NA"]
+        }
+      },
+      {
+        "name": "Car",
+        "items": ["rapid", "sedan", "SUV"],
+        "options": {
+          "Cyllenders": ["4", "6", "8", "12", "NA"],
+          "cubic capacity CC": [
+            "600cc","800cc","900cc","1000cc (1.0L)","1100cc","1200cc (1.2L)","1300cc","1400cc",
+            "1500cc (1.5L)","1600cc (1.6L)","1700cc","1800cc (1.8L)","1900cc","2000cc (2.0L)",
+            "2200cc (2.2L)","2400cc (2.4L)","2500cc (2.5L)","2700cc (2.7L)","2800cc","3000cc (3.0L)",
+            "3200cc","3400cc","3500cc (3.5L)","3700cc","3800cc","4000cc (4.0L)","4200cc","4400cc",
+            "4500cc (4.5L)","4600cc","4700cc","4800cc","NA"
+          ],
+          "Load weight": ["NA"],
+          "Number of Passengers": ["2", "5", "7", "NA"]
+        }
+      }
+    ]
+  },
+  {
+    "category": "IT Equipment",
+    "attributes": ["Size/Capacity"],
+    "sub_categories": [
+      {
+        "name": "Monitors",
+        "items": ["LCD Monitors", "LED Monitors", "HD Monitors", "FHD Monitors", "QHD Monitors", "NA"],
+        "options": { "Size/Capacity": ["32 inch", "42 inch", "50 inch", "55 inch", "60 inch", "NA"] }
+      },
+      {
+        "name": "projector",
+        "items": ["HD Projectors", "4K Projectors", "Portable Projectors", "NA"],
+        "options": { "Size/Capacity": ["2000 Mga pixel", "3000 Mga pixel", "3500 Mga pixel", "NA"] }
+      },
+      {
+        "name": "Camera",
+        "items": ["Dome Cameras", "Bullet Cameras", "Indoor Cameras", "Outdoor Cameras", "Wireless Cameras", "Network IP Cameras", "HD Projectors", "NA"],
+        "options": { "Size/Capacity": ["32GB", "64GB", "128 GB", "NA"] }
+      },
+      {
+        "name": "Printer",
+        "items": ["Ink jet", "Laser jet", "black", "colored", "NA"],
+        "options": { "Size/Capacity": ["small Printer", "Large Printer", "Havy Duty", "NA"] }
+      },
+      {
+        "name": "Portable_Storage",
+        "items": ["HDD", "SSD", "NVMe"],
+        "options": { "Size/Capacity": ["128 GB", "500 GB", "1 TB", "2 TB", "3 TB", "5 TB", "6 TB", "10 TB", "12 TB", "22 TB+"] }
+      },
+      {
+        "name": "Speaker",
+        "items": ["Bluetooth Speaker", "Wired Speaker", "Wireless Speaker", "NA"],
+        "options": { "Size/Capacity": ["Small", "Medium", "Large", "NA"] }
+      },
+      {
+        "name": "UPS",
+        "items": ["Small UPS", "Large UPS"],
+        "options": { "Size/Capacity": ["500VA", "1000VA", "2000VA", "3000VA", "NA"] }
+      },
+      {
+        "name": "Router",
+        "items": ["Wireless Router", "Wired Router", "Mesh Router", "NA"],
+        "options": { "Size/Capacity": ["100 Mbps", "300 Mbps", "500 Mbps", "1 Gbps", "NA"] }
+      }
+    ]
+  },
+  {
+    "category": "Computer",
+    "attributes": ["Size/Capacity"],
+    "sub_categories": [
+      {
+        "name": "Desktop",
+        "items": ["Desktop"],
+        "options": {
+          "Size/Capacity": ["14–16 inches tall", "17–20 inches tall", "20–24 inches tall", "NA"]
+        }
+      }
+    ]
+  },
+  {
+    "category": "Electronics",
+    "attributes": ["Size/Capacity"],
+    "sub_categories": [
+      {
+        "name": "Receiver",
+        "items": ["Receiver"],
+        "options": { "Size/Capacity": ["NA"] }
+      }
+    ]
+  }
+]

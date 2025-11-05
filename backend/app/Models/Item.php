@@ -11,20 +11,20 @@ class Item extends Model
 
     protected $fillable = [
         'fixed_item_id','description','sn','color_id','brand_id','pr_id',
-        'aquisition_cost','aquisition_date','warranty_start_date','warranty_end_date',
+        'acquisition_cost','acquisition_date','warranty_start_date','warranty_end_date',
         'budget_code','budget_donor','supplier_id','location_id','floor_id',
         'status_id','notes','holder_user_id','created_by'
     ];
 
     protected $casts = [
-        'aquisition_cost' => 'float',
-        'aquisition_date' => 'date',
+        'acquisition_cost' => 'float',
+        'acquisition_date' => 'date',
         'warranty_start_date' => 'date',
         'warranty_end_date' => 'date',
     ];
 
     public function attributeValues() {
-    return $this->hasMany(ItemAttributeValue::class);
+    return $this->hasMany(ItemAttributeValue::class, 'item_id');
 }
     public function fixedItem() { return $this->belongsTo(FixedItem::class); }
     public function brand()     { return $this->belongsTo(Brand::class); }

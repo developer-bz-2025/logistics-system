@@ -12,7 +12,7 @@ return new class extends Migration {
     {
         Schema::create('floors', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('location_id')->constrained('locations')->cascadeOnDelete();
+            $table->foreignId('location_id')->nullable()->constrained('locations')->nullOnDelete(); 
             $table->string('name');
             $table->timestamps();
 

@@ -1,21 +1,53 @@
 <div mat-subheader *ngIf="item.navCap" class="nav-caption">
   {{ item.navCap }}
 </div>
-<a
-  mat-list-item
-  (click)="onItemSelected(item)"
-  [ngClass]="{
-    'mat-toolbar mat-primary activeMenu': item.route
-      ? router.isActive(item.route, true)
-      : false,
-  }"
-  class="menu-list-item"
-  *ngIf="!item.navCap"
->
-  <i-tabler
-    class="routeIcon"
-    name="{{ item.iconName }}"
-    matListItemIcon
-  ></i-tabler>
-  <span class="hide-menu">{{ item.displayName }}</span>
-</a>
+
+<!-- Expandable item -->
+<ng-container *ngIf="!item.navCap">
+  <a
+    mat-list-item
+    class="menu-list-item"
+    *ngIf="!item.expandable"
+    (click)="onItemSelected(item)"
+    [ngClass]="{
+      'mat-toolbar mat-primary activeMenu': item.route
+        ? router.isActive(item.route, true)
+        : false
+    }"
+  >
+    <i-tabler class="routeIcon" name="{{ item.iconName }}" matListItemIcon></i-tabler>
+    <span class="hide-menu">{{ item.displayName }}</span>
+  </a>
+
+  <div *ngIf="item.expandable">
+    <a
+      mat-list-item
+      class="menu-list-item"
+      (click)="item.expanded = !item.expanded"
+    >
+      <i-tabler class="routeIcon" name="{{ item.iconName }}" matListItemIcon></i-tabler>
+      <span class="hide-menu">{{ item.displayName }}</span>
+      <span class="ml-auto">
+        <i-tabler name="chevron-down" *ngIf="!item.expanded"></i-tabler>
+        <i-tabler name="chevron-up" *ngIf="item.expanded"></i-tabler>
+      </span>
+    </a>
+
+    <div *ngIf="item.expanded" class="children-list">
+      <a
+        mat-list-item
+        class="menu-list-item pl-36"
+        *ngFor="let child of item.children"
+        (click)="onItemSelected(child)"
+        [ngClass]="{
+          'mat-toolbar mat-primary activeMenu': child.queryParams && child.queryParams.category_id &&
+            router.url.includes('/assets') &&
+            router.parseUrl(router.url).queryParams['category_id'] == child.queryParams.category_id
+        }"
+      >
+        <i-tabler class="routeIcon" name="{{ child.iconName }}" matListItemIcon></i-tabler>
+        <span class="hide-menu">{{ child.displayName }}</span>
+      </a>
+    </div>
+  </div>
+</ng-container>

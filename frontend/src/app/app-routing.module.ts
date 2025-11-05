@@ -16,19 +16,26 @@ const routes: Routes = [
       {
         path: 'pr',
         loadChildren: () =>
-        import('./features/pr-admin/pr-admin.module').then(m => m.PrAdminModule),              
+          import('./features/pr-admin/pr-admin.module').then(m => m.PrAdminModule),
         canMatch: [AuthGuard],
         data: { roles: ['pr_admin'] }
       },
       {
         path: 'dashboard',
         loadChildren: () =>
-        import('./features/dashboard/dashboard.module').then(m => m.DashboardModule),              
+          import('./features/dashboard/dashboard.module').then(m => m.DashboardModule),
         canMatch: [AuthGuard],
-        data: { roles: ['log_admin','super_admin'] }
+        data: { roles: ['log_admin', 'super_admin'] }
+      },
+      {
+        path: 'assets',
+        loadChildren: () =>
+          import('./features/assets/assets.module').then(m => m.AssetsModule),
+        canMatch: [AuthGuard],
+        data: { roles: ['log_admin', 'super_admin'] }
       },
 
-      
+
       // {
       //   path: 'dashboard',
       //   loadChildren: () =>

@@ -108,4 +108,22 @@ export class PrEditRequestsComponent implements OnDestroy {
       'text-gray-700': delta === 0,
     };
   }
+
+  docUrl(pr_path: string): string | null {
+    const raw = (pr_path || '').trim();
+    if (!raw) return null;
+  
+    // If backend already sent an absolute URL, just return it.
+    if (/^https?:\/\//i.test(raw)) return raw;
+  
+    // Normalize: remove leading slashes
+    const path = raw.replace(/^\/+/, '');
+  
+    // For Laravel public disk, the public URL is usually /storage/<path>
+    // If the value doesn't already begin with 'storage/', prefix it.
+    const rel = path.startsWith('storage/') ? path : `storage/${path}`;
+  
+    // Build an absolute URL based on current domain (localhost in dev, real domain in prod)
+    return new URL(rel, window.location.origin + '/').toString();
+  }
 }

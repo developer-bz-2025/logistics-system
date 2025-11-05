@@ -13,4 +13,7 @@ export interface NavItem {
     children?: NavItem[];
     ddType?: string;
     roles?: string[];
+    expandable?: boolean;         // render chevron + toggle
+    expanded?: boolean;
+    queryParams?: Record<string, any>
 }

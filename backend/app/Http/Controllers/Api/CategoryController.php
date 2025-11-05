@@ -23,4 +23,9 @@ class CategoryController extends Controller
 
         return CategoryResource::collection($q->get());
     }
+
+    public function show(Category $category)
+    {
+        return new CategoryResource($category);
+    }
 }

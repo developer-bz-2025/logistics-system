@@ -169,7 +169,7 @@
                                 </ng-container>
                               
                                 <ng-template #supplierSingle>
-                                  <span>{{it.old_supplier}}
+                                  <span>{{it.old_supplier || it.new_supplier}}
                                     <!-- {{ supplierNew(it.new_supplier, it.new_supplier_id) || supplierOld(it.old_supplier, it.old_supplier_id) }} -->
                                   </span>
                                 </ng-template>

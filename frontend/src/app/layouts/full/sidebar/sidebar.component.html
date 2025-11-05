@@ -2,6 +2,14 @@
   <!-- <app-branding></app-branding> -->
   <mat-nav-list class="sidebar-list">
     <app-nav-item *ngFor="let item of navItems" [item]="item"> </app-nav-item>
+
+    <!-- Loading indicator for categories -->
+    <div *ngIf="isLoadingCategories" class="px-6 py-2">
+      <div class="flex items-center space-x-2 text-white text-sm">
+        <div class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+        <span>Loading categories...</span>
+      </div>
+    </div>
   </mat-nav-list>
   <!-- <div class="p-24 m-t-auto">
     <div class="bg-light-primary d-flex align-items-center rounded p-20 m-t-20">
