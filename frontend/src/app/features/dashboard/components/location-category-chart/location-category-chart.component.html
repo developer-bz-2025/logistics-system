@@ -1,0 +1,28 @@
+<div class="chart-container">
+  <div class="chart-header">
+    <h3 class="chart-title">Assets by Location & Category</h3>
+    <p class="chart-subtitle">Distribution of assets across different locations, grouped by category</p>
+  </div>
+
+  <div class="chart-wrapper">
+    <div *ngIf="isLoading" class="loading-container">
+      <mat-spinner diameter="40" color="primary"></mat-spinner>
+      <p>Loading chart data...</p>
+    </div>
+
+    <div *ngIf="!isLoading" class="chart-content">
+      <apx-chart
+        #chart
+        [series]="chartOptions.series!"
+        [chart]="chartOptions.chart!"
+        [dataLabels]="chartOptions.dataLabels!"
+        [plotOptions]="chartOptions.plotOptions!"
+        [yaxis]="chartOptions.yaxis!"
+        [xaxis]="chartOptions.xaxis!"
+        [grid]="chartOptions.grid!"
+        [colors]="chartOptions.colors!"
+        [legend]="chartOptions.legend!">
+      </apx-chart>
+    </div>
+  </div>
+</div>

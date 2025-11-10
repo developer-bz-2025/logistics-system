@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 
 
@@ -27,6 +28,14 @@ export interface PrCreateResponse {
   pr_path?: string | null;
   // ...anything else your API returns
 }
+export interface PrListItem {
+  id: number;
+  pr_code: string;
+  pr_date: string;
+  total_price: number;
+  status?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -43,5 +52,12 @@ export class PrService {
     // DO NOT set Content-Type; HttpClient will set the correct multipart boundary
     return this.http.post<PrCreateResponse>(this.base, fd);
   }
-  
+
+  /** Get list of PRs for selection */
+  getPrs(): Observable<PrListItem[]> {
+    return this.http.get<any>(this.base).pipe(
+      map((res: any) => Array.isArray(res) ? res : (res?.data || []))
+    );
+  }
+
 }

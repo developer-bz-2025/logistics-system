@@ -32,8 +32,8 @@ export class ReferenceService {
       return [];
     }
 
-    private toOptions<T extends { id: number; name?: string; label?: string }>(rows: T[]) {
-      return rows.map(r => ({ id: r.id, label: (r as any).name ?? (r as any).label ?? String(r.id) }));
+    private toOptions<T extends { id: number; name?: string; value?: string }>(rows: T[]) {
+      return rows.map(r => ({ id: r.id, value: (r as any).name ?? (r as any).value ?? String(r.id) }));
     }
   
     getCategories(): Observable<Category[]> {
@@ -76,4 +76,20 @@ export class ReferenceService {
   
     /** Expose option mappers if you still want them in the component */
     asOptions = this.toOptions.bind(this);
+
+    getColors(): Observable<any[]> {
+      return this.http.get<any>(`${this.base}/colors`).pipe(
+        map(resp => this.unwrapArray(resp))
+      );
+    }
+
+    getBrands(categoryId?: number): Observable<any[]> {
+      let url = `${this.base}/brands`;
+      if (categoryId) {
+        url += `?category_id=${categoryId}`;
+      }
+      return this.http.get<any>(url).pipe(
+        map(resp => this.unwrapArray(resp))
+      );
+    }
 }

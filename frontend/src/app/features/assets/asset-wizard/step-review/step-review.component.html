@@ -1,0 +1,123 @@
+<div class="space-y-6">
+  <div>
+    <h3 class="text-lg font-medium text-gray-900 mb-4">Review & Confirm</h3>
+    <p class="text-sm text-gray-600 mb-6">Please review all the information before creating the asset.</p>
+  </div>
+
+  <!-- Classification -->
+  <div class="bg-gray-50 p-4 rounded-lg">
+    <h4 class="font-medium text-gray-900 mb-3">Classification</h4>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+      <div>
+        <span class="font-medium">Category:</span>
+        <span class="ml-2">{{ getLabel('categories', getFormValue().classification.category_id) }}</span>
+      </div>
+      <div>
+        <span class="font-medium">Sub-Category:</span>
+        <span class="ml-2">{{ getLabel('subCategories', getFormValue().classification.sub_category_id) }}</span>
+      </div>
+      <div>
+        <span class="font-medium">Item Type:</span>
+        <span class="ml-2">{{ getLabel('fixedItems', getFormValue().classification.fixed_item_id) }}</span>
+      </div>
+    </div>
+
+    <!-- Attributes -->
+    <div *ngIf="getFormValue().classification.attributes?.length > 0" class="mt-3">
+      <h5 class="font-medium text-gray-700 mb-2">Attributes:</h5>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+        <div *ngFor="let attr of getFormValue().classification.attributes; let i = index">
+          <span class="font-medium">{{ attributes[i].name }}:</span>
+          <span class="ml-2">{{ getAttributeLabel(attributes[i], attr.att_option_id) }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- General Information -->
+  <div class="bg-gray-50 p-4 rounded-lg">
+    <h4 class="font-medium text-gray-900 mb-3">General Information</h4>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+      <div *ngIf="getFormValue().general.supplier_id">
+        <span class="font-medium">Supplier:</span>
+        <span class="ml-2">{{ getLabel('suppliers', getFormValue().general.supplier_id) }}</span>
+      </div>
+      <div *ngIf="getFormValue().general.brand_id">
+        <span class="font-medium">Brand:</span>
+        <span class="ml-2">{{ getLabel('brands', getFormValue().general.brand_id) }}</span>
+      </div>
+      <div *ngIf="getFormValue().general.color_id">
+        <span class="font-medium">Color:</span>
+        <span class="ml-2">{{ getLabel('colors', getFormValue().general.color_id) }}</span>
+      </div>
+      <div *ngIf="getFormValue().general.pr_id">
+        <span class="font-medium">Purchase Request:</span>
+        <span class="ml-2">{{ getLabel('prs', getFormValue().general.pr_id) }}</span>
+      </div>
+      <div>
+        <span class="font-medium">Acquisition Cost:</span>
+        <span class="ml-2">${{ getFormValue().general.acquisition_cost }}</span>
+      </div>
+      <div *ngIf="getFormValue().general.acquisition_date">
+        <span class="font-medium">Acquisition Date:</span>
+        <span class="ml-2">{{ getFormValue().general.acquisition_date | date }}</span>
+      </div>
+      <div *ngIf="getFormValue().general.warranty_start_date">
+        <span class="font-medium">Warranty Start:</span>
+        <span class="ml-2">{{ getFormValue().general.warranty_start_date | date }}</span>
+      </div>
+      <div *ngIf="getFormValue().general.warranty_end_date">
+        <span class="font-medium">Warranty End:</span>
+        <span class="ml-2">{{ getFormValue().general.warranty_end_date | date }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Assignment -->
+  <div class="bg-gray-50 p-4 rounded-lg">
+    <h4 class="font-medium text-gray-900 mb-3">Assignment & Status</h4>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+      <div *ngIf="getFormValue().assignment.location_id">
+        <span class="font-medium">Location:</span>
+        <span class="ml-2">{{ getLabel('locations', getFormValue().assignment.location_id) }}</span>
+      </div>
+      <div *ngIf="getFormValue().assignment.floor_id">
+        <span class="font-medium">Floor:</span>
+        <span class="ml-2">{{ getLabel('floors', getFormValue().assignment.floor_id) }}</span>
+      </div>
+      <div *ngIf="getFormValue().assignment.holder_user_id">
+        <span class="font-medium">Holder:</span>
+        <span class="ml-2">User ID {{ getFormValue().assignment.holder_user_id }}</span>
+      </div>
+      <div *ngIf="getFormValue().assignment.status_id">
+        <span class="font-medium">Status:</span>
+        <span class="ml-2">{{ getLabel('statuses', getFormValue().assignment.status_id) }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Extra Information -->
+  <div class="bg-gray-50 p-4 rounded-lg">
+    <h4 class="font-medium text-gray-900 mb-3">Additional Information</h4>
+    <div class="space-y-3 text-sm">
+      <div *ngIf="getFormValue().extra.description">
+        <span class="font-medium">Description:</span>
+        <p class="mt-1 text-gray-700">{{ getFormValue().extra.description }}</p>
+      </div>
+      <div *ngIf="getFormValue().extra.notes">
+        <span class="font-medium">Notes:</span>
+        <p class="mt-1 text-gray-700">{{ getFormValue().extra.notes }}</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div *ngIf="getFormValue().extra.budget_code">
+          <span class="font-medium">Budget Code:</span>
+          <span class="ml-2">{{ getFormValue().extra.budget_code }}</span>
+        </div>
+        <div *ngIf="getFormValue().extra.budget_donor">
+          <span class="font-medium">Budget Donor:</span>
+          <span class="ml-2">{{ getFormValue().extra.budget_donor }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

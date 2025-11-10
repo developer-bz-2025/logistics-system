@@ -30,11 +30,18 @@ class UserController extends Controller
         return response()->json($user);
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        // get all users with their roles
-        $users = User::with('role')->get();
+        $q = User::with('role');
 
-        return response()->json($users);
+        // search by name or email
+        if ($s = trim((string) $request->query('search'))) {
+            $q->where(function ($qq) use ($s) {
+                $qq->where('name', 'like', "%{$s}%")
+                   ->orWhere('email', 'like', "%{$s}%");
+            });
+        }
+
+        return response()->json($q->get());
     }
 }

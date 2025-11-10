@@ -5,7 +5,7 @@ export interface FixedItem { id: number; name: string; sub_category_id: number; 
 export interface Supplier { id: number; name: string; }
 
 
-export type SelectOption = { id: number | string; label: string };
+export type SelectOption = { id: number | string; value: string };
 
 export interface AssetListItem {
     id: number;

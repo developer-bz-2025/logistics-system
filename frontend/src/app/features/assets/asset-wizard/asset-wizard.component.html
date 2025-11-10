@@ -1,0 +1,174 @@
+<div class="container mx-auto px-4 py-6">
+  <div class="app-card max-w-4xl mx-auto">
+    <div class="p-6">
+      <h1 class="text-2xl font-bold text-gray-900 mb-6">Create New Asset</h1>
+
+      <!-- Custom Step Header -->
+      <div class="flex items-center justify-between mb-8">
+        <div class="flex items-center space-x-4 flex-1">
+          <!-- Step 1: Classification -->
+          <div class="flex items-center">
+            <div [class]="currentStep >= 0 ? 'bg-teal-500 text-white' : 'bg-gray-200 text-gray-500'"
+                 class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium">
+              1
+            </div>
+            <span class="ml-2 text-sm font-medium"
+                  [class]="currentStep >= 0 ? 'text-teal-600' : 'text-gray-500'">
+              Classification
+            </span>
+          </div>
+
+          <!-- Separator -->
+          <div class="flex-1 h-px bg-gray-300 mx-4"></div>
+
+          <!-- Step 2: General Info -->
+          <div class="flex items-center">
+            <div [class]="currentStep >= 1 ? 'bg-teal-500 text-white' : 'bg-gray-200 text-gray-500'"
+                 class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium">
+              2
+            </div>
+            <span class="ml-2 text-sm font-medium"
+                  [class]="currentStep >= 1 ? 'text-teal-600' : 'text-gray-500'">
+              General Info
+            </span>
+          </div>
+
+          <!-- Separator -->
+          <div class="flex-1 h-px bg-gray-300 mx-4"></div>
+
+          <!-- Step 3: Assignment -->
+          <div class="flex items-center">
+            <div [class]="currentStep >= 2 ? 'bg-teal-500 text-white' : 'bg-gray-200 text-gray-500'"
+                 class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium">
+              3
+            </div>
+            <span class="ml-2 text-sm font-medium"
+                  [class]="currentStep >= 2 ? 'text-teal-600' : 'text-gray-500'">
+              Assignment
+            </span>
+          </div>
+
+          <!-- Separator -->
+          <div class="flex-1 h-px bg-gray-300 mx-4"></div>
+
+          <!-- Step 4: Extra Info -->
+          <div class="flex items-center">
+            <div [class]="currentStep >= 3 ? 'bg-teal-500 text-white' : 'bg-gray-200 text-gray-500'"
+                 class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium">
+              4
+            </div>
+            <span class="ml-2 text-sm font-medium"
+                  [class]="currentStep >= 3 ? 'text-teal-600' : 'text-gray-500'">
+              Extra Info
+            </span>
+          </div>
+
+          <!-- Separator -->
+          <div class="flex-1 h-px bg-gray-300 mx-4"></div>
+
+          <!-- Step 5: Review -->
+          <div class="flex items-center">
+            <div [class]="currentStep >= 4 ? 'bg-teal-500 text-white' : 'bg-gray-200 text-gray-500'"
+                 class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium">
+              5
+            </div>
+            <span class="ml-2 text-sm font-medium"
+                  [class]="currentStep >= 4 ? 'text-teal-600' : 'text-gray-500'">
+              Review
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step Content -->
+      <div class="min-h-96">
+        <!-- Step 1: Classification -->
+        <div *ngIf="currentStep === 0">
+          <app-step-classification
+            [form]="$any(form.get('classification'))"
+            [categories]="categories"
+            [subCategories]="subCategories"
+            [fixedItems]="fixedItems"
+            [attributes]="attributes"
+            [suppliers]="suppliers"
+            [brands]="brands"
+            [loading]="loading">
+          </app-step-classification>
+        </div>
+
+        <!-- Step 2: General Info -->
+        <div *ngIf="currentStep === 1">
+          <app-step-general-info
+            [form]="$any(form.get('general'))"
+            [suppliers]="suppliers"
+            [brands]="brands"
+            [colors]="colors"
+            [prs]="prs">
+          </app-step-general-info>
+        </div>
+
+        <!-- Step 3: Assignment -->
+        <div *ngIf="currentStep === 2">
+          <app-step-assignment
+            [form]="$any(form.get('assignment'))"
+            [locations]="locations"
+            [floors]="floors"
+            [statuses]="statuses"
+            [searchUsersFn]="searchUsers">
+          </app-step-assignment>
+        </div>
+
+        <!-- Step 4: Extra Info -->
+        <div *ngIf="currentStep === 3">
+          <app-step-extra-info
+            [form]="$any(form.get('extra'))">
+          </app-step-extra-info>
+        </div>
+
+        <!-- Step 5: Review -->
+        <div *ngIf="currentStep === 4">
+          <app-step-review
+            [form]="form"
+            [labelMaps]="labelMaps"
+            [attributes]="attributes">
+          </app-step-review>
+        </div>
+      </div>
+
+      <!-- Navigation Buttons -->
+      <div class="flex justify-between mt-8 pt-6 border-t border-gray-200">
+        <button
+          *ngIf="currentStep > 0"
+          (click)="previousStep()"
+          class="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500">
+          Back
+        </button>
+
+        <div class="flex space-x-3 ml-auto">
+          <button
+            *ngIf="currentStep < 4"
+            (click)="nextStep()"
+            [disabled]="!canProceedToNext()"
+            class="px-6 py-2 bg-teal-600 text-white rounded-md hover:bg-teal-700 disabled:bg-gray-300 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500">
+            Next Step
+          </button>
+
+          <button
+            *ngIf="currentStep === 4"
+            (click)="onSubmit()"
+            [disabled]="loading.submit || !form.valid"
+            class="px-6 py-2 bg-teal-600 text-white rounded-md hover:bg-teal-700 disabled:bg-gray-300 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500">
+            <span *ngIf="loading.submit" class="inline-flex items-center">
+              <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Creating...
+            </span>
+            <span *ngIf="!loading.submit">Create Asset</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

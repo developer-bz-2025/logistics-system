@@ -16,7 +16,7 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        $request->validate([
+        $request->validate([ 
             'email' => 'required|email',
             'password' => 'required|string',
         ]);
@@ -57,13 +57,50 @@ class AuthController extends Controller
         return response()->json(auth()->user());
     }
 
+    public function refresh(Request $request)
+    {
+        try {
+            $request->validate([
+                'refresh_token' => 'required|string',
+            ]);
+
+            // Set the token to be refreshed
+            JWTAuth::setToken($request->refresh_token);
+
+            // Get the user from the refresh token
+            $user = JWTAuth::authenticate();
+
+            if (!$user) {
+                return response()->json([
+                    'error' => 'Invalid refresh token'
+                ], 401);
+            }
+
+            // Generate a new access token for the user
+            $newToken = JWTAuth::fromUser($user);
+
+            return response()->json([
+                'access_token' => $newToken,
+                'token_type' => 'bearer',
+                'expires_in' => JWTAuth::factory()->getTTL() * 60
+            ]);
+
+        } catch (JWTException $e) {
+            return response()->json([
+                'error' => 'Invalid refresh token'
+            ], 401);
+        }
+    }
+
     protected function respondWithToken($token)
     {
+        // For now, use the same token as both access and refresh token
+        // In a production system, you'd want separate tokens with different TTLs
         return response()->json([
             'access_token' => $token,
+            'refresh_token' => $token,
             'token_type' => 'bearer',
-            'expires_in' => JWTAuth::factory()->getTTL() * 60 * 60
-            // 'expires_in' => auth('api')->factory()->getTTL() * 36000
+            'expires_in' => JWTAuth::factory()->getTTL() * 60
         ]);
     }
 }

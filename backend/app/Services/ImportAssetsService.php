@@ -8,6 +8,7 @@ use Illuminate\Support\Str;
 
 use Illuminate\Support\Facades\Schema;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use App\Services\ItemHistoryService;
 class ImportAssetsService
 {
     // Sheet names in your workbook (legacy - not currently used in main import)
@@ -475,11 +476,17 @@ public function importItemsSheet(Spreadsheet $spreadsheet, string $sheetName, st
                 DB::table('items')->where('id', $existingItem->id)->update($itemData);
                 $itemId = $existingItem->id;
                 $updated++;
+
+                // Log item update
+                ItemHistoryService::logItemUpdated($itemId, $itemData);
             } else {
                 // Insert new item
                 $itemData['created_at'] = now();
                 $itemId = DB::table('items')->insertGetId($itemData);
                 $inserted++;
+
+                // Log item creation
+                ItemHistoryService::logItemCreated($itemId, $itemData);
             }
         } else {
             // For items without SN, always insert as new (no deduplication)
@@ -487,6 +494,9 @@ public function importItemsSheet(Spreadsheet $spreadsheet, string $sheetName, st
             $itemData['created_at'] = now();
             $itemId = DB::table('items')->insertGetId($itemData);
             $inserted++;
+
+            // Log item creation
+            ItemHistoryService::logItemCreated($itemId, $itemData);
         }
 
         // Insert/update attribute values

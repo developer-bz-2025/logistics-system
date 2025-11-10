@@ -65,9 +65,13 @@ export class AssetService {
     return this.http.get<PagedResult<AssetListItem>>(`${this.apiUrl}/items`, { params });
   }
 
-  // Get dynamic attributes based on category
-  getCategoryAttributes(categoryId: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/categories/${categoryId}/attributes`).pipe(
+  // Get dynamic attributes based on category, with options filtered by sub-category
+  getCategoryAttributes(categoryId: number, subCategoryId?: number): Observable<any> {
+    let params = new HttpParams();
+    if (subCategoryId) {
+      params = params.set('sub_category_id', String(subCategoryId));
+    }
+    return this.http.get<any>(`${this.apiUrl}/categories/${categoryId}/attributes`, { params }).pipe(
       map((res: any) => Array.isArray(res) ? res : (res?.data || []))
     );
   }
@@ -110,5 +114,20 @@ export class AssetService {
   // Fetch dashboard statistics (asset counts by category)
   getDashboardStats(): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/dashboard/stats`);
+  }
+
+  // Get single asset details
+  getAsset(id: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/items/${id}`);
+  }
+
+  // Update asset
+  updateAsset(id: number, data: any): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/items/${id}`, data);
+  }
+
+  // Create new asset
+  createAsset(data: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/items`, data);
   }
 }

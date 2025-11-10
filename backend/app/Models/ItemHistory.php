@@ -10,7 +10,7 @@ class ItemHistory extends Model
     use HasFactory;
 
     protected $table = 'item_history';
-    protected $fillable = ['item_id','event_type','by_user_id','accurred_at','payload'];
+    protected $fillable = ['item_id','event_type','summary','by_user_id','accurred_at','payload'];
     protected $casts = [
         'accurred_at' => 'datetime',
         'payload' => 'array',

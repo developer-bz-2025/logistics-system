@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\FloorController;
 
 // Group all API routes
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/refresh', [AuthController::class, 'refresh']);
 
 Route::middleware('jwt.auth')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
@@ -114,6 +115,7 @@ Route::get('/sub-categories/{subCategory}/fixed-items', [FixedItemController::cl
     ->whereNumber('subCategory');
 
 Route::get('/suppliers', [SupplierController::class, 'index']);
+Route::get('/brands', [\App\Http\Controllers\Api\BrandController::class, 'index']);
 
 
 
@@ -121,10 +123,18 @@ Route::get('/categories/{category}/attributes', [AttributeController::class, 'by
     ->whereNumber('category');
 
 Route::get('/items', [ItemController::class, 'index']);
+Route::post('/items', [ItemController::class, 'store']);
+Route::get('/items/{item}', [ItemController::class, 'show'])
+    ->whereNumber('item');
+Route::put('/items/{item}', [ItemController::class, 'update'])
+    ->whereNumber('item');
+Route::get('/items/{item}/history', [\App\Http\Controllers\Api\ItemHistoryController::class, 'index'])
+    ->whereNumber('item');
 
 Route::get('/statuses', [StatusController::class, 'index']);
 Route::get('/locations', [LocationController::class, 'index']);
 Route::get('/floors', [FloorController::class, 'index']);
+Route::get('/colors', [\App\Http\Controllers\Api\ColorController::class, 'index']);
 Route::get('/users', [UserController::class, 'index']);
 
 

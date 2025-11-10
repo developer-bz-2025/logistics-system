@@ -1,0 +1,40 @@
+<div class="space-y-6">
+  <div>
+    <h3 class="text-lg font-medium text-gray-900 mb-4">Additional Information</h3>
+    <p class="text-sm text-gray-600 mb-6">Provide any additional details about the asset.</p>
+  </div>
+
+  <!-- Description -->
+  <div>
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Description</mat-label>
+      <textarea matInput [formControl]="$any(form.get('description'))" rows="3" placeholder="Detailed description of the asset"></textarea>
+      <mat-hint>Optional detailed description</mat-hint>
+    </mat-form-field>
+  </div>
+
+  <!-- Notes -->
+  <div>
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Notes</mat-label>
+      <textarea matInput [formControl]="$any(form.get('notes'))" rows="3" placeholder="Any additional notes"></textarea>
+      <mat-hint>Optional additional notes</mat-hint>
+    </mat-form-field>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Budget Code -->
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Budget Code</mat-label>
+      <input matInput [formControl]="$any(form.get('budget_code'))" placeholder="e.g., DEPT-2024-001">
+      <mat-hint>Optional budget code</mat-hint>
+    </mat-form-field>
+
+    <!-- Budget Donor -->
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Budget Donor</mat-label>
+      <input matInput [formControl]="$any(form.get('budget_donor'))" placeholder="e.g., Main Budget">
+      <mat-hint>Optional budget donor</mat-hint>
+    </mat-form-field>
+  </div>
+</div>

@@ -101,13 +101,46 @@ export class AssetsListComponent  implements OnInit, OnDestroy {
     };
     this.form.patchValue(initialValues);
 
-    // React to sub_category → fixed item selects
+    // React to sub_category → fixed item selects and attributes
     this.form.get('sub_category_id')!.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(subId => {
         this.form.patchValue({ fixed_item_id: null }, { emitEvent: false });
         this.fixedItems = [];
-        if (subId) this.cats.getFixedItems(subId).subscribe(fi => (this.fixedItems = fi));
+        this.dynamicAttributes = [];
+
+        // Reset dynamic attribute form controls
+        this.dynamicAttributes.forEach((attr: any) => {
+          if (this.form.get(attr.field_name)) {
+            (this.form as any).removeControl(attr.field_name);
+          }
+        });
+
+        if (subId) {
+          // Load fixed items
+          this.cats.getFixedItems(subId).subscribe(fi => (this.fixedItems = fi));
+
+          // Load dynamic attributes for this category, filtered by sub-category
+          this.assets.getCategoryAttributes(this.currentCategoryId!, subId).pipe(takeUntil(this.destroy$))
+            .subscribe({
+              next: (attrs) => {
+                this.dynamicAttributes = (attrs || []).filter((attr: any) => attr.field_name);
+                // Add dynamic attribute controls to form
+                this.dynamicAttributes.forEach((attr: any) => {
+                  if (!this.form.get(attr.field_name)) {
+                    this.form.addControl(attr.field_name, this.fb.control(null));
+                  }
+                });
+                this.updateDisplayedColumns();
+              },
+              error: () => {
+                this.dynamicAttributes = [];
+                this.updateDisplayedColumns();
+              }
+            });
+        } else {
+          this.updateDisplayedColumns();
+        }
       });
 
     // Initialize from URL
@@ -183,24 +216,7 @@ export class AssetsListComponent  implements OnInit, OnDestroy {
                 }
               });
 
-            // Load dynamic attributes for this category
-            this.assets.getCategoryAttributes(qp.category_id).pipe(takeUntil(this.destroy$))
-              .subscribe({
-                next: (attrs) => {
-                  this.dynamicAttributes = (attrs || []).filter((attr: any) => attr.field_name);
-                  // Add dynamic attribute controls to form
-                  this.dynamicAttributes.forEach((attr: any) => {
-                    if (!this.form.get(attr.field_name)) {
-                      this.form.addControl(attr.field_name, this.fb.control(null));
-                    }
-                  });
-                  this.updateDisplayedColumns();
-                },
-                error: () => {
-                  this.dynamicAttributes = [];
-                  this.updateDisplayedColumns();
-                }
-              });
+            // Note: Attributes are loaded when sub-category is selected, not category
           }
         }
 

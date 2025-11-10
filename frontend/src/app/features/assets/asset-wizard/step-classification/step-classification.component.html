@@ -1,0 +1,109 @@
+<div class="space-y-6">
+  <div>
+    <h3 class="text-lg font-medium text-gray-900 mb-4">Asset Classification</h3>
+    <p class="text-sm text-gray-600 mb-6">Select the category, sub-category, and item type for this asset.</p>
+  </div>
+
+  <!-- Category -->
+  <div>
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Category</mat-label>
+      <mat-select [formControl]="$any(form.get('category_id'))" required [disabled]="loading.categories">
+        <mat-option *ngIf="loading.categories" disabled>
+          <span class="flex items-center">
+            <svg class="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Loading...
+          </span>
+        </mat-option>
+        <mat-option *ngFor="let category of categories" [value]="category.id">
+          {{ category.name }}
+        </mat-option>
+      </mat-select>
+      <mat-hint>Select the main category for this asset</mat-hint>
+    </mat-form-field>
+  </div>
+
+  <!-- Sub-Category -->
+  <div>
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Sub-Category</mat-label>
+      <mat-select [formControl]="$any(form.get('sub_category_id'))" required [disabled]="loading.subCategories">
+        <mat-option *ngIf="loading.subCategories" disabled>
+          <span class="flex items-center">
+            <svg class="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Loading...
+          </span>
+        </mat-option>
+        <mat-option *ngFor="let subCategory of subCategories" [value]="subCategory.id">
+          {{ subCategory.name }}
+        </mat-option>
+      </mat-select>
+      <mat-hint>Select the sub-category</mat-hint>
+    </mat-form-field>
+  </div>
+
+  <!-- Fixed Item -->
+  <div>
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Item Type</mat-label>
+      <mat-select [formControl]="$any(form.get('fixed_item_id'))" required [disabled]="loading.fixedItems">
+        <mat-option *ngIf="loading.fixedItems" disabled>
+          <span class="flex items-center">
+            <svg class="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Loading...
+          </span>
+        </mat-option>
+        <mat-option *ngFor="let item of fixedItems" [value]="item.id">
+          {{ item.name }}
+        </mat-option>
+      </mat-select>
+      <mat-hint>Select the specific item type</mat-hint>
+    </mat-form-field>
+  </div>
+
+  <!-- Dynamic Attributes -->
+  <div class="border-t pt-6">
+    <h4 class="text-md font-medium text-gray-900 mb-4">Additional Attributes</h4>
+    <div *ngIf="loading.attributes" class="flex items-center justify-center py-8">
+      <svg class="animate-spin -ml-1 mr-3 h-6 w-6 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      <span class="text-gray-500">Loading attributes...</span>
+    </div>
+    <div *ngIf="!loading.attributes && attributes.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div *ngFor="let attribute of attributes; let i = index">
+        <mat-form-field appearance="outline" class="w-full" *ngIf="attribute.type === 'select'">
+          <mat-label>{{ attribute.name }}</mat-label>
+          <mat-select [formControl]="$any(getAttributeFormGroup(i).get('att_option_id'))" required [disabled]="loading.attributes">
+            <mat-option *ngFor="let option of getAttributeOptions(attribute)" [value]="option.id">
+              {{ option.value }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full" *ngIf="attribute.type === 'text'">
+          <mat-label>{{ attribute.name }}</mat-label>
+          <input matInput [formControl]="$any(getAttributeFormGroup(i).get('att_option_id'))" required [disabled]="loading.attributes">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full" *ngIf="attribute.type === 'number'">
+          <mat-label>{{ attribute.name }}</mat-label>
+          <input matInput type="number" [formControl]="$any(getAttributeFormGroup(i).get('att_option_id'))" required [disabled]="loading.attributes">
+        </mat-form-field>
+      </div>
+    </div>
+    <div *ngIf="!loading.attributes && attributes.length === 0" class="text-gray-500 text-sm py-4">
+      No additional attributes required for this category.
+    </div>
+  </div>
+</div>

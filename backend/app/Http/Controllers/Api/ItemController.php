@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Services\ItemHistoryService;
 
 class ItemController extends Controller
 {
@@ -252,5 +253,399 @@ class ItemController extends Controller
             'page'     => $result->currentPage(),
             'pageSize' => $result->perPage(),
         ]);
+    }
+
+    /**
+     * GET /api/items/{id} - Get single asset details
+     */
+    public function show($id)
+    {
+        // Use the same query structure as index but for a single item
+        $item = DB::table('items')
+            ->join('fixed_items', 'items.fixed_item_id', '=', 'fixed_items.id')
+            ->join('sub_category', 'fixed_items.sub_id', '=', 'sub_category.id')
+            ->join('categories', 'sub_category.cat_id', '=', 'categories.id')
+            ->leftJoin('status', 'items.status_id', '=', 'status.id')
+            ->leftJoin('locations', 'items.location_id', '=', 'locations.id')
+            ->leftJoin('floors', 'items.floor_id', '=', 'floors.id')
+            ->leftJoin('suppliers', 'items.supplier_id', '=', 'suppliers.id')
+            ->leftJoin('brands', 'items.brand_id', '=', 'brands.id')
+            ->leftJoin('colors', 'items.color_id', '=', 'colors.id')
+            ->leftJoin('users as holders', 'items.holder_user_id', '=', 'holders.id')
+            ->where('items.id', $id)
+            ->select([
+                'items.id',
+                'items.fixed_item_id',
+                'items.description',
+                'items.sn',
+                'items.color_id',
+                'items.brand_id',
+                'items.pr_id',
+                'items.acquisition_cost',
+                'items.acquisition_date',
+                'items.warranty_start_date',
+                'items.warranty_end_date',
+                'items.budget_code',
+                'items.budget_donor',
+                'items.supplier_id',
+                'items.location_id',
+                'items.floor_id',
+                'items.status_id',
+                DB::raw('COALESCE(items.Notes, items.notes) as notes'),
+                'items.holder_user_id',
+                'items.created_by',
+                'items.created_at',
+                'items.updated_at',
+
+                'fixed_items.name as fixed_item_name',
+                'categories.id as category_id',
+                'categories.name as category_name',
+                'sub_category.id as sub_category_id',
+                'sub_category.name as sub_category_name',
+
+                'status.name as status_name',
+                'locations.name as location_name',
+                'floors.name as floor_name',
+                'suppliers.name as supplier_name',
+                'brands.name as brand_name',
+                'colors.name as color_name',
+                'holders.name as holder_name',
+            ])
+            ->first();
+
+        if (!$item) {
+            return response()->json(['error' => 'Item not found'], 404);
+        }
+
+        // Fetch attributes for this item
+        $attrRows = DB::table('item_attribute_values as iav')
+            ->join('attributes as a', 'iav.att_id', '=', 'a.id')
+            ->leftJoin('att_options as ao', 'ao.id', '=', 'iav.att_option_id')
+            ->where('iav.item_id', $id)
+            ->select([
+                'a.name as attribute',
+                'ao.value as option_value',
+                'iav.att_id',
+                'iav.att_option_id',
+            ])
+            ->orderBy('a.name')
+            ->get();
+
+        $attrs = [];
+        foreach ($attrRows as $ar) {
+            $attrs[$ar->attribute] = $ar->option_value;
+        }
+
+        $result = [
+            'id'                   => $item->id,
+            'sn'                   => $item->sn,
+            'fixed_item_id'        => $item->fixed_item_id,
+            'fixed_item_name'      => $item->fixed_item_name,
+
+            'description'          => $item->description,
+            'category_id'          => $item->category_id,
+            'category_name'        => $item->category_name,
+            'sub_category_id'      => $item->sub_category_id,
+            'sub_category_name'    => $item->sub_category_name,
+
+            'status_id'            => $item->status_id,
+            'status_name'          => $item->status_name,
+            'location_id'          => $item->location_id,
+            'location_name'        => $item->location_name,
+            'floor_id'             => $item->floor_id,
+            'floor_name'           => $item->floor_name,
+            'supplier_id'          => $item->supplier_id,
+            'supplier_name'        => $item->supplier_name,
+            'brand_id'             => $item->brand_id,
+            'brand_name'           => $item->brand_name,
+            'color_id'             => $item->color_id,
+            'color_name'           => $item->color_name,
+            'holder_user_id'       => $item->holder_user_id,
+            'holder_name'          => $item->holder_name,
+
+            'acquisition_date'      => $item->acquisition_date,
+            'acquisition_cost'      => $item->acquisition_cost !== null ? (float)$item->acquisition_cost : null,
+            'warranty_start_date'  => $item->warranty_start_date,
+            'warranty_end_date'    => $item->warranty_end_date,
+
+            'budget_code'          => $item->budget_code,
+            'budget_donor'         => $item->budget_donor,
+            'pr_id'                => $item->pr_id,
+            'notes'                => $item->notes,
+            'created_at'           => $item->created_at,
+            'updated_at'           => $item->updated_at,
+
+            'attributes'           => (object)$attrs,
+        ];
+
+        return response()->json($result);
+    }
+
+    /**
+     * POST /api/items - Create new asset
+     */
+    public function store(Request $request)
+    {
+        // Validate the request
+        $validated = $request->validate([
+            'fixed_item_id' => 'required|integer|exists:fixed_items,id',
+            'supplier_id' => 'nullable|integer|exists:suppliers,id',
+            'brand_id' => 'nullable|integer|exists:brands,id',
+            'color_id' => 'nullable|integer|exists:colors,id',
+            'pr_id' => 'nullable|max:255',
+            'acquisition_cost' => 'nullable|numeric|min:0',
+            'acquisition_date' => 'nullable|date',
+            'warranty_start_date' => 'nullable|date',
+            'warranty_end_date' => 'nullable|date',
+            'location_id' => 'nullable|integer|exists:locations,id',
+            'floor_id' => 'nullable|integer|exists:floors,id',
+            'holder_user_id' => 'nullable|integer|exists:users,id',
+            'status_id' => 'nullable|integer|exists:status,id',
+            'description' => 'nullable|string|max:255',
+            'notes' => 'nullable|string',
+            'budget_code' => 'nullable|string|max:255',
+            'budget_donor' => 'nullable|string|max:255',
+            'attributes' => 'nullable|array',
+            'attributes.*.att_id' => 'required_with:attributes|string',
+            'attributes.*.att_option_id' => 'required_with:attributes|integer',
+        ]);
+
+        // Extract attributes before inserting into items table
+        $attributes = $validated['attributes'] ?? null;
+        unset($validated['attributes']);
+
+        // Format dates for MySQL compatibility
+        $dateFields = ['acquisition_date', 'warranty_start_date', 'warranty_end_date'];
+        foreach ($dateFields as $field) {
+            if (!empty($validated[$field])) {
+                // Parse the date and format it for MySQL
+                $validated[$field] = \Carbon\Carbon::parse($validated[$field])->format('Y-m-d H:i:s');
+            }
+        }
+
+        // Generate SN if not provided (AST-YYYY-NNNN format)
+        if (!isset($validated['sn']) || empty($validated['sn'])) {
+            $year = date('Y');
+            $lastItem = DB::table('items')
+                ->where('sn', 'like', "AST-{$year}-%")
+                ->orderBy('id', 'desc')
+                ->first();
+
+            if ($lastItem) {
+                $lastNumber = (int) substr($lastItem->sn, -4);
+                $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+            } else {
+                $newNumber = '0001';
+            }
+
+            $validated['sn'] = "AST-{$year}-{$newNumber}";
+        }
+
+        // Set created_by from authenticated user
+        $validated['created_by'] = auth()->id();
+        $validated['created_at'] = now();
+        $validated['updated_at'] = now();
+
+        // Create the item
+        $itemId = DB::table('items')->insertGetId($validated);
+
+        // Handle attributes
+        if (isset($attributes) && is_array($attributes)) {
+            // Get category for this fixed item to validate attributes
+            $categoryId = DB::table('fixed_items')
+                ->join('sub_category', 'fixed_items.sub_id', '=', 'sub_category.id')
+                ->where('fixed_items.id', $validated['fixed_item_id'])
+                ->value('sub_category.cat_id');
+
+            foreach ($attributes as $attribute) {
+                $attId = $attribute['att_id'];
+                $attOptionId = $attribute['att_option_id'];
+
+                // Validate that attribute exists and is allowed for category
+                $attrExists = DB::table('attributes')->where('id', $attId)->exists();
+                if (!$attrExists) continue;
+
+                $allowedForCategory = DB::table('category_attributes')
+                    ->where('category_id', $categoryId)
+                    ->where('att_id', $attId)
+                    ->exists();
+
+                if (!$allowedForCategory) continue;
+
+                // Validate that option exists for this attribute
+                $optionExists = DB::table('att_options')
+                    ->where('id', $attOptionId)
+                    ->where('att_id', $attId)
+                    ->exists();
+
+                if (!$optionExists) continue;
+
+                // Check if option is allowed for subcategory
+                $subCategoryId = DB::table('fixed_items')
+                    ->where('id', $validated['fixed_item_id'])
+                    ->value('sub_id');
+
+                $allowedForSubcategory = DB::table('sub_category_att_options')
+                    ->where('sub_category_id', $subCategoryId)
+                    ->where('att_option_id', $attOptionId)
+                    ->exists();
+
+                if (!$allowedForSubcategory) continue;
+
+                // Insert attribute value
+                DB::table('item_attribute_values')->insert([
+                    'item_id' => $itemId,
+                    'att_id' => $attId,
+                    'att_option_id' => $attOptionId,
+                ]);
+            }
+        }
+
+        // Log item creation
+        ItemHistoryService::logItemCreated($itemId, $validated);
+
+        // Return the created item
+        return response()->json([
+            'id' => $itemId,
+            'sn' => $validated['sn'],
+            'fixed_item_id' => $validated['fixed_item_id'],
+            'created_at' => $validated['created_at'],
+            'updated_at' => $validated['updated_at'],
+        ], 201);
+    }
+
+    /**
+     * PUT /api/items/{id} - Update asset information
+     */
+    public function update(Request $request, $id)
+    {
+        // Get the current item data for comparison
+        $currentItem = DB::table('items')->where('id', $id)->first();
+        if (!$currentItem) {
+            return response()->json(['error' => 'Item not found'], 404);
+        }
+
+        // Validate the request
+        $validated = $request->validate([
+            'description' => 'nullable|string|max:255',
+            'sn' => 'nullable|string|max:255',
+            'color_id' => 'nullable|integer|exists:colors,id',
+            'brand_id' => 'nullable|integer|exists:brands,id',
+            'supplier_id' => 'nullable|integer|exists:suppliers,id',
+            'status_id' => 'nullable|integer|exists:status,id',
+            'location_id' => 'nullable|integer|exists:locations,id',
+            'floor_id' => 'nullable|integer|exists:floors,id',
+            'holder_user_id' => 'nullable|integer|exists:users,id',
+            'pr_id' => 'nullable|max:255',
+            'acquisition_date' => 'nullable|date',
+            'acquisition_cost' => 'nullable|numeric|min:0',
+            'warranty_start_date' => 'nullable|date',
+            'warranty_end_date' => 'nullable|date',
+            'budget_code' => 'nullable|string|max:255',
+            'budget_donor' => 'nullable|string|max:255',
+            'notes' => 'nullable|string',
+            'attributes' => 'nullable|array',
+            'attributes.*' => 'nullable|string|max:255',
+        ]);
+
+        // Format dates for MySQL compatibility
+        $dateFields = ['acquisition_date', 'warranty_start_date', 'warranty_end_date'];
+        foreach ($dateFields as $field) {
+            if (!empty($validated[$field])) {
+                // Parse the date and format it for MySQL
+                $validated[$field] = \Carbon\Carbon::parse($validated[$field])->format('Y-m-d H:i:s');
+            }
+        }
+
+        // Track changes for history logging
+        $changes = [];
+        $oldValues = [];
+        $newValues = [];
+
+        // Compare each field and track changes
+        $fieldsToCheck = [
+            'description', 'sn', 'color_id', 'brand_id', 'supplier_id',
+            'status_id', 'location_id', 'floor_id', 'holder_user_id',
+            'acquisition_date', 'acquisition_cost', 'warranty_start_date', 'warranty_end_date',
+            'budget_code', 'budget_donor', 'notes'
+        ];
+
+        foreach ($fieldsToCheck as $field) {
+            if (isset($validated[$field]) && $currentItem->$field != $validated[$field]) {
+                $changes[] = $field;
+                $oldValues[$field] = $currentItem->$field;
+                $newValues[$field] = $validated[$field];
+            }
+        }
+
+        // Update the item
+        DB::table('items')
+            ->where('id', $id)
+            ->update(array_merge($validated, [
+                'updated_at' => now(),
+            ]));
+
+        // Handle attributes update
+        if (isset($validated['attributes']) && is_array($validated['attributes'])) {
+            // Get current category to validate attributes
+            $categoryId = DB::table('items')
+                ->join('fixed_items', 'items.fixed_item_id', '=', 'fixed_items.id')
+                ->join('sub_category', 'fixed_items.sub_id', '=', 'sub_category.id')
+                ->where('items.id', $id)
+                ->value('sub_category.cat_id');
+
+            foreach ($validated['attributes'] as $attrName => $optionValue) {
+                // Find attribute
+                $attr = DB::table('attributes')->where('name', $attrName)->first();
+                if (!$attr) continue;
+
+                // Check if attribute is allowed for category
+                $allowed = DB::table('category_attributes')
+                    ->where('category_id', $categoryId)
+                    ->where('att_id', $attr->id)
+                    ->exists();
+
+                if (!$allowed) continue;
+
+                // Find or create option
+                $option = DB::table('att_options')
+                    ->where('att_id', $attr->id)
+                    ->where('value', $optionValue)
+                    ->first();
+
+                if (!$option) continue;
+
+                // Update or insert attribute value
+                DB::table('item_attribute_values')->updateOrInsert(
+                    ['item_id' => $id, 'att_id' => $attr->id],
+                    ['att_option_id' => $option->id]
+                );
+
+                // Track attribute changes
+                $currentAttrValue = DB::table('item_attribute_values as iav')
+                    ->join('att_options as ao', 'iav.att_option_id', '=', 'ao.id')
+                    ->where('iav.item_id', $id)
+                    ->where('iav.att_id', $attr->id)
+                    ->value('ao.value');
+
+                if ($currentAttrValue != $optionValue) {
+                    $changes[] = "attribute:{$attrName}";
+                    $oldValues["attribute:{$attrName}"] = $currentAttrValue;
+                    $newValues["attribute:{$attrName}"] = $optionValue;
+                }
+            }
+        }
+
+        // Log the update if there were changes
+        if (!empty($changes)) {
+            ItemHistoryService::logItemUpdated($id, [
+                'changes' => $changes,
+                'old_values' => $oldValues,
+                'new_values' => $newValues
+            ]);
+        }
+
+        // Return the updated item
+        return $this->show($id);
     }
 }

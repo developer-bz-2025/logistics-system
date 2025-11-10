@@ -110,8 +110,9 @@
           <mat-label>{{ attr.name }}</mat-label>
           <mat-select *ngIf="attr.type === 'select'" [formControl]="$any(form.get(attr.field_name))" (selectionChange)="updateUrl({page:1})">
             <mat-option [value]="null">All</mat-option>
-            <mat-option *ngFor="let opt of attr.options" [value]="opt.id">{{ opt.label }}</mat-option>
+            <mat-option *ngFor="let opt of attr.options" [value]="opt.id">{{ opt.value }}</mat-option>
           </mat-select>
+          <!-- {{attr | json}} -->
           <input *ngIf="attr.type === 'text'" matInput [formControl]="$any(form.get(attr.field_name))" (change)="updateUrl({page:1})">
           <input *ngIf="attr.type === 'number'" matInput type="number" [formControl]="$any(form.get(attr.field_name))" (change)="updateUrl({page:1})">
         </mat-form-field>
@@ -213,7 +214,7 @@
                     'bg-pink-100 text-pink-800': r.location_name === 'Burj',
                     'bg-indigo-100 text-indigo-800': r.location_name === 'Tripoli',
                     'bg-orange-100 text-orange-800': r.location_name === 'Akkar',
-                    'bg-gray-100 text-gray-800': true
+                    'bg-green-100 text-gray-800': true
                   }">
               {{ r.location_name }}
             </span>

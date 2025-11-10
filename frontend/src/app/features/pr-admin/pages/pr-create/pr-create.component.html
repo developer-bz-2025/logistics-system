@@ -84,7 +84,7 @@
                     <!-- Category -->
                     <select class="input input-lg" formControlName="category">
                       <option [ngValue]="null" disabled>Select category ..</option>
-                      <option *ngFor="let c of categories" [ngValue]="c.id">{{ c.label }}</option>
+                      <option *ngFor="let c of categories" [ngValue]="c.id">{{ c.value }}</option>
                     </select>
                   </div>
 
@@ -92,7 +92,7 @@
                     <label class="label">Sub-Category<span class="req">*</span></label>
                     <select class="input input-lg" formControlName="subCategory">
                       <option [ngValue]="null" disabled>Select Sub Category..</option>
-                      <option *ngFor="let s of subOptions[i]" [ngValue]="s.id">{{ s.label }}</option>
+                      <option *ngFor="let s of subOptions[i]" [ngValue]="s.id">{{ s.value }}</option>
                     </select>
                   </div>
 
@@ -100,7 +100,7 @@
                     <label class="label">Item<span class="req">*</span></label>
                     <select class="input input-lg" formControlName="item">
                       <option [ngValue]="null" disabled>Select item...</option>
-                      <option *ngFor="let it of itemOptions[i]" [ngValue]="it.id">{{ it.label }}</option>
+                      <option *ngFor="let it of itemOptions[i]" [ngValue]="it.id">{{ it.value }}</option>
                     </select>
                   </div>
 

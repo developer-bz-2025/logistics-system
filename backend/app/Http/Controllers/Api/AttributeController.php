@@ -5,26 +5,37 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class AttributeController extends Controller
 {
-    // GET /api/categories/{category}/attributes
+    // GET /api/categories/{category}/attributes?sub_category_id={id}
     public function byCategory(Request $request, Category $category)
     {
-        // Assuming tables: category_attributes(id,category_id,name,field_name,type)
-        // and attribute_options(id,category_attribute_id,value,label)
+        $subCategoryId = $request->query('sub_category_id');
+
         $attrs = $category->attributes()
-            ->with(['options' => fn($q) => $q->orderBy('value')])
-            ->orderBy('id')
+            ->orderBy('name')
             ->get()
-            ->map(function ($a) {
+            ->map(function ($attribute) use ($subCategoryId) {
+                $optionsQuery = DB::table('att_options')
+                    ->where('att_id', $attribute->id)
+                    ->orderBy('value');
+
+                // If sub_category_id is provided, filter options by sub-category constraints
+                if ($subCategoryId) {
+                    $optionsQuery->join('sub_category_att_options', 'att_options.id', '=', 'sub_category_att_options.att_option_id')
+                        ->where('sub_category_att_options.sub_category_id', $subCategoryId);
+                }
+
+                $options = $optionsQuery->select('att_options.id', 'att_options.value')->get();
+
                 return [
-                    'name'       => $a->name,
-                    'field_name' => $a->field_name,
-                    'type'       => $a->type, // 'select'|'text'|'number'
-                    'options'    => $a->options->map(fn($o) => [
+                    'name'       => $attribute->name,
+                    'field_name' => strtolower(str_replace(' ', '_', $attribute->name)),
+                    'type'       => 'select', // All attributes are select type based on the data structure
+                    'options'    => $options->map(fn($o) => [
                         'id'    => $o->id,
-                        // 'label' => $o->label,
                         'value' => $o->value,
                     ])->values(),
                 ];
@@ -33,4 +44,3 @@ class AttributeController extends Controller
         return response()->json(['data' => $attrs]);
     }
 }
- 

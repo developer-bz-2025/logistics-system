@@ -5,19 +5,27 @@ import { Injectable } from '@angular/core';
 })
 export class JwtService {
 
-  private TOKEN_KEY = 'access_token';
+  private ACCESS_TOKEN_KEY = 'access_token';
+  private REFRESH_TOKEN_KEY = 'refresh_token';
 
 
   constructor() { }
 
-  
-  // getToken(): string | null {
-  //   return localStorage.getItem('access_token'); // adjust if stored under different key
-  // }
+  // Access Token methods
+  getToken(): string | null { return localStorage.getItem(this.ACCESS_TOKEN_KEY); }
+  setToken(token: string) { localStorage.setItem(this.ACCESS_TOKEN_KEY, token); }
+  clearToken() { localStorage.removeItem(this.ACCESS_TOKEN_KEY); }
 
-  getToken(): string | null { return localStorage.getItem(this.TOKEN_KEY); }
-  setToken(token: string) { localStorage.setItem(this.TOKEN_KEY, token); }
-  clearToken() { localStorage.removeItem(this.TOKEN_KEY); }
+  // Refresh Token methods
+  getRefreshToken(): string | null { return localStorage.getItem(this.REFRESH_TOKEN_KEY); }
+  setRefreshToken(token: string) { localStorage.setItem(this.REFRESH_TOKEN_KEY, token); }
+  clearRefreshToken() { localStorage.removeItem(this.REFRESH_TOKEN_KEY); }
+
+  // Clear all tokens
+  clearAllTokens() {
+    this.clearToken();
+    this.clearRefreshToken();
+  }
 
   private b64urlDecode(s: string) {
     s = s.replace(/-/g, '+').replace(/_/g, '/');

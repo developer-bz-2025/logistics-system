@@ -1,0 +1,347 @@
+<div class="asset-detail-container">
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="loading-card">
+      <mat-spinner diameter="50" color="primary"></mat-spinner>
+      <h3>Loading asset details...</h3>
+      <p>Please wait while we fetch the information</p>
+    </div>
+  </div>
+
+  <!-- Asset Details -->
+  <div *ngIf="!isLoading && asset" class="asset-detail-content app-card">
+    <!-- Header Section -->
+    <div class="header-section">
+      <div class="header-content">
+        <button mat-icon-button (click)="goBack()" class="back-button" matTooltip="Back to assets list">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        <div class="title-section">
+          <div class="asset-badge">
+            <mat-icon class="asset-icon">inventory_2</mat-icon>
+            <span class="asset-type">{{ asset.category_name }}</span>
+          </div>
+          <h1 class="asset-title">{{ asset.fixed_item_name }}</h1>
+          <p class="asset-subtitle">{{ asset.sn || 'Asset #' + asset.id }}</p>
+        </div>
+        <div class="status-section">
+          <div class="status-chip" [ngClass]="getStatusClass(asset.status_name)">
+            <mat-icon class="status-icon">{{ getStatusIcon(asset.status_name) }}</mat-icon>
+            <span>{{ asset.status_name || 'Unknown' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="action-buttons">
+        <button
+          *ngIf="!isEditing"
+          mat-raised-button
+          color="primary"
+          (click)="toggleEdit()"
+          class="edit-button">
+          <mat-icon>edit</mat-icon>
+          <span>Edit Asset</span>
+        </button>
+        <div *ngIf="isEditing" class="edit-actions">
+          <button
+            mat-stroked-button
+            (click)="toggleEdit()"
+            class="cancel-button">
+            <mat-icon>cancel</mat-icon>
+            <span>Cancel</span>
+          </button>
+          <button
+            mat-raised-button
+            color="primary"
+            (click)="saveAsset()"
+            [disabled]="assetForm.invalid || isSaving"
+            class="save-button">
+            <mat-icon *ngIf="!isSaving">save</mat-icon>
+            <mat-spinner *ngIf="isSaving" diameter="20" color="accent"></mat-spinner>
+            <span>{{ isSaving ? 'Saving...' : 'Save Changes' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Compact Information Display -->
+    <div *ngIf="!isEditing" class="compact-info-section">
+      <div class="info-table">
+        <div class="info-row">
+          <div class="info-cell">
+            <mat-icon>tag</mat-icon>
+            <div class="cell-content">
+              <label>Serial Number</label>
+              <span>{{ asset.sn || 'Not specified' }}</span>
+            </div>
+          </div>
+          <div class="info-cell">
+            <mat-icon>category</mat-icon>
+            <div class="cell-content">
+              <label>Category</label>
+              <span>{{ asset.category_name }} > {{ asset.sub_category_name }}</span>
+            </div>
+          </div>
+          <div class="info-cell">
+            <mat-icon>place</mat-icon>
+            <div class="cell-content">
+              <label>Location</label>
+              <span>{{ asset.location_name || 'Not assigned' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-row">
+          <div class="info-cell">
+            <mat-icon>description</mat-icon>
+            <div class="cell-content">
+              <label>Description</label>
+              <span>{{ asset.description || 'No description available' }}</span>
+            </div>
+          </div>
+          <div class="info-cell">
+            <mat-icon>person</mat-icon>
+            <div class="cell-content">
+              <label>Current Holder</label>
+              <span>{{ asset.holder_name || 'Not assigned' }}</span>
+            </div>
+          </div>
+          <div class="info-cell">
+            <mat-icon>attach_money</mat-icon>
+            <div class="cell-content">
+              <label>Acquisition Cost</label>
+              <span class="cost-amount">{{ asset.acquisition_cost ? ('$' + asset.acquisition_cost) : 'Not specified' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-row">
+          <div class="info-cell">
+            <mat-icon>store</mat-icon>
+            <div class="cell-content">
+              <label>Supplier</label>
+              <span>{{ asset.supplier_name || 'Not specified' }}</span>
+            </div>
+          </div>
+          <div class="info-cell">
+            <mat-icon>build</mat-icon>
+            <div class="cell-content">
+              <label>Brand</label>
+              <span>{{ asset.brand_name || 'Not specified' }}</span>
+            </div>
+          </div>
+          <div class="info-cell">
+            <mat-icon>verified</mat-icon>
+            <div class="cell-content">
+              <label>Warranty</label>
+              <span>{{ getWarrantyPeriod(asset) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detailed Information -->
+    <div *ngIf="!isEditing" class="details-section">
+      <mat-card class="details-card">
+        <mat-card-header>
+          <mat-card-title>Detailed Information</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="details-grid">
+            <!-- Specifications -->
+            <div class="detail-group">
+              <h3 class="group-title">
+                <mat-icon>science</mat-icon>
+                Specifications
+              </h3>
+              <div class="detail-items">
+                <div class="detail-item">
+                  <label>Color</label>
+                  <span>{{ asset.color_name || 'Not specified' }}</span>
+                </div>
+                <div class="detail-item">
+                  <label>PR</label>
+                  <span>{{ prCode || 'Not specified' }}</span>
+                </div>
+                <div class="detail-item">
+                  <label>Budget Donor</label>
+                  <span>{{ asset.budget_donor || 'Not specified' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Dynamic Attributes -->
+            <div *ngIf="asset.attributes && getAttributeKeys(asset.attributes).length > 0" class="detail-group">
+              <h3 class="group-title">
+                <mat-icon>settings</mat-icon>
+                Additional Attributes
+              </h3>
+              <div class="detail-items">
+                <div *ngFor="let key of getAttributeKeys(asset.attributes)" class="detail-item">
+                  <label>{{ getAttributeDisplayName(key) }}</label>
+                  <span>{{ asset.attributes[key] || 'Not specified' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Notes -->
+            <div *ngIf="asset.notes" class="detail-group full-width">
+              <h3 class="group-title">
+                <mat-icon>notes</mat-icon>
+                Notes
+              </h3>
+              <div class="notes-content">
+                <p>{{ asset.notes }}</p>
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Edit Mode -->
+    <form *ngIf="isEditing" [formGroup]="assetForm" class="edit-mode">
+      <mat-card class="asset-card">
+        <mat-card-header>
+          <mat-card-title>Edit Asset Information</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="form-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Serial Number</mat-label>
+              <input matInput formControlName="sn">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Fixed Item</mat-label>
+              <mat-select formControlName="fixed_item_id" required>
+                <mat-option *ngFor="let item of fixedItems" [value]="item.id">
+                  {{ item.name }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Description</mat-label>
+              <textarea matInput formControlName="description" rows="3"></textarea>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Status</mat-label>
+              <mat-select formControlName="status_id">
+                <mat-option *ngFor="let status of statuses" [value]="status.id">
+                  {{ status.name }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Location</mat-label>
+              <mat-select formControlName="location_id">
+                <mat-option *ngFor="let location of locations" [value]="location.id">
+                  {{ location.name }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Floor</mat-label>
+              <mat-select formControlName="floor_id">
+                <mat-option *ngFor="let floor of floors" [value]="floor.id">
+                  {{ floor.name }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Supplier</mat-label>
+              <mat-select formControlName="supplier_id">
+                <mat-option *ngFor="let supplier of suppliers" [value]="supplier.id">
+                  {{ supplier.name }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Holder</mat-label>
+              <mat-select formControlName="holder_user_id">
+                <mat-option *ngFor="let user of users" [value]="user.id">
+                  {{ user.name }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Acquisition Date</mat-label>
+              <input matInput [matDatepicker]="acquisitionPicker" formControlName="acquisition_date">
+              <mat-datepicker-toggle matSuffix [for]="acquisitionPicker"></mat-datepicker-toggle>
+              <mat-datepicker #acquisitionPicker></mat-datepicker>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Acquisition Cost</mat-label>
+              <input matInput type="number" formControlName="acquisition_cost">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Warranty Start Date</mat-label>
+              <input matInput [matDatepicker]="warrantyStartPicker" formControlName="warranty_start_date">
+              <mat-datepicker-toggle matSuffix [for]="warrantyStartPicker"></mat-datepicker-toggle>
+              <mat-datepicker #warrantyStartPicker></mat-datepicker>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Warranty End Date</mat-label>
+              <input matInput [matDatepicker]="warrantyEndPicker" formControlName="warranty_end_date">
+              <mat-datepicker-toggle matSuffix [for]="warrantyEndPicker"></mat-datepicker-toggle>
+              <mat-datepicker #warrantyEndPicker></mat-datepicker>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Budget Code</mat-label>
+              <input matInput formControlName="budget_code">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Budget Donor</mat-label>
+              <input matInput formControlName="budget_donor">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>PR ID</mat-label>
+              <input matInput type="number" formControlName="pr_id">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Notes</mat-label>
+              <textarea matInput formControlName="notes" rows="3"></textarea>
+            </mat-form-field>
+
+            <!-- Dynamic Attributes from Asset Response -->
+            <div *ngIf="asset?.attributes && getAttributeKeys(asset.attributes).length > 0" class="dynamic-attributes">
+              <h4>Additional Attributes</h4>
+              <div *ngFor="let key of getAttributeKeys(asset.attributes)" class="attribute-row">
+                <mat-form-field appearance="outline" class="attribute-field">
+                  <mat-label>{{ getAttributeDisplayName(key) }}</mat-label>
+                  <input matInput [formControlName]="key" [value]="asset.attributes[key]">
+                </mat-form-field>
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </form>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="!isLoading && !asset" class="error-container">
+    <mat-icon color="warn">error</mat-icon>
+    <h2>Asset Not Found</h2>
+    <p>The requested asset could not be found.</p>
+    <button mat-raised-button (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon>
+      Back to Assets
+    </button>
+  </div>
+</div>

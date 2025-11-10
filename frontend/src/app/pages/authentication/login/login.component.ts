@@ -45,10 +45,10 @@ export class AppSideLoginComponent {
 
     this.auth.login(this.loginForm.value).subscribe({
       next: (res) => {
-        console.log('[Login] Login success, token length:', res?.access_token ?? 0);
+        console.log('[Login] Login success, access_token length:', res?.access_token?.length ?? 0, 'refresh_token length:', res?.refresh_token?.length ?? 0);
         const prePayload = this.jwt.getPayload<any>();
         console.log('[Login] Decoded payload before hydrate:', prePayload);
-        this.auth.initializeFromToken(res.access_token).subscribe((user) => {
+        this.auth.initializeFromTokens(res.access_token, res.refresh_token).subscribe((user) => {
           console.log('[Login] User loaded after hydrate:', user);
           const roles = extractRoles(user);
           console.log('[Login] roles:', roles);

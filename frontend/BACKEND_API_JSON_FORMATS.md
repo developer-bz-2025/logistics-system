@@ -73,9 +73,12 @@ notes, holder_user_id, created_by, created_at, updated_at
 
 ## 4. GET /api/categories/{categoryId}/attributes
 
-**Description:** Get dynamic attributes for a specific category (Material, Size, etc.)
+**Description:** Get dynamic attributes for a specific category, with options filtered by sub-category (Material, Size, etc.)
 
-**Example:** GET /api/categories/1/attributes
+**Query Parameters:**
+- `sub_category_id` (optional) - Filter attribute options by sub-category
+
+**Example:** GET /api/categories/1/attributes?sub_category_id=10
 
 **Response:**
 ```json
@@ -86,10 +89,10 @@ notes, holder_user_id, created_by, created_at, updated_at
       "field_name": "material_id",
       "type": "select",
       "options": [
-        { "id": 1, "label": "Wood" },
-        { "id": 2, "label": "Metal" },
-        { "id": 3, "label": "Plastic" },
-        { "id": 4, "label": "Aluminum&Stainless" }
+        { "id": 1, "value": "Wood" },
+        { "id": 2, "value": "Metal" },
+        { "id": 3, "value": "Plastic" },
+        { "id": 16, "value": "Aluminum" }
       ]
     },
     {
@@ -97,10 +100,10 @@ notes, holder_user_id, created_by, created_at, updated_at
       "field_name": "size",
       "type": "select",
       "options": [
-        { "id": "small", "label": "small" },
-        { "id": "medium", "label": "medium" },
-        { "id": "large", "label": "large" },
-        { "id": "Double", "label": "Double" }
+        { "id": 11, "value": "large" },
+        { "id": 10, "value": "medium" },
+        { "id": 8, "value": "NA" },
+        { "id": 13, "value": "small" }
       ]
     }
   ]
@@ -363,6 +366,59 @@ GET /api/items?category_id=1&sub_category_id=10&status_id=1&page=1&pageSize=10&s
   ]
 }
 ```
+
+---
+
+## 11. GET /api/prs
+
+**Description:** Get all purchase requests for selection in asset wizard
+
+**Response:**
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "pr_code": "PR-2024-001",
+      "pr_date": "2024-01-15",
+      "total_price": 2500.00,
+      "status": "approved"
+    },
+    {
+      "id": 2,
+      "pr_code": "PR-2024-002",
+      "pr_date": "2024-02-10",
+      "total_price": 1800.00,
+      "status": "pending"
+    }
+  ]
+}
+```
+
+---
+
+## 12. GET /api/dashboard/assets-by-location-category
+
+**Description:** Get aggregated asset counts by location and category for dashboard chart
+
+**Response:**
+```json
+{
+  "data": [
+    { "location": "HQ", "category": "Furniture", "count": 45 },
+    { "location": "HQ", "category": "Appliances", "count": 23 },
+    { "location": "HQ", "category": "Electronics", "count": 12 },
+    { "location": "HQ", "category": "IT Equipment", "count": 34 },
+    { "location": "Bekaa", "category": "Furniture", "count": 28 },
+    { "location": "Bekaa", "category": "Appliances", "count": 15 },
+    { "location": "Bekaa", "category": "Electronics", "count": 8 },
+    { "location": "Bekaa", "category": "IT Equipment", "count": 22 }
+  ]
+}
+```
+
+**Implementation Note:**
+This endpoint should aggregate data from the items table, joining with locations and categories tables to count assets grouped by location name and category name.
 
 ---
 

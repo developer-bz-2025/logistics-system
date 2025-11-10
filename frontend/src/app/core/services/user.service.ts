@@ -75,6 +75,21 @@ export class UserService {
     const params: any = { unit_id: unitId, ...opts };
     return this.http.get<Paginated<UnitUserLite>>(`${this.apiUrl}/unit-admin/users`, { params });
   }
+
+  search(search: string, options?: { per_page?: number }): Observable<{ id: number; name: string }[]> {
+    let params = new HttpParams();
+    if (search?.trim()) params = params.set('search', search.trim());
+    if (options?.per_page != null) params = params.set('per_page', String(options.per_page));
+
+    return this.http.get<any>(this.apiUrl, { params }).pipe(
+      map(resp => {
+        if (Array.isArray(resp)) return resp as { id: number; name: string }[];
+        if (Array.isArray(resp?.data)) return resp.data as { id: number; name: string }[];
+        if (Array.isArray(resp?.data?.data)) return resp.data.data as { id: number; name: string }[];
+        return [];
+      })
+    );
+  }
   
   countUnitUsers(unitId: number) {
     return this.http.get<{ total_users: number }>(`${this.apiUrl}/unit-admin/users/count`, { params: { unit_id: unitId } })

@@ -30,14 +30,44 @@ export class AuthService {
   // }
 
   login(data: { email: string; password: string }) {
-    return this.http.post<{ access_token: string }>(`${this.apiUrl}/login`, data);
+    return this.http.post<{ access_token: string; refresh_token: string }>(`${this.apiUrl}/login`, data);
   }
 
-  // Save token and hydrate user from backend
-  initializeFromToken(token: string): Observable<AppUser | null> {
-    console.log('[AuthService] initializeFromToken token len:', token?.length ?? 0);
-    this.jwt.setToken(token);
+  // Save tokens and hydrate user from backend
+  initializeFromTokens(accessToken: string, refreshToken?: string): Observable<AppUser | null> {
+    console.log('[AuthService] initializeFromTokens accessToken len:', accessToken?.length ?? 0);
+    this.jwt.setToken(accessToken);
+    if (refreshToken) {
+      this.jwt.setRefreshToken(refreshToken);
+    }
     return this.loadUserFromApi();
+  }
+
+  // Legacy method for backward compatibility
+  initializeFromToken(token: string): Observable<AppUser | null> {
+    return this.initializeFromTokens(token);
+  }
+
+  // Refresh access token using refresh token
+  refreshToken(): Observable<{ access_token: string }> {
+    const refreshToken = this.jwt.getRefreshToken();
+    if (!refreshToken) {
+      throw new Error('No refresh token available');
+    }
+
+    return this.http.post<{ access_token: string }>(`${this.apiUrl}/refresh`, {
+      refresh_token: refreshToken
+    }).pipe(
+      tap(response => {
+        console.log('[AuthService] Token refreshed successfully');
+        this.jwt.setToken(response.access_token);
+      }),
+      catchError(error => {
+        console.error('[AuthService] Token refresh failed:', error);
+        this.logout(); // Clear all tokens on refresh failure
+        throw error;
+      })
+    );
   }
 
   ensureUserLoaded(): Observable<boolean> {
@@ -62,7 +92,7 @@ export class AuthService {
   // ---- compatibility + helpers
   saveToken(t: string) { this.jwt.setToken(t); }
   getToken() { return this.jwt.getToken(); }
-  logout() { this.jwt.clearToken(); this._user$.next(null); }
+  logout() { this.jwt.clearAllTokens(); this._user$.next(null); }
   isAuthenticated() { return !!this.getToken(); }
   isLoggedIn() { return !!this.getToken() && !this.jwt.isTokenExpired(); }
 
