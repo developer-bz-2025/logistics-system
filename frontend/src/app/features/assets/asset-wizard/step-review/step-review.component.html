@@ -5,7 +5,7 @@
   </div>
 
   <!-- Classification -->
-  <div class="bg-gray-50 p-4 rounded-lg">
+  <div class="bg-gray-50 p-12 rounded-lg app-card">
     <h4 class="font-medium text-gray-900 mb-3">Classification</h4>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
       <div>
@@ -35,9 +35,13 @@
   </div>
 
   <!-- General Information -->
-  <div class="bg-gray-50 p-4 rounded-lg">
+  <div class="bg-gray-50 p-12 rounded-lg app-card">
     <h4 class="font-medium text-gray-900 mb-3">General Information</h4>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+      <div *ngIf="(form.get('general.sn')?.value ?? '') !== ''">
+        <span class="font-medium">Serial Number:</span>
+        <span class="ml-2">{{ form.get('general.sn')?.value }}</span>
+      </div>
       <div *ngIf="getFormValue().general.supplier_id">
         <span class="font-medium">Supplier:</span>
         <span class="ml-2">{{ getLabel('suppliers', getFormValue().general.supplier_id) }}</span>
@@ -74,7 +78,7 @@
   </div>
 
   <!-- Assignment -->
-  <div class="bg-gray-50 p-4 rounded-lg">
+  <div class="bg-gray-50 p-12 rounded-lg app-card">
     <h4 class="font-medium text-gray-900 mb-3">Assignment & Status</h4>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
       <div *ngIf="getFormValue().assignment.location_id">
@@ -87,7 +91,7 @@
       </div>
       <div *ngIf="getFormValue().assignment.holder_user_id">
         <span class="font-medium">Holder:</span>
-        <span class="ml-2">User ID {{ getFormValue().assignment.holder_user_id }}</span>
+        <span class="ml-2">{{ getLabel('users', getFormValue().assignment.holder_user_id) }}</span>
       </div>
       <div *ngIf="getFormValue().assignment.status_id">
         <span class="font-medium">Status:</span>
@@ -97,7 +101,7 @@
   </div>
 
   <!-- Extra Information -->
-  <div class="bg-gray-50 p-4 rounded-lg">
+  <div class="bg-gray-50 p-12 rounded-lg app-card">
     <h4 class="font-medium text-gray-900 mb-3">Additional Information</h4>
     <div class="space-y-3 text-sm">
       <div *ngIf="getFormValue().extra.description">

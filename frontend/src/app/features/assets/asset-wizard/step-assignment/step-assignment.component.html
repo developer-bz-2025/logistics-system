@@ -13,7 +13,7 @@
           {{ location.name }}
         </mat-option>
       </mat-select>
-      <mat-hint>Optional location assignment</mat-hint>
+      <mat-hint>Required location assignment</mat-hint>
     </mat-form-field>
 
     <!-- Floor -->
@@ -24,7 +24,7 @@
           {{ floor.name }}
         </mat-option>
       </mat-select>
-      <mat-hint>Optional floor assignment</mat-hint>
+      <mat-hint>Required floor assignment</mat-hint>
     </mat-form-field>
 
     <!-- Status -->
@@ -35,16 +35,23 @@
           {{ status.name }}
         </mat-option>
       </mat-select>
-      <mat-hint>Optional status assignment</mat-hint>
+      <mat-hint>Required status assignment</mat-hint>
     </mat-form-field>
   </div>
 
-  <!-- Holder (Simple input for now) -->
+  <!-- Holder User -->
   <div>
     <mat-form-field appearance="outline" class="w-full">
-      <mat-label>Holder User ID</mat-label>
-      <input matInput type="number" [formControl]="$any(form.get('holder_user_id'))" placeholder="Enter user ID">
-      <mat-hint>Optional user ID assignment</mat-hint>
+      <mat-label>Holder User</mat-label>
+      <input matInput
+             [formControl]="$any(form.get('holder_user_id'))"
+             [matAutocomplete]="userAuto">
+      <mat-autocomplete #userAuto="matAutocomplete" [displayWith]="displayUser">
+        <mat-option *ngFor="let user of filteredUsers$ | async" [value]="user">
+          {{ user.label || user.name }}
+        </mat-option>
+      </mat-autocomplete>
+      <mat-hint>Optional user assignment - start typing to search</mat-hint>
     </mat-form-field>
   </div>
 </div>

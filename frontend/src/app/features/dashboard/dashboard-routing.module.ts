@@ -17,6 +17,13 @@ const routes: Routes = [
     data: { roles: ['super_admin'] }
   },
 
+  {
+    path: 'my-assets',
+    loadChildren: () =>
+      import('../log-admin/log-admin.module').then(m => m.LogAdminModule),
+    data: { roles: ['log_admin'] }
+  },
+
 
 ];
 

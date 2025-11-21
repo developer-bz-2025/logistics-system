@@ -33,16 +33,28 @@
       </div>
 
       <div class="action-buttons">
-        <button
-          *ngIf="!isEditing"
-          mat-raised-button
+        <ng-container *ngIf="!isEditing; else editActions">
+          <button
+          mat-stroked-button
           color="primary"
-          (click)="toggleEdit()"
-          class="edit-button">
-          <mat-icon>edit</mat-icon>
-          <span>Edit Asset</span>
+          class="move-button"
+          (click)="openMoveAssetDialog()"
+          [disabled]="!canEditAsset || !allowedMoveLocations.length || isRelocating">
+          <mat-icon>swap_horiz</mat-icon>
+          <span>{{ isRelocating ? 'Moving...' : 'Move Asset' }}</span>
         </button>
-        <div *ngIf="isEditing" class="edit-actions">
+          <button
+            mat-raised-button
+            color="primary"
+            (click)="toggleEdit()"
+            class="edit-button"
+            [disabled]="!canEditAsset">
+            <mat-icon>edit</mat-icon>
+            <span>Edit Asset</span>
+          </button>
+        
+        </ng-container>
+        <ng-template #editActions>
           <button
             mat-stroked-button
             (click)="toggleEdit()"
@@ -60,7 +72,7 @@
             <mat-spinner *ngIf="isSaving" diameter="20" color="accent"></mat-spinner>
             <span>{{ isSaving ? 'Saving...' : 'Save Changes' }}</span>
           </button>
-        </div>
+        </ng-template>
       </div>
     </div>
 
@@ -72,7 +84,7 @@
             <mat-icon>tag</mat-icon>
             <div class="cell-content">
               <label>Serial Number</label>
-              <span>{{ asset.sn || 'Not specified' }}</span>
+              <span>{{ asset.sn || 'NA' }}</span>
             </div>
           </div>
           <div class="info-cell">

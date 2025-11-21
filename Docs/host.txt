@@ -1,0 +1,11 @@
+FTP server
+user:logistic-backend
+pass:DuqYVTR)$vgD
+
+user:logistic
+pass:[dR}4xuzh4q4
+
+
+database:
+user: logistic-usr
+pass: z?xlHT0vEN^X

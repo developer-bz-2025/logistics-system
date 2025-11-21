@@ -1,10 +1,13 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, Inject } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, combineLatest, takeUntil } from 'rxjs';
 import { AssetService, CategoryService } from 'src/app/core/services/category.service';
 import { PrService } from 'src/app/core/services/pr.service';
 import { Category, SubCategory, FixedItem } from 'src/app/core/models/reference';
+import { AuthService } from 'src/app/core/services/auth.service';
+import { MatDialog } from '@angular/material/dialog';
+import { MoveAssetDialogComponent } from './move-asset-dialog.component';
 
 @Component({
   selector: 'app-asset-detail',
@@ -36,6 +39,12 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
   brands: any[] = [];
   colors: any[] = [];
   dynamicAttributes: any[] = [];
+  canEditAsset = false;
+  allowedMoveLocations: any[] = [];
+  isRelocating = false;
+  currentUser: any = null;
+  userLocationIds: number[] = [];
+  userRole: string | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -43,10 +52,18 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private assets: AssetService,
     private cats: CategoryService,
-    private prService: PrService
+    private prService: PrService,
+    private auth: AuthService,
+    private dialog: MatDialog
   ) {
     this.assetId = Number(this.route.snapshot.paramMap.get('id'));
     this.assetForm = this.createForm();
+    this.auth.user$.pipe(takeUntil(this.destroy$)).subscribe(user => {
+      this.currentUser = user;
+      this.userRole = this.resolveRoleName(user);
+      this.userLocationIds = ((user as any)?.locations || []).map((loc: any) => loc.id);
+      this.updatePermissions();
+    });
   }
 
   ngOnInit() {
@@ -90,6 +107,7 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
         this.populateForm();
         this.loadCategoryAttributes();
         this.loadPrDetails();
+        this.updatePermissions();
         this.isLoading = false;
       },
       error: (error) => {
@@ -117,6 +135,7 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
         this.floors = floors;
         this.suppliers = suppliers;
         this.users = users;
+        this.updatePermissions();
       },
       error: (error) => {
         console.error('Error loading dropdown data:', error);
@@ -202,6 +221,9 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
   }
 
   toggleEdit() {
+    if (!this.isEditing && !this.canEditAsset) {
+      return;
+    }
     this.isEditing = !this.isEditing;
     if (!this.isEditing) {
       this.populateForm(); // Reset form if canceling edit
@@ -332,5 +354,75 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
     };
 
     return displayNames[key] || key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  }
+
+  private resolveRoleName(user: any): string | null {
+    if (!user) return null;
+    const role = (user.role?.name) ?? (Array.isArray(user.role) ? user.role[0] : user.role) ?? (Array.isArray(user.roles) ? user.roles[0] : user.roles);
+    if (!role) return null;
+    if (typeof role === 'string') return role.toLowerCase();
+    if (typeof role === 'object' && typeof role.name === 'string') return role.name.toLowerCase();
+    return null;
+  }
+
+  private updatePermissions(): void {
+    if (!this.asset || !this.currentUser) {
+      this.canEditAsset = false;
+      return;
+    }
+
+    const role = this.userRole;
+    const assetLocationId = this.asset.location_id;
+    const availableLocations = (this.locations?.length ? this.locations : ((this.currentUser as any)?.locations || [])) || [];
+
+    if (role === 'super_admin') {
+      this.canEditAsset = false;
+      this.allowedMoveLocations = [];
+      return;
+    }
+
+    if (role === 'log_admin') {
+      this.canEditAsset = !!assetLocationId && this.userLocationIds.includes(assetLocationId);
+      this.allowedMoveLocations = availableLocations;
+      return;
+    }
+
+    this.canEditAsset = true;
+    this.allowedMoveLocations = availableLocations;
+  }
+
+  openMoveAssetDialog(): void {
+    if (!this.canEditAsset || !this.allowedMoveLocations?.length || this.isRelocating) {
+      return;
+    }
+    const dialogRef = this.dialog.open(MoveAssetDialogComponent, {
+      width: '420px',
+      data: {
+        locations: this.allowedMoveLocations,
+        currentLocationId: this.asset?.location_id
+      }
+    });
+
+    dialogRef.afterClosed().pipe(takeUntil(this.destroy$)).subscribe((locationId?: number) => {
+      if (locationId && locationId !== this.asset?.location_id) {
+        this.moveAsset(locationId);
+      }
+    });
+  }
+
+  private moveAsset(locationId: number): void {
+    this.isRelocating = true;
+    this.assets.updateAsset(this.assetId, { location_id: locationId }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: updated => {
+        this.asset = updated.data || updated;
+        this.isRelocating = false;
+        this.populateForm();
+        this.updatePermissions();
+      },
+      error: (error) => {
+        console.error('Error moving asset:', error);
+        this.isRelocating = false;
+      }
+    });
   }
 }

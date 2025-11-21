@@ -31,6 +31,7 @@ import { StepGeneralInfoComponent } from './asset-wizard/step-general-info/step-
 import { StepAssignmentComponent } from './asset-wizard/step-assignment/step-assignment.component';
 import { StepExtraInfoComponent } from './asset-wizard/step-extra-info/step-extra-info.component';
 import { StepReviewComponent } from './asset-wizard/step-review/step-review.component';
+import { MoveAssetDialogComponent } from './asset-detail/move-asset-dialog.component';
 
 
 @NgModule({
@@ -42,7 +43,8 @@ import { StepReviewComponent } from './asset-wizard/step-review/step-review.comp
     StepGeneralInfoComponent,
     StepAssignmentComponent,
     StepExtraInfoComponent,
-    StepReviewComponent
+    StepReviewComponent,
+    MoveAssetDialogComponent
   ],
   imports: [
     CommonModule,

@@ -6,7 +6,22 @@ import { NavService } from '../../../../core/services/nav.service';
 @Component({
   selector: 'app-nav-item',
   templateUrl: './nav-item.component.html',
-  styleUrls: [],
+  styles: [`
+    .children-list {
+      padding-left: 12px;
+      border-left: 1px solid rgba(255, 255, 255, 0.08);
+      margin-left: 12px;
+    }
+
+    .children-list .child-menu-item {
+      padding-left: 24px !important;
+      font-size: 0.92rem;
+    }
+
+    .children-list .child-menu-item .hide-menu {
+      opacity: 0.85;
+    }
+  `],
 })
 export class AppNavItemComponent implements OnChanges {
   @Input() item: NavItem | any;

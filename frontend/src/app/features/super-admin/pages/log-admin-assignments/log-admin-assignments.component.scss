@@ -1,0 +1,352 @@
+.log-admin-assignments {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.assigned-admins-card {
+  position: relative;
+}
+
+.card-icon {
+  background: #e0e7ff;
+  color: #312e81;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.assigned-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.assigned-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  background: #f9fafb;
+}
+
+.avatar {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 999px;
+  background: #1d4ed8;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1.125rem;
+}
+
+.admin-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.admin-name {
+  font-weight: 600;
+}
+
+.admin-email {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.chip {
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #0369a1;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.empty-state {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #6b7280;
+}
+
+.empty-state mat-icon {
+  color: #60a5fa;
+}
+
+.page-header h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.5rem;
+}
+
+.page-header p {
+  margin: 0;
+  color: #4b5563;
+}
+
+.role-chip {
+  display: inline-flex;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.assignment-card {
+  overflow: hidden;
+}
+
+.assignment-card mat-card-header {
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.assignment-card .card-icon.primary {
+  background: linear-gradient(135deg, #1d4ed8, #4338ca);
+  color: #fff;
+}
+
+.assignment-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.candidate-search {
+  position: relative;
+  margin-bottom: 1.5rem;
+  max-width: 720px;
+
+  .search-field {
+    width: 100%;
+  }
+}
+
+.candidate-search .mat-progress-bar {
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 100%;
+}
+
+.candidate-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.candidate-name {
+  font-weight: 600;
+}
+
+.candidate-email {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.candidate-role {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: #4b5563;
+}
+
+.candidate-meta {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.assignment-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.selected-user-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 1rem;
+  padding: 1.25rem;
+  border-radius: 1rem;
+  background: linear-gradient(135deg, #f5f3ff, #e0e7ff);
+  position: relative;
+}
+
+.avatar.large {
+  width: 3.75rem;
+  height: 3.75rem;
+  font-size: 1.5rem;
+}
+
+.selected-user-details h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.selected-user-details p {
+  margin: 0.2rem 0 0.5rem;
+  color: #4b5563;
+}
+
+.selected-user-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.location-count {
+  font-size: 0.85rem;
+  color: #4338ca;
+  font-weight: 600;
+}
+
+.selected-user-inline-locations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+  align-items: center;
+}
+
+.selected-user-actions {
+  display: flex;
+  align-items: flex-start;
+}
+
+.assignment-form .full-width {
+  width: 100%;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.location-select {
+  background: #f9fafb;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+}
+
+.field-label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.field-helper {
+  margin: 0 0 0.75rem;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.summary-card {
+  border-radius: 0.75rem;
+  background: #111827;
+  color: #f9fafb;
+  padding: 1.25rem;
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.25);
+}
+
+.summary-card h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+
+.summary-card ul {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.summary-card li {
+  font-size: 0.9rem;
+}
+
+.role-chip.small {
+  font-size: 0.65rem;
+  padding: 0.05rem 0.4rem;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2rem 0;
+  color: #6b7280;
+}
+
+.placeholder mat-icon {
+  font-size: 2rem;
+  width: 2rem;
+  height: 2rem;
+}
+
+.loading-overlay {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 999px;
+  box-shadow: 0 5px 20px rgba(15, 23, 42, 0.1);
+  font-size: 0.85rem;
+  color: #374151;
+}
+
+@media (max-width: 768px) {
+  .selected-user-card {
+    grid-template-columns: 1fr;
+  }
+
+  .assigned-card {
+    grid-template-columns: 1fr;
+    text-align: left;
+  }
+
+  .assigned-card button {
+    width: 100%;
+  }
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .summary-card {
+    order: -1;
+  }
+}
+

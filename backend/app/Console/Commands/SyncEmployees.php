@@ -101,17 +101,49 @@ class SyncEmployees extends Command
                 $emp_name = $emp['VAL'] ?? null;
                 $emp_position = $emp['EMPLOYEE_POSITION'] ?? null;
                 $emp_branch = $emp['BRANCH'] ?? null;
-                $api_email = trim($emp['E_MAIL'] ?? '');
-                $emp_email = (!empty($api_email) && strtolower($api_email) !== 'n/a') ? $api_email : null;
+                
+                // Get business email (EMAIL_ADDRESS) and personal email
+                $business_email_raw = trim($emp['EMAIL_ADDRESS'] ?? '');
+                $business_email = (!empty($business_email_raw) && strtolower($business_email_raw) !== 'n/a') ? $business_email_raw : null;
+                
+                $personal_email_raw = trim($emp['E_MAIL'] ?? $emp['E_MAIL'] ?? '');
+                $personal_email = (!empty($personal_email_raw) && strtolower($personal_email_raw) !== 'n/a') ? $personal_email_raw : null;
 
-
-                // Sync employee using emp_no (from API's ID) as the unique identifier.
-                // If an employee with this emp_no exists, update it. Otherwise, create a new one.
+                // Sync employee using hr_id as the unique identifier
                 $user = User::firstOrNew(['hr_id' => $emp_id]);
+                
+                // Determine which email to use
+                $final_email = null;
+                
+                if ($business_email) {
+                    // Check if business email is already used by a different user
+                    $existingUserWithBusinessEmail = User::where('email', $business_email)
+                        ->where('hr_id', '!=', $emp_id)
+                        ->first();
+                    
+                    if ($existingUserWithBusinessEmail) {
+                        // Business email is taken, use personal email if available
+                        if ($personal_email) {
+                            $final_email = $personal_email;
+                            $this->warn("⚠ Business email '{$business_email}' already used by {$existingUserWithBusinessEmail->name} (HR ID: {$existingUserWithBusinessEmail->hr_id}). Using personal email for {$emp_name} (HR ID: {$emp_id})");
+                        } else {
+                            // No personal email available, still use business email (since unique constraint is removed)
+                            $final_email = $business_email;
+                            $this->warn("⚠ Business email '{$business_email}' already used by {$existingUserWithBusinessEmail->name} (HR ID: {$existingUserWithBusinessEmail->hr_id}). No personal email available, using business email for {$emp_name} (HR ID: {$emp_id})");
+                        }
+                    } else {
+                        // Business email is available, use it
+                        $final_email = $business_email;
+                    }
+                } elseif ($personal_email) {
+                    // No business email, use personal email
+                    $final_email = $personal_email;
+                }
+                
                 $user->fill([
                     'name' => $emp_name,
                     'employee_no' => $emp_no,
-                    'email' => $emp_email ?: null,
+                    'email' => $final_email,
                     'position' => $emp_position,
                     'branch' => $emp_branch,
                 ]);
@@ -120,15 +152,19 @@ class SyncEmployees extends Command
                     $user->password = \Hash::make('welcome123');
                 }
 
-                if (!$emp_email) {
-                    $this->warn("⚠ Skipping {$emp_name} — no valid email");
+                if (!$final_email) {
+                    $this->warn("⚠ Skipping {$emp_name} — no valid email (business or personal)");
                     continue;
                 }
 
-                $user->save();
-                $now=Now();
-
-                $this->line("Synced: {$emp_name} ({$emp_email}) at {$now}");
+                try {
+                    $user->save();
+                    $now=Now();
+                    $this->line("Synced: {$emp_name} ({$final_email}) at {$now}");
+                } catch (\Exception $e) {
+                    $this->error("❌ Error syncing {$emp_name}: " . $e->getMessage());
+                    continue;
+                }
 
 
                 // User::updateOrCreate(
@@ -152,7 +188,7 @@ class SyncEmployees extends Command
             return true;
 
         } catch (\Exception $e) {
-            $this->error("❌ Error syncing {$emp['VAL']}: " . $e->getMessage());
+            $this->error("❌ Error: " . $e->getMessage());
 
             return false;
         }

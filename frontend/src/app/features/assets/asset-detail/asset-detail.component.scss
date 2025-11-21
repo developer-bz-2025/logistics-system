@@ -203,6 +203,30 @@
         transform: translateY(-2px);
         box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
       }
+
+      &:disabled {
+        background: #d1d5db;
+        color: #9ca3af;
+        cursor: not-allowed;
+        box-shadow: none;
+        transform: none;
+      }
+    }
+
+    .move-button {
+      border-radius: 25px;
+      padding: 12px 24px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
     }
 
     .cancel-button {

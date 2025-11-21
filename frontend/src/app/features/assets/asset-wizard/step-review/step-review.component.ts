@@ -16,8 +16,12 @@ export class StepReviewComponent {
     return this.form.value;
   }
 
-  getLabel(type: string, id: number): string {
-    return this.labelMaps[type]?.get(id) || id?.toString() || '';
+  getLabel(type: string, value: any): string {
+    // Handle both IDs and objects
+    if (value && typeof value === 'object' && value.id) {
+      return this.labelMaps[type]?.get(value.id) || value.name || value.label || value.id.toString();
+    }
+    return this.labelMaps[type]?.get(value) || value?.toString() || '';
   }
 
   getAttributeLabel(attribute: DynamicAttribute, value: any): string {

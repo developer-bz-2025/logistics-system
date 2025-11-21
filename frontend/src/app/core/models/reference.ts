@@ -37,6 +37,8 @@ export interface AssetListItem {
   }
 
 export interface DynamicAttribute {
+  id?: number;
+  att_id?: number;
   name: string;          // e.g., "Material", "Size", "Capacity"
   field_name: string;    // e.g., "material_id", "size", "capacity"
   type: 'select' | 'text' | 'number';

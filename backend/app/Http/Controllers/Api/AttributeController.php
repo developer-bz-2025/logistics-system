@@ -32,6 +32,7 @@ class AttributeController extends Controller
 
                 return [
                     'name'       => $attribute->name,
+                    'att_id'       => $attribute->id,
                     'field_name' => strtolower(str_replace(' ', '_', $attribute->name)),
                     'type'       => 'select', // All attributes are select type based on the data structure
                     'options'    => $options->map(fn($o) => [

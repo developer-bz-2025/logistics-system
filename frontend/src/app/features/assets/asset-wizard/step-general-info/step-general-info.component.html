@@ -5,26 +5,39 @@
   </div>
 
   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Serial Number -->
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Serial Number</mat-label>
+      <input matInput [formControl]="$any(form.get('sn'))" placeholder="Enter serial number">
+      <mat-hint>Optional asset serial number</mat-hint>
+    </mat-form-field>
+
     <!-- Supplier -->
     <mat-form-field appearance="outline" class="w-full">
       <mat-label>Supplier</mat-label>
-      <mat-select [formControl]="$any(form.get('supplier_id'))">
-        <mat-option *ngFor="let supplier of suppliers" [value]="supplier.id">
+      <input matInput
+             [formControl]="$any(form.get('supplier_id'))"
+             [matAutocomplete]="supplierAuto">
+      <mat-autocomplete #supplierAuto="matAutocomplete" [displayWith]="displaySupplier">
+        <mat-option *ngFor="let supplier of filteredSuppliers$ | async" [value]="supplier">
           {{ supplier.name }}
         </mat-option>
-      </mat-select>
-      <mat-hint>Optional supplier information</mat-hint>
+      </mat-autocomplete>
+      <mat-hint>Required supplier information - start typing to search</mat-hint>
     </mat-form-field>
 
     <!-- Brand -->
     <mat-form-field appearance="outline" class="w-full">
       <mat-label>Brand</mat-label>
-      <mat-select [formControl]="$any(form.get('brand_id'))">
-        <mat-option *ngFor="let brand of brands" [value]="brand.id">
+      <input matInput
+             [formControl]="$any(form.get('brand_id'))"
+             [matAutocomplete]="brandAuto">
+      <mat-autocomplete #brandAuto="matAutocomplete" [displayWith]="displayBrand">
+        <mat-option *ngFor="let brand of filteredBrands$ | async" [value]="brand">
           {{ brand.name }}
         </mat-option>
-      </mat-select>
-      <mat-hint>Optional brand information</mat-hint>
+      </mat-autocomplete>
+      <mat-hint>Required brand information - start typing to search</mat-hint>
     </mat-form-field>
 
     <!-- Color -->
@@ -35,7 +48,7 @@
           {{ color.name }}
         </mat-option>
       </mat-select>
-      <mat-hint>Optional color information</mat-hint>
+      <mat-hint>Required color information</mat-hint>
     </mat-form-field>
 
     <!-- PR Selection -->
@@ -46,7 +59,7 @@
           {{ pr.pr_code }}
         </mat-option>
       </mat-select>
-      <mat-hint>Optional purchase request selection</mat-hint>
+      <mat-hint>Required purchase request selection</mat-hint>
     </mat-form-field>
   </div>
 

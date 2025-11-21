@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Services\ItemHistoryService;
@@ -72,7 +73,17 @@ class ItemController extends Controller
         if ($v = $request->integer('sub_category_id')) $q->where('sub_category.id', $v);
         if ($v = $request->integer('fixed_item_id'))   $q->where('items.fixed_item_id', $v);
         if ($v = $request->integer('status_id'))       $q->where('items.status_id', $v);
-        if ($v = $request->integer('location_id'))     $q->where('items.location_id', $v);
+
+        $locationIds = $request->input('location_ids');
+        if (is_array($locationIds)) {
+            $locationIds = array_values(array_filter(array_map('intval', $locationIds)));
+            if (!empty($locationIds)) {
+                $q->whereIn('items.location_id', $locationIds);
+            }
+        } elseif ($v = $request->integer('location_id')) {
+            $q->where('items.location_id', $v);
+        }
+
         if ($v = $request->integer('floor_id'))        $q->where('items.floor_id', $v);
         if ($v = $request->integer('supplier_id'))     $q->where('items.supplier_id', $v);
         if ($v = $request->integer('holder_user_id'))  $q->where('items.holder_user_id', $v);
@@ -382,6 +393,38 @@ class ItemController extends Controller
     }
 
     /**
+     * GET /api/log-admin/assets - Fetch assets for authenticated log admin
+     */
+    public function logAdminAssets(Request $request)
+    {
+        $user = $request->user();
+
+        if (! $user || $user->role?->name !== Role::LOG_ADMIN) {
+            return response()->json([
+                'message' => 'This action is authorized for log admins only.',
+            ], 403);
+        }
+
+        $locationIds = $user->locations()->pluck('locations.id')->all();
+
+        if (empty($locationIds)) {
+            $pageSize = min(max((int) $request->integer('pageSize', 10), 1), 100);
+            $page = max((int) $request->integer('page', 1), 1);
+
+            return response()->json([
+                'data' => [],
+                'total' => 0,
+                'page' => $page,
+                'pageSize' => $pageSize,
+            ]);
+        }
+
+        $request->merge(['location_ids' => $locationIds]);
+
+        return $this->index($request);
+    }
+
+    /**
      * POST /api/items - Create new asset
      */
     public function store(Request $request)
@@ -403,10 +446,11 @@ class ItemController extends Controller
             'status_id' => 'nullable|integer|exists:status,id',
             'description' => 'nullable|string|max:255',
             'notes' => 'nullable|string',
+            'sn' => 'nullable|string|max:255',
             'budget_code' => 'nullable|string|max:255',
             'budget_donor' => 'nullable|string|max:255',
             'attributes' => 'nullable|array',
-            'attributes.*.att_id' => 'required_with:attributes|string',
+            'attributes.*.att_id' => 'required_with:attributes|integer',
             'attributes.*.att_option_id' => 'required_with:attributes|integer',
         ]);
 
@@ -424,22 +468,9 @@ class ItemController extends Controller
         }
 
         // Generate SN if not provided (AST-YYYY-NNNN format)
-        if (!isset($validated['sn']) || empty($validated['sn'])) {
-            $year = date('Y');
-            $lastItem = DB::table('items')
-                ->where('sn', 'like', "AST-{$year}-%")
-                ->orderBy('id', 'desc')
-                ->first();
-
-            if ($lastItem) {
-                $lastNumber = (int) substr($lastItem->sn, -4);
-                $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
-            } else {
-                $newNumber = '0001';
-            }
-
-            $validated['sn'] = "AST-{$year}-{$newNumber}";
-        }
+        // if (!isset($validated['sn']) || $validated['sn'] === null || $validated['sn'] === '') {
+        //     $validated['sn'] = 'NA';
+        // }
 
         // Set created_by from authenticated user
         $validated['created_by'] = auth()->id();

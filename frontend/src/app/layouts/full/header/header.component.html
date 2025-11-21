@@ -1,4 +1,4 @@
-<mat-toolbar class="topbar app-card" style="background-color: #F9FAFB;">
+<mat-toolbar class="topbar" style="background-color: #F9FAFB; border-bottom: 1px solid #E5E7EB;">
   <!-- Mobile Menu -->
   <button mat-icon-button (click)="toggleMobileNav.emit()" *ngIf="!showToggle">
     <i-tabler name="menu-2" class="icon-20 d-flex"></i-tabler>
@@ -33,7 +33,7 @@
   <!-- --------------------------------------------------------------- -->
   <!-- profile Dropdown -->
   <!-- --------------------------------------------------------------- -->
-  <div class="">
+  <div class="ml-auto flex items-center gap-2">
 
     <span class="font-bold text-sm">Welcome {{ user?.name?.split(' ')[0] }}!</span>
     <!-- Profile Button -->
@@ -59,6 +59,18 @@
       <div class="text-xs font-medium mt-1 inline-block px-2 py-1 rounded-full text-white mt-4"
         [ngClass]="getGradientClass(user?.role.name)">
         {{ user?.role?.name.replace('_', ' ') | titlecase }}
+      </div>
+      <div *ngIf="user?.role?.name === 'log_admin'" class="mt-4 text-sm text-gray-700">
+        <!-- <div class="text-xs font-semibold uppercase text-gray-500 tracking-wide mb-2">Locations</div> -->
+        <div class="flex flex-wrap gap-2">
+          <span
+            class="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-medium"
+            *ngFor="let location of user?.locations"
+          >
+            {{ location.name }}
+          </span>
+          <span *ngIf="!user?.locations?.length" class="text-gray-400 text-xs">No locations assigned</span>
+        </div>
       </div>
       <!-- <div class="text-sm text-gray-500 truncate mt-4" *ngIf="user?.role!='super_admin' && user?.role!='c_level'">{{
         user?.unit_name }}, {{ user?.country_name }}, {{ user?.entity_name }}</div> -->

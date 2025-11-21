@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Hash;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 use PHPOpenSourceSaver\JWTAuth\Exceptions\JWTException;
 use PHPOpenSourceSaver\JWTAuth\Exceptions\TokenExpiredException;
+use PHPOpenSourceSaver\JWTAuth\Exceptions\TokenInvalidException;
 
 
 class AuthController extends Controller
@@ -59,33 +60,32 @@ class AuthController extends Controller
 
     public function refresh(Request $request)
     {
+        $request->validate([
+            'refresh_token' => 'required|string',
+        ]);
+
+        $refreshToken = trim(preg_replace('/^Bearer\s+/i', '', $request->refresh_token));
+
+        if (empty($refreshToken)) {
+            return response()->json([
+                'error' => 'Invalid refresh token'
+            ], 401);
+        }
+
         try {
-            $request->validate([
-                'refresh_token' => 'required|string',
-            ]);
+            // Attempt to refresh the token (will blacklist the old one by default)
+            $newToken = JWTAuth::setToken($refreshToken)->refresh();
 
-            // Set the token to be refreshed
-            JWTAuth::setToken($request->refresh_token);
-
-            // Get the user from the refresh token
-            $user = JWTAuth::authenticate();
-
-            if (!$user) {
-                return response()->json([
-                    'error' => 'Invalid refresh token'
-                ], 401);
-            }
-
-            // Generate a new access token for the user
-            $newToken = JWTAuth::fromUser($user);
+            $user = JWTAuth::setToken($newToken)->toUser();
 
             return response()->json([
                 'access_token' => $newToken,
+                'refresh_token' => $newToken,
                 'token_type' => 'bearer',
-                'expires_in' => JWTAuth::factory()->getTTL() * 60
+                'expires_in' => JWTAuth::factory()->getTTL() * 60,
+                'user' => $user,
             ]);
-
-        } catch (JWTException $e) {
+        } catch (TokenExpiredException|TokenInvalidException|JWTException $e) {
             return response()->json([
                 'error' => 'Invalid refresh token'
             ], 401);

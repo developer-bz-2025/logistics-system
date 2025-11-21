@@ -1,0 +1,213 @@
+<div class="log-admin-assignments">
+  <header class="page-header">
+    <div>
+      <h1>Assign Location Admins</h1>
+      <p>
+        Promote a user to <span class="role-chip">log_admin</span> and attach one or more locations.
+        Each location keeps at most one admin&mdash;reassigning will replace its previous owner automatically.
+      </p>
+    </div>
+  </header>
+
+  <mat-card class="assigned-admins-card">
+    <mat-card-header>
+      <div mat-card-avatar class="card-icon">
+        <mat-icon>groups</mat-icon>
+      </div>
+      <mat-card-title>Current location admins</mat-card-title>
+      <mat-card-subtitle>Review who owns each location before making updates.</mat-card-subtitle>
+      <button
+        mat-icon-button
+        type="button"
+        aria-label="Refresh list"
+        (click)="loadAssignedAdmins()"
+        [disabled]="loadingAssigned"
+      >
+        <mat-icon>{{ loadingAssigned ? 'hourglass_top' : 'refresh' }}</mat-icon>
+      </button>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="assigned-list" *ngIf="assignedAdmins.length; else noAdmins">
+        <div class="assigned-card" *ngFor="let admin of assignedAdmins">
+          <div class="avatar">
+            {{ admin.name.charAt(0).toUpperCase() }}
+          </div>
+          <div class="admin-meta">
+            <div class="admin-name">{{ admin.name }}</div>
+            <div class="admin-email">{{ admin.email }}</div>
+            <div class="chips">
+              <span class="chip" *ngFor="let loc of admin.locations">{{ loc.name }}</span>
+            </div>
+          </div>
+          <button mat-stroked-button color="primary" type="button" (click)="prefillCandidate(admin)">
+            Reassign
+          </button>
+        </div>
+      </div>
+      <ng-template #noAdmins>
+        <div class="empty-state">
+          <mat-icon>map</mat-icon>
+          <p>No locations have been assigned yet.</p>
+        </div>
+      </ng-template>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="assignment-card">
+    <mat-card-header>
+      <div mat-card-avatar class="card-icon primary">
+        <mat-icon>person_add</mat-icon>
+      </div>
+      <mat-card-title>Assign or reassign locations</mat-card-title>
+      <mat-card-subtitle>Pick a candidate, review their current coverage, then attach new locations.</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content class="assignment-content">
+      <section class="candidate-search">
+        <mat-form-field appearance="outline" class="full-width search-field">
+          <mat-label>Search candidates (min. 2 characters)</mat-label>
+          <input
+            type="text"
+            #candidateInput
+            matInput
+            [formControl]="searchCtrl"
+            [matAutocomplete]="candidateAuto"
+            placeholder="Type a name, email, or employee id"
+          />
+          <button
+            *ngIf="searchCtrl.value"
+            matSuffix
+            mat-icon-button
+            type="button"
+            aria-label="Clear search"
+            (click)="searchCtrl.setValue('')"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+          <mat-hint>Only super admins can access this tool.</mat-hint>
+        </mat-form-field>
+        <mat-progress-bar *ngIf="loadingCandidates" mode="indeterminate"></mat-progress-bar>
+
+        <mat-autocomplete
+          #candidateAuto="matAutocomplete"
+          [displayWith]="displayCandidate.bind(this)"
+          (optionSelected)="onCandidateSelected($event)"
+        >
+          <mat-option *ngFor="let candidate of candidates$ | async" [value]="candidate">
+            <div class="candidate-option">
+              <div>
+                <div class="candidate-name">{{ candidate.name }}</div>
+                <div class="candidate-email">{{ candidate.email }}</div>
+              </div>
+              <span class="candidate-role">
+                {{ candidate.role?.name?.replace('_', ' ') | titlecase }}
+              </span>
+            </div>
+            <div class="candidate-meta" *ngIf="candidate.locations?.length">
+              Already admin on
+              <strong>{{ candidate.locations?.length || 0 }}</strong>
+              location{{ (candidate.locations?.length || 0) > 1 ? 's' : '' }}
+            </div>
+          </mat-option>
+          <mat-option
+            *ngIf="!(candidates$ | async)?.length && !loadingCandidates && (searchCtrl.value?.length ?? 0) >= 2"
+            disabled
+          >
+            No users match this search.
+          </mat-option>
+        </mat-autocomplete>
+      </section>
+
+      <section *ngIf="selectedUser; else selectPlaceholder" class="assignment-panel">
+        <div class="selected-user-card">
+          <div class="avatar large">
+            {{ selectedUser.name.charAt(0).toUpperCase() }}
+          </div>
+          <div class="selected-user-details">
+            <h2>{{ selectedUser.name }}</h2>
+            <p>{{ selectedUser.email }}</p>
+            <div class="selected-user-meta">
+              <span class="role-chip">
+                {{ (selectedUser.role?.name?.replace('_', ' ') || 'User') | titlecase }}
+              </span>
+              <span class="location-count">
+                {{ selectedLocations.length || 0 }} location{{ (selectedLocations.length || 0) === 1 ? '' : 's' }}
+              </span>
+            </div>
+            <div class="selected-user-inline-locations">
+              <ng-container *ngIf="selectedLocations.length; else noSelectedLocations">
+                <span class="chip" *ngFor="let loc of selectedLocations">
+                  {{ loc.name }}
+                </span>
+              </ng-container>
+              <ng-template #noSelectedLocations>
+                <span class="chip muted" *ngIf="!loadingUserDetail">No locations attached</span>
+              </ng-template>
+              <mat-progress-spinner *ngIf="loadingUserDetail" diameter="20" mode="indeterminate"></mat-progress-spinner>
+            </div>
+          </div>
+          <div class="selected-user-actions">
+            <button mat-icon-button type="button" aria-label="Clear selected user" (click)="clearSelection()">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <form [formGroup]="form" (ngSubmit)="submit()" class="assignment-form">
+          <div class="form-grid">
+            <div class="location-select">
+              <label class="field-label">Locations to assign</label>
+              <p class="field-helper">
+                Select every site this admin should manage. Any existing admin on those locations will be replaced.
+              </p>
+              <mat-form-field class="full-width" appearance="fill">
+                <mat-select formControlName="location_ids" multiple>
+                  <mat-option *ngFor="let location of locations; trackBy: trackByLocation" [value]="location.id">
+                    {{ location.name }}
+                  </mat-option>
+                </mat-select>
+                <mat-error *ngIf="hasLocationError">
+                  Each assigned admin must manage at least one location.
+                </mat-error>
+              </mat-form-field>
+            </div>
+            <div class="summary-card">
+              <h3>What happens next?</h3>
+              <ul>
+                <li>The selected user is promoted to <span class="role-chip small">log_admin</span> if not already.</li>
+                <li>Any previous owners of the selected locations are removed.</li>
+                <li>The changes take effect immediately for the next login.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button mat-button type="button" (click)="clearSelection()" [disabled]="saving">
+              Cancel
+            </button>
+            <button
+              mat-flat-button
+              color="primary"
+              type="submit"
+              [disabled]="form.invalid || saving"
+            >
+              {{ saving ? 'Saving...' : 'Assign locations' }}
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <ng-template #selectPlaceholder>
+        <div class="placeholder">
+          <mat-icon>search</mat-icon>
+          <p>Search for a candidate to review and update their locations.</p>
+        </div>
+      </ng-template>
+
+      <div *ngIf="loadingLocations" class="loading-overlay">
+        <mat-progress-spinner mode="indeterminate" diameter="32"></mat-progress-spinner>
+        <span>Loading locations…</span>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>
+

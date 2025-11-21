@@ -25,7 +25,7 @@ class UserController extends Controller
 
     public function show($id)
     {
-        $user = User::with('role')->findOrFail($id);
+        $user = User::with(['role', 'locations'])->findOrFail($id);
 
         return response()->json($user);
     }

@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\AttributeController;
 use App\Http\Controllers\Api\ItemController;
 use App\Http\Controllers\Api\StatusController;
 use App\Http\Controllers\Api\LocationController;
+use App\Http\Controllers\Api\LocationAdminAssignmentController;
 use App\Http\Controllers\Api\FloorController;
 
 
@@ -38,6 +39,10 @@ Route::middleware(['jwt.auth'])->group(function () {
 
 });
 
+Route::middleware(['jwt.auth'])->group(function () {
+    Route::get('/log-admin/assets', [ItemController::class, 'logAdminAssets']);
+});
+
 
 Route::middleware(['jwt.auth'])->group(function () { //to add super admin middleware later
     Route::get('/pr-edit-requests', [PrEditRequestController::class, 'index']);
@@ -48,6 +53,12 @@ Route::middleware(['jwt.auth'])->group(function () { //to add super admin middle
 
 Route::post('/import/assets', [\App\Http\Controllers\Api\ImportController::class, 'import']);
 
+});
+
+Route::middleware(['jwt.auth','super.admin'])->prefix('super-admin')->group(function () {
+    Route::get('/log-admins', [LocationAdminAssignmentController::class, 'assignedAdmins']);
+    Route::get('/log-admin-candidates', [LocationAdminAssignmentController::class, 'index']);
+    Route::post('/log-admin-assignments', [LocationAdminAssignmentController::class, 'store']);
 });
 
 Route::get('/catalog/structure', function () {
@@ -103,6 +114,7 @@ Route::get('/catalog/structure', function () {
 });
 
 Route::get('/dashboard/stats', [\App\Http\Controllers\Api\DashboardController::class, 'stats']);
+Route::get('/dashboard/assets-by-location-category', [\App\Http\Controllers\Api\DashboardController::class, 'assetsByLocationCategory']);
 
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{category}', [CategoryController::class, 'show'])

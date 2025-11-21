@@ -36,4 +36,8 @@ export class AssetService {
   create(payload: CreateAssetPayload): Observable<any> {
     return this.http.post(this.base, payload);
   }
+
+  getDashboardStats(): Observable<any> {
+    return this.http.get(`${environment.apiBaseUrl}/dashboard/assets-by-location-category`);
+  }
 }

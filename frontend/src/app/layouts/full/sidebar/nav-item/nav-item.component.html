@@ -36,7 +36,7 @@
     <div *ngIf="item.expanded" class="children-list">
       <a
         mat-list-item
-        class="menu-list-item pl-36"
+        class="menu-list-item child-menu-item"
         *ngFor="let child of item.children"
         (click)="onItemSelected(child)"
         [ngClass]="{

@@ -66,7 +66,8 @@ export class AssetWizardComponent implements OnInit, OnDestroy {
     floors: new Map<number, string>(),
     statuses: new Map<number, string>(),
     users: new Map<number, string>(),
-    attributes: new Map<string, Map<number, string>>()
+    attributes: new Map<string, Map<number, string>>(),
+    prs: new Map<number, string>()
   };
 
   constructor(
@@ -103,20 +104,21 @@ export class AssetWizardComponent implements OnInit, OnDestroy {
         attributes: this.fb.array([])
       }),
       general: this.fb.group({
-        supplier_id: [null],
-        brand_id: [null],
-        color_id: [null],
-        pr_id: [null],
+        supplier_id: [null, Validators.required],
+        brand_id: [null, Validators.required],
+        color_id: [null, Validators.required],
+        pr_id: [null, Validators.required],
+        sn: [''],
         acquisition_cost: [0, [Validators.required, Validators.min(0)]],
         acquisition_date: [null],
         warranty_start_date: [null],
         warranty_end_date: [null]
       }, { validators: this.dateRangeValidator }),
       assignment: this.fb.group({
-        location_id: [null],
-        floor_id: [null],
+        location_id: [null, Validators.required],
+        floor_id: [null, Validators.required],
         holder_user_id: [null],
-        status_id: [null]
+        status_id: [null, Validators.required]
       }),
       extra: this.fb.group({
         description: [''],
@@ -137,7 +139,7 @@ export class AssetWizardComponent implements OnInit, OnDestroy {
   }
 
   private loadInitialData(): void {
-    this.loading.categories = this.loading.colors = this.loading.locations = this.loading.floors = this.loading.statuses = true;
+    this.loading.categories = this.loading.colors = this.loading.locations = this.loading.floors = this.loading.statuses = this.loading.brands = true;
 
     forkJoin({
       categories: this.referenceService.getCategories(),
@@ -145,15 +147,17 @@ export class AssetWizardComponent implements OnInit, OnDestroy {
       locations: this.assetService.getLocations(),
       floors: this.assetService.getFloors(),
       statuses: this.assetService.getStatuses(),
+      brands: this.referenceService.getBrands(), // Load all brands without category filter
       prs: this.prService.getPrs()
     }).pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: ({ categories, colors, locations, floors, statuses, prs }) => {
+        next: ({ categories, colors, locations, floors, statuses, brands, prs }) => {
           this.categories = categories;
           this.colors = colors;
           this.locations = locations;
           this.floors = floors;
           this.statuses = statuses;
+          this.brands = brands; // Store all brands
           this.prs = prs;
 
           // Build label maps
@@ -162,14 +166,15 @@ export class AssetWizardComponent implements OnInit, OnDestroy {
           this.buildLabelMaps('locations', locations);
           this.buildLabelMaps('floors', floors);
           this.buildLabelMaps('statuses', statuses);
-          this.buildLabelMaps('prs', prs.map(pr => ({ id: pr.id, name: pr.pr_code })));
+          this.buildLabelMaps('brands', brands); // Build label map for brands
+          this.buildLabelMapsFromKey('prs', prs, 'pr_code');
 
-          this.loading.categories = this.loading.colors = this.loading.locations = this.loading.floors = this.loading.statuses = false;
+          this.loading.categories = this.loading.colors = this.loading.locations = this.loading.floors = this.loading.statuses = this.loading.brands = false;
         },
         error: (error) => {
           console.error('Error loading initial data:', error);
           this.toastService.error('Failed to load initial data');
-          this.loading.categories = this.loading.colors = this.loading.locations = this.loading.floors = this.loading.statuses = false;
+          this.loading.categories = this.loading.colors = this.loading.locations = this.loading.floors = this.loading.statuses = this.loading.brands = false;
         }
       });
   }
@@ -214,28 +219,25 @@ export class AssetWizardComponent implements OnInit, OnDestroy {
     // Reset dependent fields
     this.resetClassificationFields();
 
-    // Load sub-categories, suppliers, brands, attributes
-    this.loading.subCategories = this.loading.suppliers = this.loading.brands = this.loading.attributes = true;
+    // Load sub-categories, suppliers, attributes (brands are already loaded)
+    this.loading.subCategories = this.loading.suppliers = this.loading.attributes = true;
 
     forkJoin({
       subCategories: this.categoryService.getSubCategories(categoryId),
       suppliers: this.supplierService.search('', {}), // Fetch all suppliers without category filter
-      brands: this.referenceService.getBrands(categoryId),
       attributes: this.assetService.getCategoryAttributes(categoryId) // Load attributes for category
     }).pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: ({ subCategories, suppliers, brands, attributes }) => {
+        next: ({ subCategories, suppliers, attributes }) => {
           this.subCategories = subCategories;
           this.suppliers = suppliers;
-          this.brands = brands;
           this.attributes = attributes;
 
           // Build label maps
           this.buildLabelMaps('subCategories', subCategories);
           this.buildLabelMaps('suppliers', suppliers);
-          this.buildLabelMaps('brands', brands);
 
-          this.loading.subCategories = this.loading.suppliers = this.loading.brands = this.loading.attributes = false;
+          this.loading.subCategories = this.loading.suppliers = this.loading.attributes = false;
 
           // Setup attributes form array
           this.setupAttributesFormArray();
@@ -243,7 +245,7 @@ export class AssetWizardComponent implements OnInit, OnDestroy {
         error: (error) => {
           console.error('Error loading category data:', error);
           this.toastService.error('Failed to load category data');
-          this.loading.subCategories = this.loading.suppliers = this.loading.brands = this.loading.attributes = false;
+          this.loading.subCategories = this.loading.suppliers = this.loading.attributes = false;
         }
       });
   }
@@ -291,13 +293,16 @@ export class AssetWizardComponent implements OnInit, OnDestroy {
     this.attributes = [];
   }
 
+  
+
   private setupAttributesFormArray(): void {
     const attributesArray = this.form.get('classification.attributes') as FormArray;
     attributesArray.clear();
 
     this.attributes.forEach(attr => {
+      const attributeId = attr.att_id ?? attr.id ?? attr.field_name;
       attributesArray.push(this.fb.group({
-        att_id: [attr.field_name],
+        att_id: [attributeId],
         att_option_id: [null, attr.type === 'select' ? Validators.required : null]
       }));
     });
@@ -307,6 +312,13 @@ export class AssetWizardComponent implements OnInit, OnDestroy {
     const map = this.labelMaps[type as keyof typeof this.labelMaps] as Map<number, string>;
     if (map) {
       items.forEach(item => map.set(item.id, item.name || item.label));
+    }
+  }
+
+  private buildLabelMapsFromKey(type: string, items: any[], displayKey: string): void {
+    const map = this.labelMaps[type as keyof typeof this.labelMaps] as Map<number, string>;
+    if (map) {
+      items.forEach(item => map.set(item.id, item[displayKey] || item.name || item.label));
     }
   }
 
@@ -343,9 +355,24 @@ export class AssetWizardComponent implements OnInit, OnDestroy {
     if (this.form.valid) {
       this.loading.submit = true;
 
+      // Extract IDs from autocomplete objects
+      const generalData = { ...this.form.value.general };
+      const assignmentData = { ...this.form.value.assignment };
+
+      // Convert autocomplete objects to IDs
+      if (generalData.supplier_id && typeof generalData.supplier_id === 'object') {
+        generalData.supplier_id = generalData.supplier_id.id;
+      }
+      if (generalData.brand_id && typeof generalData.brand_id === 'object') {
+        generalData.brand_id = generalData.brand_id.id;
+      }
+      if (assignmentData.holder_user_id && typeof assignmentData.holder_user_id === 'object') {
+        assignmentData.holder_user_id = assignmentData.holder_user_id.id;
+      }
+
       const payload = {
-        ...this.form.value.general,
-        ...this.form.value.assignment,
+        ...generalData,
+        ...assignmentData,
         ...this.form.value.extra,
         fixed_item_id: this.form.value.classification.fixed_item_id,
         attributes: this.form.value.classification.attributes
