@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from 'src/environments/environment';
 
 export interface LogAdminAsset {
@@ -8,7 +8,9 @@ export interface LogAdminAsset {
   sn?: string;
   name?: string;
   fixed_item?: string;
+  fixed_item_name?: string;
   status?: { id: number; name: string };
+  status_id?: number;
   location?: { id: number; name: string };
   acquisition_date?: string;
   brand?: string;
@@ -41,6 +43,10 @@ export class LogAdminAssetsService {
     return this.http.get<Paginated<LogAdminAsset>>(`${this.baseUrl}/log-admin/assets`, {
       params: httpParams,
     });
+  }
+
+  getAllAssets(): Observable<LogAdminAsset[]> {
+    return this.getAssets({ per_page: 1000 }).pipe(map(res => res.data || []));
   }
 }
 

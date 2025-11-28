@@ -130,4 +130,16 @@ export class AssetService {
   createAsset(data: any): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/items`, data);
   }
+
+  // Request to move asset to a new location
+  moveAsset(itemId: number, requestedLocationId: number, notes?: string): Observable<any> {
+    const payload: any = {
+      item_id: itemId,
+      requested_location_id: requestedLocationId
+    };
+    if (notes?.trim()) {
+      payload.notes = notes.trim();
+    }
+    return this.http.post<any>(`${this.apiUrl}/location-change-requests`, payload);
+  }
 }

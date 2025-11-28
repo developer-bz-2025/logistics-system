@@ -11,6 +11,7 @@ import { PrService, PrListItem } from '../../../core/services/pr.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { Category, SubCategory, FixedItem, DynamicAttribute, SelectOption } from '../../../core/models/reference';
 import { MatDialog } from '@angular/material/dialog';
+import { AuthService } from 'src/app/core/services/auth.service';
 
 @Component({
   selector: 'app-asset-wizard',
@@ -23,6 +24,8 @@ export class AssetWizardComponent implements OnInit, OnDestroy {
   form: FormGroup;
   currentStep = 0;
   isLinear = true;
+  assetPhoto: File | null = null;
+  photoPreviewUrl: string | null = null;
 
   // Data
   categories: Category[] = [];
@@ -37,6 +40,7 @@ export class AssetWizardComponent implements OnInit, OnDestroy {
   statuses: any[] = [];
   users: any[] = [];
   prs: PrListItem[] = [];
+  currentUser: any = null;
 
   // Loading states
   loading = {
@@ -80,9 +84,14 @@ export class AssetWizardComponent implements OnInit, OnDestroy {
     private userService: UserService,
     private prService: PrService,
     private toastService: ToastService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private auth: AuthService
   ) {
     this.form = this.createForm();
+    this.auth.user$.pipe(takeUntil(this.destroy$)).subscribe(user => {
+      this.currentUser = user;
+      this.applyLocationFilter();
+    });
   }
 
   ngOnInit(): void {
@@ -93,6 +102,9 @@ export class AssetWizardComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+    if (this.photoPreviewUrl) {
+      URL.revokeObjectURL(this.photoPreviewUrl);
+    }
   }
 
   private createForm(): FormGroup {
@@ -163,11 +175,11 @@ export class AssetWizardComponent implements OnInit, OnDestroy {
           // Build label maps
           this.buildLabelMaps('categories', categories);
           this.buildLabelMaps('colors', colors);
-          this.buildLabelMaps('locations', locations);
           this.buildLabelMaps('floors', floors);
           this.buildLabelMaps('statuses', statuses);
           this.buildLabelMaps('brands', brands); // Build label map for brands
           this.buildLabelMapsFromKey('prs', prs, 'pr_code');
+          this.applyLocationFilter();
 
           this.loading.categories = this.loading.colors = this.loading.locations = this.loading.floors = this.loading.statuses = this.loading.brands = false;
         },
@@ -370,7 +382,7 @@ export class AssetWizardComponent implements OnInit, OnDestroy {
         assignmentData.holder_user_id = assignmentData.holder_user_id.id;
       }
 
-      const payload = {
+      const payload: any = {
         ...generalData,
         ...assignmentData,
         ...this.form.value.extra,
@@ -378,18 +390,16 @@ export class AssetWizardComponent implements OnInit, OnDestroy {
         attributes: this.form.value.classification.attributes
       };
 
-      this.assetService.createAsset(payload)
+      const body = this.buildRequestBody(payload);
+
+      this.assetService.createAsset(body)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: (response) => {
             this.toastService.success(`Asset created • ${response.sn || 'AST-' + response.id}`);
             this.router.navigate(['/assets']);
           },
-          error: (error) => {
-            console.error('Error creating asset:', error);
-            this.toastService.error('Failed to create asset');
-            this.loading.submit = false;
-          }
+          error: (error) => this.handleCreateError(error)
         });
     }
   }
@@ -400,4 +410,82 @@ export class AssetWizardComponent implements OnInit, OnDestroy {
       map(users => users.map(u => ({ id: u.id, label: u.name })))
     );
   };
+
+  handlePhotoChange(file: File | null): void {
+    if (this.photoPreviewUrl) {
+      URL.revokeObjectURL(this.photoPreviewUrl);
+      this.photoPreviewUrl = null;
+    }
+    this.assetPhoto = file;
+    if (file) {
+      this.photoPreviewUrl = URL.createObjectURL(file);
+    }
+  }
+
+  private buildRequestBody(payload: any): any {
+    if (!this.assetPhoto) {
+      return payload;
+    }
+    const formData = new FormData();
+    Object.entries(payload).forEach(([key, value]) => {
+      if (value === undefined || value === null) return;
+      if (value instanceof Date) {
+        formData.append(key, value.toISOString());
+      } else if (typeof value === 'object') {
+        formData.append(key, JSON.stringify(value));
+      } else {
+        formData.append(key, String(value));
+      }
+    });
+    formData.append('photo', this.assetPhoto);
+    return formData;
+  }
+
+  private handleCreateError(error: any): void {
+    console.error('Error creating asset:', error);
+    this.loading.submit = false;
+    const snControl = this.form.get('general.sn');
+    const duplicateMessage = 'Serial number already exists.';
+    const backendMessage: string = error?.error?.message || '';
+    const snErrors: string[] | undefined = error?.error?.errors?.sn;
+
+    if (snErrors?.length) {
+      snControl?.setErrors({ duplicate: true });
+      this.toastService.error(snErrors[0]);
+      return;
+    }
+
+    if (backendMessage.toLowerCase().includes('duplicate entry') && snControl) {
+      snControl.setErrors({ duplicate: true });
+      this.toastService.error(duplicateMessage);
+      return;
+    }
+
+    this.toastService.error('Failed to create asset');
+  }
+
+  private applyLocationFilter(): void {
+    if (!this.locations) return;
+    if (this.isSuperAdmin()) {
+      this.refreshLocationLabelMap();
+      return;
+    }
+    const managed = this.currentUser?.locations || [];
+    if (managed.length) {
+      const allowedIds = new Set(managed.map((loc: any) => loc.id));
+      this.locations = this.locations.filter(loc => allowedIds.has(loc.id));
+    } else {
+      this.locations = [];
+    }
+    this.refreshLocationLabelMap();
+  }
+
+  private refreshLocationLabelMap(): void {
+    this.labelMaps.locations = new Map<number, string>();
+    this.locations.forEach(loc => this.labelMaps.locations.set(loc.id, loc.name));
+  }
+
+  private isSuperAdmin(): boolean {
+    return !!this.auth.hasAnyRole && this.auth.hasAnyRole(['super_admin']);
+  }
 }

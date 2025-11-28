@@ -55,4 +55,25 @@ export class AppNavItemComponent implements OnChanges {
       left: 0,
     });
   }
+
+  isActive(item: NavItem): boolean {
+    if (!item.route) return false;
+    const currentPath = this.router.url.split('?')[0];
+    if (currentPath !== item.route) return false;
+    
+    const queryParams = this.router.parseUrl(this.router.url).queryParams;
+    
+    if (item.queryParams) {
+      // Item has specific query params - check if all match
+      return Object.entries(item.queryParams).every(
+        ([key, value]) => queryParams[key] && String(queryParams[key]) === String(value)
+      );
+    } else {
+      // Item has no query params (like "All Assets")
+      // Only active if there's no category_id in the URL (or other conflicting params)
+      // Allow pagination/filter params like page, pageSize, search, status_id, etc.
+      const conflictingParams = ['category_id', 'sub_category_id', 'fixed_item_id'];
+      return !conflictingParams.some(param => queryParams[param] !== undefined);
+    }
+  }
 }

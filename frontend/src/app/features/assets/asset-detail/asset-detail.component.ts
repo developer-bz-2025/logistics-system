@@ -6,8 +6,11 @@ import { AssetService, CategoryService } from 'src/app/core/services/category.se
 import { PrService } from 'src/app/core/services/pr.service';
 import { Category, SubCategory, FixedItem } from 'src/app/core/models/reference';
 import { AuthService } from 'src/app/core/services/auth.service';
+import { ToastService } from 'src/app/core/services/toast.service';
 import { MatDialog } from '@angular/material/dialog';
 import { MoveAssetDialogComponent } from './move-asset-dialog.component';
+import { PendingRequestDialogComponent } from './pending-request-dialog.component';
+import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-asset-detail',
@@ -54,6 +57,7 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
     private cats: CategoryService,
     private prService: PrService,
     private auth: AuthService,
+    private toast: ToastService,
     private dialog: MatDialog
   ) {
     this.assetId = Number(this.route.snapshot.paramMap.get('id'));
@@ -63,6 +67,14 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
       this.userRole = this.resolveRoleName(user);
       this.userLocationIds = ((user as any)?.locations || []).map((loc: any) => loc.id);
       this.updatePermissions();
+    });
+  }
+
+  openPhotoPreview(): void {
+    if (!this.asset?.photo_url) return;
+    this.dialog.open(PhotoPreviewDialogComponent, {
+      data: { url: this.asset.photo_url },
+      panelClass: 'photo-preview-dialog',
     });
   }
 
@@ -396,33 +408,85 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
       return;
     }
     const dialogRef = this.dialog.open(MoveAssetDialogComponent, {
-      width: '420px',
+      width: '500px',
       data: {
         locations: this.allowedMoveLocations,
         currentLocationId: this.asset?.location_id
       }
     });
 
-    dialogRef.afterClosed().pipe(takeUntil(this.destroy$)).subscribe((locationId?: number) => {
-      if (locationId && locationId !== this.asset?.location_id) {
-        this.moveAsset(locationId);
+    dialogRef.afterClosed().pipe(takeUntil(this.destroy$)).subscribe((result?: { locationId: number; notes?: string }) => {
+      if (result && result.locationId && result.locationId !== this.asset?.location_id) {
+        this.moveAsset(result.locationId, result.notes);
       }
     });
   }
 
-  private moveAsset(locationId: number): void {
+  private moveAsset(requestedLocationId: number, notes?: string): void {
     this.isRelocating = true;
-    this.assets.updateAsset(this.assetId, { location_id: locationId }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: updated => {
-        this.asset = updated.data || updated;
+    this.assets.moveAsset(this.assetId, requestedLocationId, notes).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (response) => {
+        // Reload the asset to get updated data
+        this.loadAsset();
         this.isRelocating = false;
-        this.populateForm();
-        this.updatePermissions();
+        const message = response?.message || 'Asset move request submitted successfully.';
+        this.toast.success(message, 'Move Asset');
       },
       error: (error) => {
         console.error('Error moving asset:', error);
         this.isRelocating = false;
+        
+        // Check if this is a pending request error
+        const existingRequest = error?.error?.existing_request;
+        const itemIdErrors = error?.error?.errors?.item_id;
+        const hasPendingRequestError = existingRequest && 
+                                      itemIdErrors && 
+                                      Array.isArray(itemIdErrors) && 
+                                      itemIdErrors.length > 0;
+        
+        if (hasPendingRequestError) {
+          // Show dialog with existing request details
+          this.dialog.open(PendingRequestDialogComponent, {
+            width: '500px',
+            data: {
+              existingRequest: existingRequest
+            }
+          });
+          // Also show a toast with the main message
+          const errorMessage = error?.error?.message || 'A pending location change request already exists for this item.';
+          this.toast.error(errorMessage, 'Move Asset Failed', 5000);
+        } else {
+          // Regular error handling
+          const errorMessage = error?.error?.message || 'Failed to move asset. Please try again.';
+          this.toast.error(errorMessage, 'Move Asset Failed');
+        }
       }
     });
   }
+}
+
+@Component({
+  selector: 'app-photo-preview-dialog',
+  template: `
+    <div class="photo-preview">
+      <img [src]="data.url" alt="Asset photo" />
+    </div>
+  `,
+  styles: [
+    `
+      .photo-preview {
+        max-width: 90vw;
+        max-height: 90vh;
+      }
+      .photo-preview img {
+        width: 100%;
+        height: auto;
+        max-height: 90vh;
+        object-fit: contain;
+      }
+    `,
+  ],
+})
+export class PhotoPreviewDialogComponent {
+  constructor(@Inject(MAT_DIALOG_DATA) public data: { url: string }) {}
 }

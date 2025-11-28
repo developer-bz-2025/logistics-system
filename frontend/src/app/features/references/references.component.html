@@ -1,0 +1,76 @@
+<div class="references-page">
+  <header class="page-header">
+    <div>
+      <h1>Reference Data</h1>
+      <p>Manage the lookups used throughout the platform.</p>
+    </div>
+  </header>
+
+  <mat-card class="app-card">
+    <mat-tab-group [selectedIndex]="selectedTabIndex" (selectedIndexChange)="onTabChange($event)">
+      <mat-tab *ngFor="let tab of tabs">
+        <ng-template mat-tab-label>
+          <div class="tab-label">
+            <span class="tab-title">{{ tab.label }}</span>
+            <!-- <span class="tab-subtitle">{{ tab.description }}</span> -->
+          </div>
+        </ng-template>
+
+        <section class="tab-content">
+          <div class="tab-toolbar">
+            <mat-form-field appearance="outline" class="search-field">
+              <mat-label>Search {{ tab.label }}</mat-label>
+              <mat-icon matPrefix>search</mat-icon>
+              <input
+                matInput
+                [formControl]="searchCtrl"
+                placeholder="Type to filter"
+              />
+              <button
+                matSuffix
+                mat-icon-button
+                type="button"
+                aria-label="Clear search"
+                *ngIf="searchCtrl.value"
+                (click)="searchCtrl.setValue('')"
+              >
+                <mat-icon>close</mat-icon>
+              </button>
+            </mat-form-field>
+
+            <button mat-flat-button color="primary" type="button" (click)="openCreateDialog()">
+              <mat-icon>add</mat-icon>
+              Add {{ tab.label.slice(0, -1) }}
+            </button>
+          </div>
+
+          <mat-progress-bar *ngIf="tab.loading" mode="indeterminate"></mat-progress-bar>
+
+          <div class="references-list" *ngIf="filteredItems(tab).length">
+            <div class="reference-row header">
+              <span>Name</span>
+              <span class="actions-col">Actions</span>
+            </div>
+            <div class="reference-row" *ngFor="let item of filteredItems(tab)">
+              <span class="item-name">{{ item.name }}</span>
+              <span class="actions-col">
+                <button mat-icon-button type="button" (click)="openEditDialog(item)" aria-label="Edit">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button mat-icon-button type="button" (click)="deleteItem(item)" aria-label="Delete">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </span>
+            </div>
+          </div>
+
+          <div class="empty-state" *ngIf="!tab.loading && !filteredItems(tab).length">
+            <mat-icon>layers</mat-icon>
+            <p>No {{ tab.label.toLowerCase() }} match your search.</p>
+          </div>
+        </section>
+      </mat-tab>
+    </mat-tab-group>
+  </mat-card>
+</div>
+

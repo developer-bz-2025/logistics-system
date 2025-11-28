@@ -37,4 +37,31 @@
       <mat-hint>Optional budget donor</mat-hint>
     </mat-form-field>
   </div>
+
+  <!-- Photo Upload -->
+  <div class="photo-upload">
+    <label class="text-sm font-medium text-gray-700 mb-2 block">Asset Photo (optional)</label>
+    <div class="upload-card">
+      <div class="preview" *ngIf="photoPreviewUrl; else emptyState">
+        <img [src]="photoPreviewUrl" alt="Asset preview" />
+      </div>
+      <ng-template #emptyState>
+        <div class="preview placeholder">
+          <mat-icon>photo_camera</mat-icon>
+          <p>Add a photo to help identify this asset.</p>
+        </div>
+      </ng-template>
+      <div class="upload-actions">
+        <label class="upload-btn">
+          <input type="file" accept="image/*" (change)="onPhotoSelected($event)" hidden>
+          <mat-icon>cloud_upload</mat-icon>
+          <span>{{ photoPreviewUrl ? 'Replace Photo' : 'Upload Photo' }}</span>
+        </label>
+        <button mat-button type="button" color="warn" *ngIf="photoPreviewUrl" (click)="clearPhoto()">
+          <mat-icon>delete</mat-icon>
+          Remove
+        </button>
+      </div>
+    </div>
+  </div>
 </div>

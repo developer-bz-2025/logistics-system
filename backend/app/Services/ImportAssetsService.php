@@ -486,7 +486,7 @@ public function importItemsSheet(Spreadsheet $spreadsheet, string $sheetName, st
                 $inserted++;
 
                 // Log item creation
-                ItemHistoryService::logItemCreated($itemId, $itemData);
+                ItemHistoryService::logItemCreated($itemId, $itemData, auth()->id());
             }
         } else {
             // For items without SN, always insert as new (no deduplication)
@@ -496,7 +496,7 @@ public function importItemsSheet(Spreadsheet $spreadsheet, string $sheetName, st
             $inserted++;
 
             // Log item creation
-            ItemHistoryService::logItemCreated($itemId, $itemData);
+            ItemHistoryService::logItemCreated($itemId, $itemData, auth()->id());
         }
 
         // Insert/update attribute values

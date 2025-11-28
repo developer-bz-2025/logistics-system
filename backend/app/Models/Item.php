@@ -13,7 +13,7 @@ class Item extends Model
         'fixed_item_id','description','sn','color_id','brand_id','pr_id',
         'acquisition_cost','acquisition_date','warranty_start_date','warranty_end_date',
         'budget_code','budget_donor','supplier_id','location_id','floor_id',
-        'status_id','notes','holder_user_id','created_by'
+        'status_id','notes','holder_user_id','created_by','photo_path','details_pdf_path'
     ];
 
     protected $casts = [

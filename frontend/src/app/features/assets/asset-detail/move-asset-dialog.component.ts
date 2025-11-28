@@ -1,9 +1,15 @@
 import { Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 export interface MoveAssetDialogData {
   locations: { id: number; name: string }[];
   currentLocationId?: number | null;
+}
+
+export interface MoveAssetResult {
+  locationId: number;
+  notes?: string;
 }
 
 @Component({
@@ -12,13 +18,17 @@ export interface MoveAssetDialogData {
   styleUrls: ['./move-asset-dialog.component.scss']
 })
 export class MoveAssetDialogComponent {
-  selectedLocationId: number | null;
+  form: FormGroup;
 
   constructor(
     private dialogRef: MatDialogRef<MoveAssetDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: MoveAssetDialogData
+    @Inject(MAT_DIALOG_DATA) public data: MoveAssetDialogData,
+    private fb: FormBuilder
   ) {
-    this.selectedLocationId = data.currentLocationId ?? null;
+    this.form = this.fb.group({
+      locationId: [data.currentLocationId ?? null, Validators.required],
+      notes: ['']
+    });
   }
 
   cancel(): void {
@@ -26,8 +36,12 @@ export class MoveAssetDialogComponent {
   }
 
   submit(): void {
-    if (this.selectedLocationId) {
-      this.dialogRef.close(this.selectedLocationId);
+    if (this.form.valid) {
+      const result: MoveAssetResult = {
+        locationId: this.form.value.locationId,
+        notes: this.form.value.notes?.trim() || undefined
+      };
+      this.dialogRef.close(result);
     }
   }
 }

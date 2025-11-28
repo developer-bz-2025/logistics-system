@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers\Api;
 
-
 use App\Http\Controllers\Controller;
 use App\Http\Resources\SupplierResource;
 use App\Models\Category;
 use App\Models\Supplier;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class SupplierController extends Controller
 {
@@ -33,6 +34,53 @@ class SupplierController extends Controller
         }
 
         return SupplierResource::collection($q->limit(1000)->get()); // cap just in case
+    }
+
+    public function store(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => ['required', 'string', 'max:255'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 400);
+        }
+
+        $supplier = Supplier::create([
+            'name' => trim($validator->validated()['name']),
+        ]);
+
+        return response()->json([
+            'id' => $supplier->id,
+            'name' => $supplier->name,
+        ], 201);
+    }
+
+    public function update(Request $request, Supplier $supplier): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => ['required', 'string', 'max:255'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 400);
+        }
+
+        $supplier->update([
+            'name' => trim($validator->validated()['name']),
+        ]);
+
+        return response()->json([
+            'id' => $supplier->id,
+            'name' => $supplier->name,
+        ]);
+    }
+
+    public function destroy(Supplier $supplier): JsonResponse
+    {
+        $supplier->delete();
+
+        return response()->noContent();
     }
 
     // GET /categories/{category}/suppliers?search=&per_page=

@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\SubCategoryController;
 use App\Http\Controllers\Api\FixedItemController;
+use App\Http\Controllers\Api\BrandController;
 use App\Http\Controllers\Api\SupplierController;
 use App\Http\Controllers\Api\PrController;
 use App\Http\Controllers\Api\PrEditRequestController;
@@ -14,6 +15,7 @@ use App\Http\Controllers\Api\ItemController;
 use App\Http\Controllers\Api\StatusController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\LocationAdminAssignmentController;
+use App\Http\Controllers\Api\LocationChangeRequestController;
 use App\Http\Controllers\Api\FloorController;
 
 
@@ -126,11 +128,6 @@ Route::get('/categories/{category}/sub-categories', [SubCategoryController::clas
 Route::get('/sub-categories/{subCategory}/fixed-items', [FixedItemController::class, 'indexBySubCategory'])
     ->whereNumber('subCategory');
 
-Route::get('/suppliers', [SupplierController::class, 'index']);
-Route::get('/brands', [\App\Http\Controllers\Api\BrandController::class, 'index']);
-
-
-
 Route::get('/categories/{category}/attributes', [AttributeController::class, 'byCategory'])
     ->whereNumber('category');
 
@@ -143,11 +140,47 @@ Route::put('/items/{item}', [ItemController::class, 'update'])
 Route::get('/items/{item}/history', [\App\Http\Controllers\Api\ItemHistoryController::class, 'index'])
     ->whereNumber('item');
 
+Route::middleware(['jwt.auth'])->group(function () {
+    Route::post('/location-change-requests', [LocationChangeRequestController::class, 'store']);
+});
+
 Route::get('/statuses', [StatusController::class, 'index']);
-Route::get('/locations', [LocationController::class, 'index']);
-Route::get('/floors', [FloorController::class, 'index']);
 Route::get('/colors', [\App\Http\Controllers\Api\ColorController::class, 'index']);
 Route::get('/users', [UserController::class, 'index']);
+
+Route::get('/locations', [LocationController::class, 'index']);
+Route::get('/brands', [BrandController::class, 'index']);
+Route::get('/suppliers', [SupplierController::class, 'index']);
+Route::get('/floors', [FloorController::class, 'index']);
+Route::middleware(['jwt.auth','super.admin'])->group(function () {
+    // Locations
+    Route::post('/locations', [LocationController::class, 'store']);
+    Route::put('/locations/{location}', [LocationController::class, 'update'])
+        ->whereNumber('location');
+    Route::delete('/locations/{location}', [LocationController::class, 'destroy'])
+        ->whereNumber('location');
+
+    // Brands
+    Route::post('/brands', [BrandController::class, 'store']);
+    Route::put('/brands/{brand}', [BrandController::class, 'update'])
+        ->whereNumber('brand');
+    Route::delete('/brands/{brand}', [BrandController::class, 'destroy'])
+        ->whereNumber('brand');
+
+    // Suppliers
+    Route::post('/suppliers', [SupplierController::class, 'store']);
+    Route::put('/suppliers/{supplier}', [SupplierController::class, 'update'])
+        ->whereNumber('supplier');
+    Route::delete('/suppliers/{supplier}', [SupplierController::class, 'destroy'])
+        ->whereNumber('supplier');
+
+    // Floors
+    Route::post('/floors', [FloorController::class, 'store']);
+    Route::put('/floors/{floor}', [FloorController::class, 'update'])
+        ->whereNumber('floor');
+    Route::delete('/floors/{floor}', [FloorController::class, 'destroy'])
+        ->whereNumber('floor');
+});
 
 
 

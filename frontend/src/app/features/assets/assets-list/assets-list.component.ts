@@ -116,12 +116,12 @@ export class AssetsListComponent  implements OnInit, OnDestroy {
           }
         });
 
-        if (subId) {
+        if (subId && this.currentCategoryId) {
           // Load fixed items
           this.cats.getFixedItems(subId).subscribe(fi => (this.fixedItems = fi));
 
           // Load dynamic attributes for this category, filtered by sub-category
-          this.assets.getCategoryAttributes(this.currentCategoryId!, subId).pipe(takeUntil(this.destroy$))
+          this.assets.getCategoryAttributes(this.currentCategoryId, subId).pipe(takeUntil(this.destroy$))
             .subscribe({
               next: (attrs) => {
                 this.dynamicAttributes = (attrs || []).filter((attr: any) => attr.field_name);
@@ -215,8 +215,9 @@ export class AssetsListComponent  implements OnInit, OnDestroy {
                   this.isLoadingCategories = false;
                 }
               });
-
-            // Note: Attributes are loaded when sub-category is selected, not category
+          } else {
+            this.subs = [];
+            this.fixedItems = [];
           }
         }
 

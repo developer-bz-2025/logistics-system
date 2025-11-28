@@ -24,7 +24,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatStepperModule } from '@angular/material/stepper';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatDialogModule } from '@angular/material/dialog';
-import { AssetDetailComponent } from './asset-detail/asset-detail.component';
+import { AssetDetailComponent, PhotoPreviewDialogComponent } from './asset-detail/asset-detail.component';
 import { AssetWizardComponent } from './asset-wizard/asset-wizard.component';
 import { StepClassificationComponent } from './asset-wizard/step-classification/step-classification.component';
 import { StepGeneralInfoComponent } from './asset-wizard/step-general-info/step-general-info.component';
@@ -32,19 +32,22 @@ import { StepAssignmentComponent } from './asset-wizard/step-assignment/step-ass
 import { StepExtraInfoComponent } from './asset-wizard/step-extra-info/step-extra-info.component';
 import { StepReviewComponent } from './asset-wizard/step-review/step-review.component';
 import { MoveAssetDialogComponent } from './asset-detail/move-asset-dialog.component';
+import { PendingRequestDialogComponent } from './asset-detail/pending-request-dialog.component';
 
 
 @NgModule({
   declarations: [
     AssetsListComponent,
     AssetDetailComponent,
+    PhotoPreviewDialogComponent,
     AssetWizardComponent,
     StepClassificationComponent,
     StepGeneralInfoComponent,
     StepAssignmentComponent,
     StepExtraInfoComponent,
     StepReviewComponent,
-    MoveAssetDialogComponent
+    MoveAssetDialogComponent,
+    PendingRequestDialogComponent
   ],
   imports: [
     CommonModule,

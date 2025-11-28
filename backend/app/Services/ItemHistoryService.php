@@ -3,10 +3,22 @@
 namespace App\Services;
 
 use App\Models\ItemHistory;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 
 class ItemHistoryService
 {
+    private const CREATION_SNAPSHOT_FIELDS = [
+        'sn',
+        'description',
+        'fixed_item_id',
+        'status_id',
+        'location_id',
+        'floor_id',
+        'holder_user_id',
+        'brand_id',
+        'supplier_id',
+    ];
     /**
      * Log an item history event
      *
@@ -42,13 +54,20 @@ class ItemHistoryService
     /**
      * Log item creation
      */
-    public static function logItemCreated(int $itemId, array $itemData = []): ItemHistory
-    {
+    public static function logItemCreated(
+        int $itemId,
+        array $itemData = [],
+        ?int $byUserId = null
+    ): ItemHistory {
+        $snapshot = Arr::only($itemData, self::CREATION_SNAPSHOT_FIELDS);
+        $snapshot = array_filter($snapshot, static fn ($value) => !is_null($value));
+
         return self::logEvent(
             $itemId,
             'created',
             'Item created',
-            ['item_data' => $itemData]
+            empty($snapshot) ? null : ['initial_snapshot' => $snapshot],
+            $byUserId
         );
     }
 

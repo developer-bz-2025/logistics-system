@@ -260,6 +260,34 @@
   }
 }
 
+.asset-photo {
+  margin-bottom: 24px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #0f172a;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+
+  img {
+    width: 100%;
+    max-height: 360px;
+    object-fit: cover;
+  }
+
+  &.placeholder {
+    background: #f1f5f9;
+    color: #94a3b8;
+    flex-direction: column;
+    gap: 8px;
+    mat-icon {
+      font-size: 48px;
+    }
+  }
+}
+
 // Compact Information Section
 .compact-info-section {
   margin-bottom: 24px;

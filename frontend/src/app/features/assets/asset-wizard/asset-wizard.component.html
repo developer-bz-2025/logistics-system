@@ -121,7 +121,9 @@
         <!-- Step 4: Extra Info -->
         <div *ngIf="currentStep === 3">
           <app-step-extra-info
-            [form]="$any(form.get('extra'))">
+            [form]="$any(form.get('extra'))"
+            [photoPreviewUrl]="photoPreviewUrl"
+            (photoChange)="handlePhotoChange($event)">
           </app-step-extra-info>
         </div>
 

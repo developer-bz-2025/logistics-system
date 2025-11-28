@@ -10,6 +10,9 @@
       <mat-label>Serial Number</mat-label>
       <input matInput [formControl]="$any(form.get('sn'))" placeholder="Enter serial number">
       <mat-hint>Optional asset serial number</mat-hint>
+      <mat-error *ngIf="form.get('sn')?.hasError('duplicate')">
+        This serial number is already in use.
+      </mat-error>
     </mat-form-field>
 
     <!-- Supplier -->

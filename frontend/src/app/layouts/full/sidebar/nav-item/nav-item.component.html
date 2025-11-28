@@ -10,9 +10,7 @@
     *ngIf="!item.expandable"
     (click)="onItemSelected(item)"
     [ngClass]="{
-      'mat-toolbar mat-primary activeMenu': item.route
-        ? router.isActive(item.route, true)
-        : false
+      'mat-toolbar mat-primary activeMenu': isActive(item)
     }"
   >
     <i-tabler class="routeIcon" name="{{ item.iconName }}" matListItemIcon></i-tabler>
@@ -40,9 +38,7 @@
         *ngFor="let child of item.children"
         (click)="onItemSelected(child)"
         [ngClass]="{
-          'mat-toolbar mat-primary activeMenu': child.queryParams && child.queryParams.category_id &&
-            router.url.includes('/assets') &&
-            router.parseUrl(router.url).queryParams['category_id'] == child.queryParams.category_id
+          'mat-toolbar mat-primary activeMenu': isActive(child)
         }"
       >
         <i-tabler class="routeIcon" name="{{ child.iconName }}" matListItemIcon></i-tabler>

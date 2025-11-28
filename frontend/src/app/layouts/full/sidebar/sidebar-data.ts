@@ -27,6 +27,12 @@ export const navItems: NavItem[] = [
     route: '/dashboard/pr-edit-requests/log-admin-assignments',
     roles: ['super_admin']
   },
+  {
+    displayName: 'References',
+    iconName: 'database',
+    route: '/dashboard/references',
+    roles: ['super_admin']
+  },
 
   { navCap: 'Assets' },
   { displayName: 'All Assets', iconName: 'package', route: '/assets', roles: ['super_admin','log_admin'] },

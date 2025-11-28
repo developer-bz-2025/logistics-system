@@ -23,6 +23,12 @@ const routes: Routes = [
       import('../log-admin/log-admin.module').then(m => m.LogAdminModule),
     data: { roles: ['log_admin'] }
   },
+  {
+    path: 'references',
+    loadChildren: () =>
+      import('../references/references.module').then(m => m.ReferencesModule),
+    data: { roles: ['super_admin'] }
+  },
 
 
 ];

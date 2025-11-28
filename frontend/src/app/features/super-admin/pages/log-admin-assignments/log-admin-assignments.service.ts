@@ -67,4 +67,3 @@ export class LogAdminAssignmentsService {
     return this.http.get<UserDetail>(`${this.baseUrl}/users/${id}`);
   }
 }
-

@@ -58,7 +58,9 @@
       <div class="text-sm text-gray-500 truncate">{{ user?.email }}</div>
       <div class="text-xs font-medium mt-1 inline-block px-2 py-1 rounded-full text-white mt-4"
         [ngClass]="getGradientClass(user?.role.name)">
-        {{ user?.role?.name.replace('_', ' ') | titlecase }}
+        {{ user?.role?.name === 'super_admin'
+            ? 'Pro Admin'
+            : (user?.role?.name.replace('_', ' ') | titlecase) }}
       </div>
       <div *ngIf="user?.role?.name === 'log_admin'" class="mt-4 text-sm text-gray-700">
         <!-- <div class="text-xs font-semibold uppercase text-gray-500 tracking-wide mb-2">Locations</div> -->

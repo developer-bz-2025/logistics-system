@@ -1,17 +1,29 @@
 <h2 mat-dialog-title>Move Asset</h2>
 <mat-dialog-content class="dialog-content">
-  <p>Select the destination location for this asset.</p>
-  <mat-form-field appearance="fill" class="w-full">
-    <mat-label>Location</mat-label>
-    <mat-select
-      [value]="selectedLocationId"
-      (selectionChange)="selectedLocationId = $event.value"
-    >
-      <mat-option *ngFor="let location of data.locations" [value]="location.id">
-        {{ location.name }}
-      </mat-option>
-    </mat-select>
-  </mat-form-field>
+  <form [formGroup]="form">
+    <p>Select the destination location for this asset.</p>
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Location</mat-label>
+      <mat-select formControlName="locationId">
+        <mat-option *ngFor="let location of data.locations" [value]="location.id">
+          {{ location.name }}
+        </mat-option>
+      </mat-select>
+      <mat-error *ngIf="form.get('locationId')?.hasError('required')">
+        Location is required
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Notes (Optional)</mat-label>
+      <textarea
+        matInput
+        formControlName="notes"
+        rows="3"
+        placeholder="Add any notes about this location change..."
+      ></textarea>
+    </mat-form-field>
+  </form>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button mat-button type="button" (click)="cancel()">Cancel</button>
@@ -20,7 +32,7 @@
     color="primary"
     type="button"
     (click)="submit()"
-    [disabled]="!selectedLocationId || selectedLocationId === data.currentLocationId"
+    [disabled]="form.invalid || form.get('locationId')?.value === data.currentLocationId"
   >
     Move Asset
   </button>

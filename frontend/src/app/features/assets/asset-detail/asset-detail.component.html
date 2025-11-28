@@ -76,6 +76,17 @@
       </div>
     </div>
 
+    <!-- Asset Photo -->
+    <div class="asset-photo" *ngIf="asset.photo_url; else placeholderPhoto" (click)="openPhotoPreview()">
+      <img [src]="asset.photo_url" alt="Asset photo" />
+    </div>
+    <ng-template #placeholderPhoto>
+      <div class="asset-photo placeholder">
+        <mat-icon>photo_camera</mat-icon>
+        <span>No photo uploaded</span>
+      </div>
+    </ng-template>
+
     <!-- Compact Information Display -->
     <div *ngIf="!isEditing" class="compact-info-section">
       <div class="info-table">

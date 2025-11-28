@@ -3,10 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Item;
 use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Services\ItemHistoryService;
+use Illuminate\Support\Facades\Storage;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
 
 class ItemController extends Controller
 {
@@ -49,6 +53,8 @@ class ItemController extends Controller
                 'items.status_id',
                 DB::raw('COALESCE(items.Notes, items.notes) as notes'),
                 'items.holder_user_id',
+                'items.photo_path',
+                'items.details_pdf_path',
                 'items.created_by',
                 'items.created_at',
                 'items.updated_at',
@@ -251,6 +257,10 @@ class ItemController extends Controller
                 'budget_donor'         => $row->budget_donor,
                 'pr_id'                => $row->pr_id,
                 'notes'                => $row->notes,
+                'photo_path'           => $row->photo_path,
+                'details_pdf_path'     => $row->details_pdf_path,
+                'photo_url'            => $this->fileUrl($row->photo_path),
+                'details_pdf_url'      => $this->fileUrl($row->details_pdf_path),
                 'created_at'           => $row->created_at,
                 'updated_at'           => $row->updated_at,
 
@@ -304,6 +314,8 @@ class ItemController extends Controller
                 'items.status_id',
                 DB::raw('COALESCE(items.Notes, items.notes) as notes'),
                 'items.holder_user_id',
+                'items.photo_path',
+                'items.details_pdf_path',
                 'items.created_by',
                 'items.created_at',
                 'items.updated_at',
@@ -383,6 +395,10 @@ class ItemController extends Controller
             'budget_donor'         => $item->budget_donor,
             'pr_id'                => $item->pr_id,
             'notes'                => $item->notes,
+            'photo_path'           => $item->photo_path,
+            'details_pdf_path'     => $item->details_pdf_path,
+            'photo_url'            => $this->fileUrl($item->photo_path),
+            'details_pdf_url'      => $this->fileUrl($item->details_pdf_path),
             'created_at'           => $item->created_at,
             'updated_at'           => $item->updated_at,
 
@@ -429,6 +445,8 @@ class ItemController extends Controller
      */
     public function store(Request $request)
     {
+        $this->normalizeArrayPayloads($request);
+
         // Validate the request
         $validated = $request->validate([
             'fixed_item_id' => 'required|integer|exists:fixed_items,id',
@@ -452,6 +470,7 @@ class ItemController extends Controller
             'attributes' => 'nullable|array',
             'attributes.*.att_id' => 'required_with:attributes|integer',
             'attributes.*.att_option_id' => 'required_with:attributes|integer',
+            'photo' => 'nullable|image|max:10240',
         ]);
 
         // Extract attributes before inserting into items table
@@ -471,6 +490,15 @@ class ItemController extends Controller
         // if (!isset($validated['sn']) || $validated['sn'] === null || $validated['sn'] === '') {
         //     $validated['sn'] = 'NA';
         // }
+
+        // Handle photo upload when present
+        if ($request->hasFile('photo')) {
+            $validated['photo_path'] = $this->compressAndStorePhoto($request->file('photo'));
+        }
+
+        if (array_key_exists('photo', $validated)) {
+            unset($validated['photo']);
+        }
 
         // Set created_by from authenticated user
         $validated['created_by'] = auth()->id();
@@ -533,7 +561,7 @@ class ItemController extends Controller
         }
 
         // Log item creation
-        ItemHistoryService::logItemCreated($itemId, $validated);
+        ItemHistoryService::logItemCreated($itemId, $validated, auth()->id());
 
         // Return the created item
         return response()->json([
@@ -542,6 +570,8 @@ class ItemController extends Controller
             'fixed_item_id' => $validated['fixed_item_id'],
             'created_at' => $validated['created_at'],
             'updated_at' => $validated['updated_at'],
+            'photo_path' => $validated['photo_path'] ?? null,
+            'photo_url' => $this->fileUrl($validated['photo_path'] ?? null),
         ], 201);
     }
 
@@ -678,5 +708,88 @@ class ItemController extends Controller
 
         // Return the updated item
         return $this->show($id);
+    }
+
+    private function normalizeArrayPayloads(Request $request): void
+    {
+        if ($request->has('attributes') && is_string($request->input('attributes'))) {
+            $decoded = json_decode((string) $request->input('attributes'), true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $request->merge(['attributes' => $decoded]);
+            }
+        }
+    }
+
+    private function fileUrl(?string $path): ?string
+    {
+        return $path ? asset('storage/' . ltrim($path, '/')) : null;
+    }
+
+    /**
+     * Compress and store photo to max 100KB
+     */
+    private function compressAndStorePhoto($file): string
+    {
+        $maxSizeKB = 100;
+        $maxSizeBytes = $maxSizeKB * 1024;
+
+        // Create image manager
+        $manager = new ImageManager(new Driver());
+
+        // Read image from file
+        $image = $manager->read($file->getRealPath());
+
+        // Get original dimensions
+        $width = $image->width();
+        $height = $image->height();
+
+        // Start with reasonable dimensions and quality
+        $targetWidth = min(1200, $width);
+        $targetHeight = min(1200, $height);
+        $quality = 75;
+
+        // Resize if needed
+        if ($width > $targetWidth || $height > $targetHeight) {
+            $image->scale($targetWidth, $targetHeight);
+        }
+
+        // Try different quality levels until we get under 100KB
+        $path = null;
+        $tempPath = tempnam(sys_get_temp_dir(), 'item_photo_');
+
+        for ($q = $quality; $q >= 30; $q -= 5) {
+            // Re-read and resize if needed
+            if ($q < $quality) {
+                $image = $manager->read($file->getRealPath());
+                if ($width > 800 || $height > 800) {
+                    $image->scale(800, 800);
+                }
+            }
+
+            // Save to temp file
+            $image->toJpeg($q)->save($tempPath);
+            $fileSize = filesize($tempPath);
+
+            if ($fileSize <= $maxSizeBytes) {
+                // File size is acceptable
+                $fileName = 'item-' . uniqid() . '.jpg';
+                $path = 'items/photos/' . $fileName;
+                Storage::disk('public')->put($path, file_get_contents($tempPath));
+                unlink($tempPath);
+                return $path;
+            }
+        }
+
+        // If still too large, force smaller dimensions
+        $image = $manager->read($file->getRealPath());
+        $image->scale(600, 600);
+        $image->toJpeg(60)->save($tempPath);
+
+        $fileName = 'item-' . uniqid() . '.jpg';
+        $path = 'items/photos/' . $fileName;
+        Storage::disk('public')->put($path, file_get_contents($tempPath));
+        unlink($tempPath);
+
+        return $path;
     }
 }
