@@ -606,7 +606,8 @@ class ItemController extends Controller
             'budget_donor' => 'nullable|string|max:255',
             'notes' => 'nullable|string',
             'attributes' => 'nullable|array',
-            'attributes.*' => 'nullable|string|max:255',
+            'attributes.*.att_id' => 'required_with:attributes|integer|exists:attributes,id',
+            'attributes.*.att_option_id' => 'required_with:attributes|integer|exists:att_options,id',
         ]);
 
         // Format dates for MySQL compatibility
@@ -617,6 +618,10 @@ class ItemController extends Controller
                 $validated[$field] = \Carbon\Carbon::parse($validated[$field])->format('Y-m-d H:i:s');
             }
         }
+
+        // Extract attributes before updating items table
+        $attributes = $validated['attributes'] ?? null;
+        unset($validated['attributes']);
 
         // Track changes for history logging
         $changes = [];
@@ -647,7 +652,7 @@ class ItemController extends Controller
             ]));
 
         // Handle attributes update
-        if (isset($validated['attributes']) && is_array($validated['attributes'])) {
+        if (isset($attributes) && is_array($attributes)) {
             // Get current category to validate attributes
             $categoryId = DB::table('items')
                 ->join('fixed_items', 'items.fixed_item_id', '=', 'fixed_items.id')
@@ -655,44 +660,50 @@ class ItemController extends Controller
                 ->where('items.id', $id)
                 ->value('sub_category.cat_id');
 
-            foreach ($validated['attributes'] as $attrName => $optionValue) {
-                // Find attribute
-                $attr = DB::table('attributes')->where('name', $attrName)->first();
+            foreach ($attributes as $attribute) {
+                $attId = $attribute['att_id'];
+                $attOptionId = $attribute['att_option_id'];
+
+                // Validate that attribute exists
+                $attr = DB::table('attributes')->where('id', $attId)->first();
                 if (!$attr) continue;
 
                 // Check if attribute is allowed for category
                 $allowed = DB::table('category_attributes')
                     ->where('category_id', $categoryId)
-                    ->where('att_id', $attr->id)
+                    ->where('att_id', $attId)
                     ->exists();
 
                 if (!$allowed) continue;
 
-                // Find or create option
+                // Validate that option exists for this attribute
                 $option = DB::table('att_options')
-                    ->where('att_id', $attr->id)
-                    ->where('value', $optionValue)
+                    ->where('id', $attOptionId)
+                    ->where('att_id', $attId)
                     ->first();
 
                 if (!$option) continue;
 
-                // Update or insert attribute value
-                DB::table('item_attribute_values')->updateOrInsert(
-                    ['item_id' => $id, 'att_id' => $attr->id],
-                    ['att_option_id' => $option->id]
-                );
-
-                // Track attribute changes
+                // Get current attribute value for change tracking
                 $currentAttrValue = DB::table('item_attribute_values as iav')
                     ->join('att_options as ao', 'iav.att_option_id', '=', 'ao.id')
                     ->where('iav.item_id', $id)
-                    ->where('iav.att_id', $attr->id)
+                    ->where('iav.att_id', $attId)
                     ->value('ao.value');
 
-                if ($currentAttrValue != $optionValue) {
+                // Update or insert attribute value
+                DB::table('item_attribute_values')->updateOrInsert(
+                    ['item_id' => $id, 'att_id' => $attId],
+                    ['att_option_id' => $attOptionId]
+                );
+
+                // Track attribute changes
+                $newAttrValue = $option->value;
+                if ($currentAttrValue != $newAttrValue) {
+                    $attrName = $attr->name;
                     $changes[] = "attribute:{$attrName}";
                     $oldValues["attribute:{$attrName}"] = $currentAttrValue;
-                    $newValues["attribute:{$attrName}"] = $optionValue;
+                    $newValues["attribute:{$attrName}"] = $newAttrValue;
                 }
             }
         }

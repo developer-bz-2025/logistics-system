@@ -1,16 +1,19 @@
 import { Component, OnInit, OnDestroy, Inject } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, FormArray, FormControl, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subject, combineLatest, takeUntil } from 'rxjs';
+import { Subject, combineLatest, takeUntil, forkJoin, Observable, of } from 'rxjs';
+import { debounceTime, distinctUntilChanged, switchMap, startWith, map } from 'rxjs/operators';
 import { AssetService, CategoryService } from 'src/app/core/services/category.service';
-import { PrService } from 'src/app/core/services/pr.service';
-import { Category, SubCategory, FixedItem } from 'src/app/core/models/reference';
+import { PrService, PrListItem } from 'src/app/core/services/pr.service';
+import { Category, SubCategory, FixedItem, DynamicAttribute } from 'src/app/core/models/reference';
 import { AuthService } from 'src/app/core/services/auth.service';
 import { ToastService } from 'src/app/core/services/toast.service';
 import { MatDialog } from '@angular/material/dialog';
 import { MoveAssetDialogComponent } from './move-asset-dialog.component';
 import { PendingRequestDialogComponent } from './pending-request-dialog.component';
 import { MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { SupplierService } from 'src/app/core/services/supplier.service';
+import { UserService } from 'src/app/core/services/user.service';
 
 @Component({
   selector: 'app-asset-detail',
@@ -41,13 +44,18 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
   users: any[] = [];
   brands: any[] = [];
   colors: any[] = [];
-  dynamicAttributes: any[] = [];
+  prs: PrListItem[] = [];
+  dynamicAttributes: DynamicAttribute[] = [];
   canEditAsset = false;
   allowedMoveLocations: any[] = [];
   isRelocating = false;
   currentUser: any = null;
   userLocationIds: number[] = [];
   userRole: string | null = null;
+
+  // Autocomplete observables
+  filteredSuppliers$: Observable<any[]> = of([]);
+  filteredUsers$: Observable<any[]> = of([]);
 
   constructor(
     private route: ActivatedRoute,
@@ -58,7 +66,9 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
     private prService: PrService,
     private auth: AuthService,
     private toast: ToastService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private supplierService: SupplierService,
+    private userService: UserService
   ) {
     this.assetId = Number(this.route.snapshot.paramMap.get('id'));
     this.assetForm = this.createForm();
@@ -81,6 +91,91 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.loadAsset();
     this.loadDropdownData();
+    this.setupAutocomplete();
+  }
+
+  private setupAutocomplete(): void {
+    // Supplier autocomplete
+    const supplierControl = this.assetForm.get('supplier_id');
+    if (supplierControl) {
+      this.filteredSuppliers$ = supplierControl.valueChanges.pipe(
+        startWith(supplierControl.value || ''),
+        debounceTime(300),
+        distinctUntilChanged(),
+        switchMap(value => {
+          // If value is an object (selected), show it
+          if (typeof value === 'object' && value !== null && value.id) {
+            return of([value]);
+          }
+          // If value is a number (ID), find the supplier
+          if (typeof value === 'number' && this.suppliers.length > 0) {
+            const supplier = this.suppliers.find(s => s.id === value);
+            return supplier ? of([supplier]) : this.supplierService.search('', {});
+          }
+          const searchValue = typeof value === 'string' ? value : '';
+          if (!searchValue.trim()) {
+            // If empty, return all suppliers or empty array
+            return this.suppliers.length > 0 ? of(this.suppliers) : of([]);
+          }
+          return this.supplierService.search(searchValue, {});
+        }),
+        takeUntil(this.destroy$)
+      );
+    }
+
+    // User autocomplete
+    const userControl = this.assetForm.get('holder_user_id');
+    if (userControl) {
+      this.filteredUsers$ = userControl.valueChanges.pipe(
+        startWith(userControl.value || ''),
+        debounceTime(300),
+        distinctUntilChanged(),
+        switchMap(value => {
+          // If value is an object (selected), show it
+          if (typeof value === 'object' && value !== null && (value.id || value.label)) {
+            return of([value]);
+          }
+          // If value is a number (ID), find the user
+          if (typeof value === 'number' && this.users.length > 0) {
+            const user = this.users.find(u => u.id === value);
+            return user ? of([{ id: user.id, label: user.name }]) : this.userService.search('').pipe(
+              map(users => users.map(u => ({ id: u.id, label: u.name })))
+            );
+          }
+          const searchValue = typeof value === 'string' ? value : '';
+          if (!searchValue.trim()) {
+            // If empty, return empty array (don't load all users)
+            return of([]);
+          }
+          return this.userService.search(searchValue).pipe(
+            map(users => users.map(u => ({ id: u.id, label: u.name })))
+          );
+        }),
+        takeUntil(this.destroy$)
+      );
+    }
+  }
+
+  get supplierControl(): FormControl {
+    return this.assetForm.get('supplier_id') as FormControl;
+  }
+
+  get holderUserControl(): FormControl {
+    return this.assetForm.get('holder_user_id') as FormControl;
+  }
+
+  displaySupplier(supplier: any): string {
+    if (!supplier) return '';
+    if (typeof supplier === 'object' && supplier.name) return supplier.name;
+    if (typeof supplier === 'string') return supplier;
+    return '';
+  }
+
+  displayUser(user: any): string {
+    if (!user) return '';
+    if (typeof user === 'object' && (user.name || user.label)) return user.name || user.label;
+    if (typeof user === 'string') return user;
+    return '';
   }
 
   ngOnDestroy() {
@@ -91,10 +186,8 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
   private createForm(): FormGroup {
     return this.fb.group({
       sn: [''],
-      fixed_item_id: [null, Validators.required],
       description: [''],
       status_id: [null],
-      location_id: [null],
       floor_id: [null],
       supplier_id: [null],
       brand_id: [null],
@@ -107,7 +200,8 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
       budget_code: [''],
       budget_donor: [''],
       pr_id: [null],
-      notes: ['']
+      notes: [''],
+      attributes: this.fb.array([])
     });
   }
 
@@ -125,7 +219,7 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
       error: (error) => {
         console.error('Error loading asset:', error);
         this.isLoading = false;
-        // TODO: Show error message
+        this.toast.error('Failed to load asset details.', 'Error');
       }
     });
   }
@@ -138,53 +232,111 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
       this.assets.getLocations(),
       this.assets.getFloors(),
       this.assets.getSuppliers(),
-      this.assets.getUsers()
+      this.assets.getUsers(),
+      this.prService.getPrs()
     ]).pipe(takeUntil(this.destroy$)).subscribe({
-      next: ([categories, statuses, locations, floors, suppliers, users]) => {
+      next: ([categories, statuses, locations, floors, suppliers, users, prs]) => {
         this.categories = categories;
         this.statuses = statuses;
         this.locations = locations;
         this.floors = floors;
         this.suppliers = suppliers;
         this.users = users;
+        this.prs = prs;
+        // Reload PR details if asset is already loaded
+        if (this.asset) {
+          this.loadPrDetails();
+          // Repopulate form to set supplier and user objects
+          this.populateForm();
+        }
         this.updatePermissions();
       },
       error: (error) => {
         console.error('Error loading dropdown data:', error);
       }
     });
-
-    // Load subcategories and fixed items when category changes
-    this.assetForm.get('fixed_item_id')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(fixedItemId => {
-      if (fixedItemId && this.asset) {
-        // Find the subcategory for this fixed item
-        const fixedItem = this.fixedItems.find(fi => fi.id === fixedItemId);
-        if (fixedItem) {
-          this.cats.getSubCategories(fixedItem.sub_category_id).pipe(takeUntil(this.destroy$)).subscribe(subs => {
-            this.subCategories = subs;
-          });
-        }
-      }
-    });
   }
 
   private loadCategoryAttributes() {
-    // Note: category_id is not included in the asset response
-    // Dynamic attributes loading is disabled until backend provides category_id
-    console.log('Category attributes loading skipped - category_id not available in asset response');
-    this.dynamicAttributes = [];
+    if (!this.asset?.category_id) {
+      this.dynamicAttributes = [];
+      return;
+    }
+
+    const categoryId = this.asset.category_id;
+    const subCategoryId = this.asset.sub_category_id;
+
+    this.assets.getCategoryAttributes(categoryId, subCategoryId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (attributes) => {
+          this.dynamicAttributes = attributes || [];
+          // Ensure asset is loaded before setting up form array
+          if (this.asset) {
+            this.setupAttributesFormArray();
+          }
+        },
+        error: (error) => {
+          console.error('Error loading category attributes:', error);
+          this.dynamicAttributes = [];
+        }
+      });
+  }
+
+  private setupAttributesFormArray(): void {
+    const attributesArray = this.assetForm.get('attributes') as FormArray;
+    attributesArray.clear();
+
+    this.dynamicAttributes.forEach((attr) => {
+      const attributeId = attr.att_id ?? attr.id;
+      const existingValue = this.getExistingAttributeValue(attr);
+      
+      const attrGroup = this.fb.group({
+        att_id: [attributeId],
+        att_option_id: [existingValue, attr.type === 'select' ? Validators.required : null]
+      });
+      
+      attributesArray.push(attrGroup);
+    });
+  }
+
+  private getExistingAttributeValue(attr: DynamicAttribute): any {
+    if (!this.asset?.attributes) return null;
+    
+    // Attributes are stored with display names as keys (e.g., "Material", "Size/Capacity")
+    // and option values as values (e.g., "leather", "medium")
+    const attributeName = attr.name;
+    const storedValue = this.asset.attributes[attributeName];
+    
+    if (storedValue === undefined || storedValue === null) {
+      return null;
+    }
+    
+    // For select type attributes, find the option that matches the stored value
+    if (attr.type === 'select' && attr.options && attr.options.length > 0) {
+      // Find the option where the value matches the stored value
+      const foundOption = attr.options.find(opt => {
+        // Compare the option's value (display text) with the stored value
+        const optValue = opt.value || String(opt.id);
+        return String(optValue).toLowerCase() === String(storedValue).toLowerCase();
+      });
+      
+      if (foundOption) {
+        // Return the option ID
+        return typeof foundOption.id === 'string' && !isNaN(Number(foundOption.id))
+          ? Number(foundOption.id)
+          : foundOption.id;
+      }
+    }
+    
+    // For text and number types, return the stored value as is
+    return storedValue;
   }
 
   private loadPrDetails() {
-    if (this.asset?.pr_id) {
-      // For now, we'll just set a placeholder. In a real implementation,
-      // you'd fetch the PR details from the backend
-      // this.prService.getPr(this.asset.pr_id).subscribe(pr => {
-      //   this.prCode = pr.pr_code;
-      // });
-
-      // Since we don't have a getPr method, we'll use a placeholder for now
-      this.prCode = `PR-${this.asset.pr_id.toString().padStart(4, '0')}`;
+    if (this.asset?.pr_id && this.prs.length > 0) {
+      const pr = this.prs.find(p => p.id === this.asset.pr_id);
+      this.prCode = pr?.pr_code || '';
     } else {
       this.prCode = '';
     }
@@ -193,17 +345,33 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
   private populateForm() {
     if (!this.asset || !this.assetForm) return;
 
-    const formData = {
+    // Find supplier object if supplier_id exists
+    let supplierValue = this.asset.supplier_id || null;
+    if (supplierValue && this.suppliers.length > 0) {
+      const supplier = this.suppliers.find(s => s.id === supplierValue);
+      if (supplier) {
+        supplierValue = supplier;
+      }
+    }
+
+    // Find user object if holder_user_id exists
+    let userValue = this.asset.holder_user_id || null;
+    if (userValue && this.users.length > 0) {
+      const user = this.users.find(u => u.id === userValue);
+      if (user) {
+        userValue = { id: user.id, label: user.name };
+      }
+    }
+
+    const formData: any = {
       sn: this.asset.sn || '',
-      fixed_item_id: this.asset.fixed_item_id || null,
       description: this.asset.description || '',
       status_id: this.asset.status_id || null,
-      location_id: this.asset.location_id || null,
       floor_id: this.asset.floor_id || null,
-      supplier_id: this.asset.supplier_id || null,
+      supplier_id: supplierValue,
       brand_id: this.asset.brand_id || null,
       color_id: this.asset.color_id || null,
-      holder_user_id: this.asset.holder_user_id || null,
+      holder_user_id: userValue,
       acquisition_date: this.asset.acquisition_date || '',
       acquisition_cost: this.asset.acquisition_cost || null,
       warranty_start_date: this.asset.warranty_start_date || '',
@@ -214,22 +382,7 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
       notes: this.asset.notes || ''
     };
 
-    // Add dynamic attributes
-    if (this.asset.attributes) {
-      Object.keys(this.asset.attributes).forEach(key => {
-        // Only add form controls for non-name attributes (avoid duplicates)
-        if (!key.endsWith('_name') && !this.assetForm.get(key)) {
-          this.assetForm.addControl(key, this.fb.control(null));
-        }
-        formData[key as keyof typeof formData] = this.asset.attributes[key];
-      });
-    }
-
     this.assetForm.patchValue(formData);
-
-    // Note: sub_category_id is not available in asset response
-    // Fixed items loading is disabled until backend provides sub_category_id
-    console.log('Fixed items loading skipped - sub_category_id not available in asset response');
   }
 
   toggleEdit() {
@@ -249,11 +402,37 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
     }
 
     this.isSaving = true;
-    const formData = this.assetForm.value;
+    const formData: any = { ...this.assetForm.value };
+
+    // Extract supplier_id from supplier object
+    if (formData.supplier_id && typeof formData.supplier_id === 'object' && formData.supplier_id.id) {
+      formData.supplier_id = formData.supplier_id.id;
+    }
+
+    // Extract holder_user_id from user object
+    if (formData.holder_user_id && typeof formData.holder_user_id === 'object' && formData.holder_user_id.id) {
+      formData.holder_user_id = formData.holder_user_id.id;
+    }
+
+    // Extract attributes from FormArray and ensure proper format
+    if (formData.attributes && Array.isArray(formData.attributes)) {
+      formData.attributes = formData.attributes
+        .filter((attr: any) => 
+          attr.att_id !== null && 
+          attr.att_id !== undefined && 
+          attr.att_option_id !== null && 
+          attr.att_option_id !== undefined
+        )
+        .map((attr: any) => ({
+          att_id: Number(attr.att_id),
+          att_option_id: Number(attr.att_option_id)
+        }));
+    }
 
     // Remove empty values
     Object.keys(formData).forEach(key => {
-      if (formData[key] === '' || formData[key] === null) {
+      if (formData[key] === '' || formData[key] === null || 
+          (Array.isArray(formData[key]) && formData[key].length === 0)) {
         delete formData[key];
       }
     });
@@ -263,12 +442,14 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
         this.asset = updatedAsset.data || updatedAsset;
         this.isEditing = false;
         this.isSaving = false;
-        // TODO: Show success message
+        this.toast.success('Asset updated successfully.', 'Update Asset');
+        // Reload attributes after update
+        this.loadCategoryAttributes();
       },
       error: (error) => {
         console.error('Error updating asset:', error);
         this.isSaving = false;
-        // TODO: Show error message
+        this.toast.error('Failed to update asset. Please try again.', 'Update Asset Failed');
       }
     });
   }
@@ -285,6 +466,25 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
   getAttributeOptions(fieldName: string): any[] {
     const attr = this.dynamicAttributes.find(a => a.field_name === fieldName);
     return attr?.options || [];
+  }
+
+  get attributesFormArray(): FormArray {
+    return this.assetForm.get('attributes') as FormArray;
+  }
+
+  getAttributeFormGroup(index: number): FormGroup {
+    return this.attributesFormArray.at(index) as FormGroup;
+  }
+
+  getAttributeByIndex(index: number): DynamicAttribute {
+    return this.dynamicAttributes[index];
+  }
+
+  getSelectedPrCode(): string {
+    const prId = this.assetForm.get('pr_id')?.value;
+    if (!prId) return '';
+    const pr = this.prs.find(p => p.id === prId);
+    return pr?.pr_code || '';
   }
 
   getAttributeFieldClass(attr: any): string {
