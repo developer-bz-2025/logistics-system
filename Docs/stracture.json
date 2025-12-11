@@ -172,10 +172,66 @@
       },
       {
         "name": "TV",
-        "items": ["Smart TV", "LED TV", "LCD TV"],
+        "items": ["Smart TV", "LED TV", "LCD TV", "TV"],
         "options": {
           "Material - brand - fixture": ["NA", "Plastic", "Metal"],
           "Size/Capacity": ["32 inch", "42 inch", "50 inch", "55 inch"]
+        }
+      },
+      {
+        "name": "computer_screen",
+        "items": ["computer_screen"],
+        "options": {
+          "Material - brand - fixture": ["NA"],
+          "Size/Capacity": ["NA"]
+        }
+      },
+      {
+        "name": "Recorder",
+        "items": ["Recorder"],
+        "options": {
+          "Material - brand - fixture": ["NA"],
+          "Size/Capacity": ["NA","Small","large"]
+        }
+      },
+      {
+        "name": "Hoover",
+        "items": ["Hoover"],
+        "options": {
+          "Material - brand - fixture": ["NA"],
+          "Size/Capacity": ["NA"]
+        }
+      },
+      {
+        "name": "External_DVD",
+        "items": ["External_DVD"],
+        "options": {
+          "Material - brand - fixture": ["NA"],
+          "Size/Capacity": ["NA"]
+        }
+      },
+      {
+        "name": "DVR",
+        "items": ["DVR"],
+        "options": {
+          "Material - brand - fixture": ["NA"],
+          "Size/Capacity": ["NA"]
+        }
+      },
+      {
+        "name": "Electric_drill",
+        "items": ["Electric drill with battery","Electric drill without drill"],
+        "options": {
+          "Material - brand - fixture": ["NA"],
+          "Size/Capacity": ["NA","Small","large"]
+        }
+      },
+      {
+        "name": "kettle",
+        "items": ["Electric kettle"],
+        "options": {
+          "Material - brand - fixture": ["NA"],
+          "Size/Capacity": ["NA","Small","large"]
         }
       }
     ]
@@ -193,8 +249,16 @@
         }
       },
       {
+        "name": "Safe_Money",
+        "items": ["Safe money with lock","NA"],
+        "options": {
+          "Material - brand - fixture": ["iron", "NA"],
+          "Size/Capacity": ["Small", "Big", "NA"]
+        }
+      },
+      {
         "name": "Overlock_Machines",
-        "items": ["Sewing Machine"],
+        "items": ["Sewing Machine"], 
         "options": {
           "Material - brand - fixture": ["NA"],
           "Size/Capacity": ["small", "home use", "non-industrial"]
@@ -206,6 +270,38 @@
         "options": {
           "Material - brand - fixture": ["NA", "Plastic", "Metal", "Plastic & stainless"],
           "Size/Capacity": ["Small", "Medium", "Large", "N/A"]
+        }
+      },
+      {
+        "name": "Computer_Case",
+        "items": ["Computer Case"],
+        "options": {
+          "Material - brand - fixture": ["NA"],
+          "Size/Capacity": ["NA"]
+        }
+      },
+      {
+        "name": "Mouse",
+        "items": ["Mouse"],
+        "options": {
+          "Material - brand - fixture": ["NA"],
+          "Size/Capacity": ["NA"]
+        }
+      },
+      {
+        "name": "Punching_Machine",
+        "items": ["Punching Machine"],
+        "options": {
+          "Material - brand - fixture": ["NA"],
+          "Size/Capacity": ["NA"]
+        }
+      },
+      {
+        "name": "Blood_pressure_monitor",
+        "items": ["Manual","Automated"],
+        "options": {
+          "Material - brand - fixture": ["NA"],
+          "Size/Capacity": ["NA"]
         }
       }
     ]
@@ -263,7 +359,7 @@
       },
       {
         "name": "Printer",
-        "items": ["Ink jet", "Laser jet", "black", "colored", "NA"],
+        "items": ["Ink jet", "Laser jet", "black Printer", "colored Printer", "NA"],
         "options": { "Size/Capacity": ["small Printer", "Large Printer", "Havy Duty", "NA"] }
       },
       {
@@ -273,7 +369,7 @@
       },
       {
         "name": "Speaker",
-        "items": ["Bluetooth Speaker", "Wired Speaker", "Wireless Speaker", "NA"],
+        "items": ["Bluetooth Speaker", "Wired Speaker", "Wireless Speaker","Speaker", "NA"],
         "options": { "Size/Capacity": ["Small", "Medium", "Large", "NA"] }
       },
       {
@@ -283,8 +379,40 @@
       },
       {
         "name": "Router",
-        "items": ["Wireless Router", "Wired Router", "Mesh Router", "NA"],
+        "items": ["Router","Wireless Router", "Wired Router", "Mesh Router", "NA"],
         "options": { "Size/Capacity": ["100 Mbps", "300 Mbps", "500 Mbps", "1 Gbps", "NA"] }
+      }
+      ,
+      {
+        "name": "Audio_Device",
+        "items": ["Audio_Device"],
+        "options": { "Size/Capacity": ["NA"] }
+      },
+      {
+        "name": "Sound_machine",
+        "items": ["Sound_machine"],
+        "options": { "Size/Capacity": ["NA"] }
+      },
+      {
+        "name": "Microphone",
+        "items": ["Microphone"],
+        "options": { "Size/Capacity": ["NA"] }
+      },
+      {
+        "name": "Keyboard",
+        "items": ["Keyboard","wired keyboard","wireless keyboard"],
+        "options": { "Size/Capacity": ["NA"] }
+      },
+      {
+        "name": "Server",
+        "items": ["Server"],
+        "options": { "Size/Capacity": ["NA"] }
+      }
+      ,
+      {
+        "name": "Inverter",
+        "items": ["Inverter","NA"],
+        "options": { "Size/Capacity": ["3 KW","5 KW","8 KW"] }
       }
     ]
   },

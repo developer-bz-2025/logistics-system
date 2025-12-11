@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, AfterViewInit, ViewChildren, QueryList, ElementRef } from '@angular/core';
 import { AssetService } from 'src/app/core/services/category.service';
 
 type Card = {
@@ -13,7 +13,8 @@ type Card = {
   templateUrl: './dashboard-cards.component.html',
   styleUrls: ['./dashboard-cards.component.scss']
 })
-export class DashboardCardsComponent implements OnInit {
+export class DashboardCardsComponent implements OnInit, AfterViewInit {
+  @ViewChildren('countElement') countElements!: QueryList<ElementRef>;
 
   cards: Card[] = [
     { key: 'furniture',  label: 'Furniture',    count: 0, tint: 'indigo' },
@@ -31,6 +32,42 @@ export class DashboardCardsComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadDashboardStats();
+  }
+
+  ngAfterViewInit(): void {
+    // Adjust font sizes after view initialization
+    setTimeout(() => this.adjustFontSizes(), 100);
+    
+    // Adjust again after data loads
+    this.countElements.changes.subscribe(() => {
+      setTimeout(() => this.adjustFontSizes(), 100);
+    });
+  }
+
+  private adjustFontSizes(): void {
+    this.countElements.forEach((elementRef, index) => {
+      const element = elementRef.nativeElement;
+      const container = element.closest('.flex');
+      if (!container || !element) return;
+
+      const containerWidth = container.offsetWidth;
+      const iconWidth = 56; // icon width
+      const gap = 16; // gap-4 = 16px
+      const margin = 8; // ml-2 = 8px
+      const padding = 48; // card padding (24px each side for md:p-6)
+      const safetyMargin = 5; // minimal safety margin to prevent overlap
+      const availableWidth = containerWidth - iconWidth - gap - margin - padding - safetyMargin;
+      
+      // Start with max font size
+      let fontSize = 30; // 1.875rem
+      element.style.fontSize = `${fontSize}px`;
+      
+      // Check if text overflows - reduce gradually
+      while (element.scrollWidth > availableWidth && fontSize > 12) {
+        fontSize -= 0.5; // Reduce by 0.5px for finer control
+        element.style.fontSize = `${fontSize}px`;
+      }
+    });
   }
 
   private loadDashboardStats(): void {
@@ -51,6 +88,8 @@ export class DashboardCardsComponent implements OnInit {
         });
 
         this.isLoading = false;
+        // Adjust font sizes after data loads
+        setTimeout(() => this.adjustFontSizes(), 100);
       },
       error: (error) => {
         console.error('Failed to load dashboard stats:', error);

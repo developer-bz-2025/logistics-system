@@ -1,3 +1,32 @@
 :host {
     display: block;
   }
+
+.count-number {
+  font-size: 1.875rem; // Default text-3xl (30px)
+  line-height: 1.2;
+  display: inline-block;
+  max-width: 100%;
+  
+  // Use CSS to scale font size down when text is too wide
+  // This will make the font smaller to fit the available space
+  font-size: clamp(0.875rem, 5vw, 1.875rem);
+  
+  // For smaller cards, scale down more aggressively
+  @media (max-width: 640px) {
+    font-size: clamp(0.75rem, 4vw, 1.5rem);
+  }
+  
+  // Use container queries if supported (better scaling)
+  @container (max-width: 200px) {
+    font-size: 1.125rem; // text-lg
+  }
+  
+  @container (max-width: 180px) {
+    font-size: 1rem; // text-base
+  }
+  
+  @container (max-width: 160px) {
+    font-size: 0.875rem; // text-sm
+  }
+}

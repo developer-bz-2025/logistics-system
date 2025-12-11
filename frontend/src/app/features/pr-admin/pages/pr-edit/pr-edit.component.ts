@@ -271,25 +271,61 @@ isExisting(i: number): boolean {
 
   private addItemRowFromExisting(item: PRItemDto, idx: number): void {
     const fg = this.createItemGroup();
-    fg.patchValue({
-      pr_item_id: item.pr_item_id,
-      category_id: item.category_id ?? null,
-      sub_category_id: item.sub_category_id ?? null,
-      fixed_item_id: item.fixed_item_id,
-      supplier_id: item.supplier_id,
-      supplier_query: item.supplier_name ?? '',   // <= prefill
-      unit_cost: item.unit_cost,
-      currency: item.currency ?? 'USD'
-    });
     this.itemsFA.push(fg);
     this.rowOptions.push({ subCategories: [], items: [], supplierResults: [], supplierLoading: false });
   
-    this.loadSubCategories(idx, fg.get('category_id')!.value).subscribe(() => {
-      this.loadFixedItems(idx, fg.get('sub_category_id')!.value).subscribe(() => {
+    // Load options first, then patch values to avoid empty dropdowns
+    const categoryId = item.category_id ?? null;
+    const subCategoryId = item.sub_category_id ?? null;
+    
+    // Load subcategories first if category exists
+    const loadSubCats$ = categoryId 
+      ? this.loadSubCategories(idx, categoryId)
+      : of([]);
+    
+    loadSubCats$.pipe(
+      switchMap(() => {
+        // Then load fixed items if subcategory exists
+        return subCategoryId 
+          ? this.loadFixedItems(idx, subCategoryId)
+          : of([]);
+      })
+    ).subscribe({
+      next: () => {
+        // Now patch values after options are loaded
+        fg.patchValue({
+          pr_item_id: item.pr_item_id,
+          category_id: categoryId,
+          sub_category_id: subCategoryId,
+          fixed_item_id: item.fixed_item_id,
+          supplier_id: item.supplier_id,
+          supplier_query: item.supplier_name ?? '',   // <= prefill
+          unit_cost: item.unit_cost,
+          currency: item.currency ?? 'USD'
+        }, { emitEvent: false }); // Don't trigger cascades yet
+        
+        // Setup cascades and typeahead after values are set
         this.setupCascadesForRow(idx);
         this.setupSupplierTypeaheadForRow(idx);
         this.cdr.markForCheck();
-      });
+      },
+      error: (err) => {
+        console.error(`Error loading options for item ${idx}:`, err);
+        // Still patch values even if options fail to load (user can manually select)
+        fg.patchValue({
+          pr_item_id: item.pr_item_id,
+          category_id: categoryId,
+          sub_category_id: subCategoryId,
+          fixed_item_id: item.fixed_item_id,
+          supplier_id: item.supplier_id,
+          supplier_query: item.supplier_name ?? '',
+          unit_cost: item.unit_cost,
+          currency: item.currency ?? 'USD'
+        }, { emitEvent: false });
+        this.setupCascadesForRow(idx);
+        this.setupSupplierTypeaheadForRow(idx);
+        this.cdr.markForCheck();
+      }
     });
   }
 

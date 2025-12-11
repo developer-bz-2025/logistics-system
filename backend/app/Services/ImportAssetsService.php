@@ -65,6 +65,10 @@ class ImportAssetsService
                 'inserted' => 0, 'updated' => 0, 'att_options_created' => 0,
                 'skipped_missing_category' => 1, 'skipped_missing_sub' => 0,
                 'skipped_missing_fixed' => 0, 'skipped_empty_row' => 0,
+                'skipped_category_names' => [$categoryName],
+                'skipped_sub_names' => [],
+                'skipped_fixed_names' => [],
+                'duplicate_sns' => [],
             ];
             continue;
         }
@@ -85,6 +89,28 @@ class ImportAssetsService
         );
     }
 
+    // Aggregate skipped names across all sheets
+    $all_skipped_category_names = [];
+    $all_skipped_sub_names = [];
+    $all_skipped_fixed_names = [];
+    
+    foreach ($results as $result) {
+        if (isset($result['skipped_category_names'])) {
+            $all_skipped_category_names = array_merge($all_skipped_category_names, $result['skipped_category_names']);
+        }
+        if (isset($result['skipped_sub_names'])) {
+            $all_skipped_sub_names = array_merge($all_skipped_sub_names, $result['skipped_sub_names']);
+        }
+        if (isset($result['skipped_fixed_names'])) {
+            $all_skipped_fixed_names = array_merge($all_skipped_fixed_names, $result['skipped_fixed_names']);
+        }
+    }
+    
+    // Remove duplicates and re-index
+    $all_skipped_category_names = array_values(array_unique($all_skipped_category_names));
+    $all_skipped_sub_names = array_values(array_unique($all_skipped_sub_names));
+    $all_skipped_fixed_names = array_values(array_unique($all_skipped_fixed_names));
+
     $summary = [
         // 'references' => $refSummary ?? null,
         'items' => [
@@ -96,6 +122,9 @@ class ImportAssetsService
             'skipped_missing_sub'      => array_sum(array_column($results, 'skipped_missing_sub')),
             'skipped_missing_fixed'    => array_sum(array_column($results, 'skipped_missing_fixed')),
             'skipped_empty_row'        => array_sum(array_column($results, 'skipped_empty_row')),
+            'skipped_category_names'   => $all_skipped_category_names,
+            'skipped_sub_names'        => $all_skipped_sub_names,
+            'skipped_fixed_names'      => $all_skipped_fixed_names,
         ],
     ];
 
@@ -199,6 +228,10 @@ public function importItemsSheet(Spreadsheet $spreadsheet, string $sheetName, st
             'skipped_missing_sub' => 0,
             'skipped_missing_fixed' => 0,
             'skipped_empty_row' => 0,
+            'skipped_category_names' => [],
+            'skipped_sub_names' => [],
+            'skipped_fixed_names' => [],
+            'duplicate_sns' => [],
         ];
     }
 
@@ -217,7 +250,11 @@ public function importItemsSheet(Spreadsheet $spreadsheet, string $sheetName, st
             'skipped_missing_category' => 0,
             'skipped_missing_sub' => 0,
             'skipped_missing_fixed' => 0,
-            'skipped_empty_row' => 0
+            'skipped_empty_row' => 0,
+            'skipped_category_names' => [],
+            'skipped_sub_names' => [],
+            'skipped_fixed_names' => [],
+            'duplicate_sns' => [],
         ];
     }
 
@@ -238,7 +275,7 @@ public function importItemsSheet(Spreadsheet $spreadsheet, string $sheetName, st
         'warranty_start' => ['warranty start', 'warranty start date', 'warranty_start'],
         'warranty_end' => ['warranty end', 'warranty end date', 'warranty_end'],
         'budget_code' => ['budget code', 'budget_code'],
-        'budget_donor' => ['budget donor', 'budget_donor'],
+        'budget_donor' => ['budget donor', 'budget_donor','Budget/ Doner'],
         'location' => ['location'],
         'floor' => ['floor'],
         'notes' => ['notes', 'note'],
@@ -257,16 +294,24 @@ public function importItemsSheet(Spreadsheet $spreadsheet, string $sheetName, st
             'skipped_missing_category' => 1,
             'skipped_missing_sub' => 0,
             'skipped_missing_fixed' => 0,
-            'skipped_empty_row' => 0
+            'skipped_empty_row' => 0,
+            'skipped_category_names' => [$categoryName],
+            'skipped_sub_names' => [],
+            'skipped_fixed_names' => [],
+            'duplicate_sns' => [],
         ];
     }
 
     $inserted = $updated = $att_options_created = 0;
     $skipped_missing_sub = $skipped_missing_fixed = $skipped_empty_row = 0;
+    $skipped_sub_names = [];
+    $skipped_fixed_names = [];
+    $duplicate_sns = []; // Track duplicate serial numbers found during import
 
     // 4) Iterate data rows (skip header row)
-    for ($i = 2; $i < count($rows); $i++) {
-        $r = $rows[$i];
+    // Note: toArray returns 1-indexed array, so row 1 is header, rows 2+ are data
+    for ($i = 2; $i <= count($rows); $i++) {
+        $r = $rows[$i] ?? [];
 
         // Grab core fields
         $subName = $this->clean($this->cell($r, $H, 'sub_category'));
@@ -296,8 +341,10 @@ public function importItemsSheet(Spreadsheet $spreadsheet, string $sheetName, st
         $fixedName = $fixedName ?: 'NA';
         $desc = $desc ?: 'NA';
 
-        // Skip rows that are completely empty (all NA)
-        if ($subName === 'NA' && $fixedName === 'NA' && $sn === 'NA' && $desc === 'NA') {
+        // Skip rows that are completely empty (all NA or null)
+        // Note: $sn can be null, so we check for both null and 'NA'
+        $isSnEmpty = ($sn === null || $sn === 'NA');
+        if ($subName === 'NA' && $fixedName === 'NA' && $isSnEmpty && $desc === 'NA') {
             $skipped_empty_row++;
             continue;
         }
@@ -312,6 +359,10 @@ public function importItemsSheet(Spreadsheet $spreadsheet, string $sheetName, st
                 'row' => $i
             ]);
             $skipped_missing_sub++;
+            // Store the skipped subcategory name (avoid duplicates)
+            if (!in_array($subName, $skipped_sub_names)) {
+                $skipped_sub_names[] = $subName;
+            }
             continue;
         }
 
@@ -326,6 +377,11 @@ public function importItemsSheet(Spreadsheet $spreadsheet, string $sheetName, st
                 'row' => $i
             ]);
             $skipped_missing_fixed++;
+            // Store the skipped fixed item name with its subcategory for context
+            $skipped_fixed_key = $subName . ' > ' . $fixedName;
+            if (!in_array($skipped_fixed_key, $skipped_fixed_names)) {
+                $skipped_fixed_names[] = $skipped_fixed_key;
+            }
             continue;
         }
 
@@ -472,10 +528,15 @@ public function importItemsSheet(Spreadsheet $spreadsheet, string $sheetName, st
             // If item has SN, check for existing item with same SN
             $existingItem = DB::table('items')->where('sn', $sn)->first();
             if ($existingItem) {
-                // Update existing item with same SN
+                // Update existing item with same SN (duplicate SN in Excel file)
                 DB::table('items')->where('id', $existingItem->id)->update($itemData);
                 $itemId = $existingItem->id;
                 $updated++;
+
+                // Track duplicate serial number
+                if (!in_array($sn, $duplicate_sns)) {
+                    $duplicate_sns[] = $sn;
+                }
 
                 // Log item update
                 ItemHistoryService::logItemUpdated($itemId, $itemData);
@@ -518,6 +579,9 @@ public function importItemsSheet(Spreadsheet $spreadsheet, string $sheetName, st
         'skipped_missing_sub' => $skipped_missing_sub,
         'skipped_missing_fixed' => $skipped_missing_fixed,
         'skipped_empty_row' => $skipped_empty_row,
+        'skipped_sub_names' => $skipped_sub_names,
+        'skipped_fixed_names' => $skipped_fixed_names,
+        'duplicate_sns' => $duplicate_sns,
     ];
 }
 
@@ -626,6 +690,15 @@ private function requireIdOrSkip(?int $id, string $what, array $context, &$skips
     {
         if (!$v)
             return null;
+        
+        // Clean the value first
+        $v = is_string($v) ? trim($v) : $v;
+        
+        // Check for NA/N/A values and return null
+        if (is_string($v) && (strtoupper($v) === 'NA' || strtoupper($v) === 'N/A')) {
+            return null;
+        }
+        
         try {
             // handle Excel serials or ISO strings
             if (is_numeric($v)) {
@@ -642,7 +715,12 @@ private function requireIdOrSkip(?int $id, string $what, array $context, &$skips
             }
 
             // Fallback to strtotime for other formats
-            return date('Y-m-d', strtotime($v));
+            $timestamp = strtotime($v);
+            // If strtotime fails, return null instead of 1970-01-01
+            if ($timestamp === false) {
+                return null;
+            }
+            return date('Y-m-d', $timestamp);
         } catch (\Throwable $e) {
             return null;
         }

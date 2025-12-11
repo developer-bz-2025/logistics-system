@@ -3,18 +3,19 @@
     <!-- Card -->
     <div *ngFor="let c of cards"
          class="rounded-2xl border border-gray-200 bg-white shadow-sm p-5 md:p-6 h-30
-                flex items-center justify-between">
+                flex items-center gap-4"
+         style="container-type: inline-size;">
       <!-- Left: label + number -->
-      <div class="min-w-0">
+      <div class="min-w-0 flex-1 overflow-hidden pr-2">
         <div class="text-sm text-gray-500 leading-none">{{ c.label }}</div>
-        <div class="mt-2 text-3xl font-extrabold tracking-tight text-gray-900">
-          <span *ngIf="!isLoading">{{ c.count | number }}</span>
+        <div class="mt-2 font-extrabold tracking-tight text-gray-900 whitespace-nowrap count-number">
+          <span #countElement *ngIf="!isLoading" class="inline-block">{{ c.count | number }}</span>
           <span *ngIf="isLoading" class="inline-block w-16 h-8 bg-gray-200 rounded animate-pulse"></span>
         </div>
       </div>
   
       <!-- Right: icon pill -->
-      <div class="shrink-0">
+      <div class="shrink-0 ml-2">
         <div class="w-[56px] h-[56px] rounded-2xl ring-1 flex items-center justify-center"
              [ngClass]="[tintClass(c.tint).bg, tintClass(c.tint).ring]">
           <ng-container [ngSwitch]="c.key">

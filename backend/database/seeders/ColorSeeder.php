@@ -37,6 +37,7 @@ class ColorSeeder extends Seeder
             ['name' => 'Beige'],
             ['name' => 'Ivory'],
             ['name' => 'Tan'],
+            ['name' => 'Move'],
         ];
 
         // Insert fresh data

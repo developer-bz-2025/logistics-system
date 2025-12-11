@@ -12,6 +12,24 @@
 .row.head { font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb; }
 .row.empty { color: #6b7280; }
 
+.input {
+  @apply w-full rounded-xl bg-white border border-gray-300 px-3 h-11
+         placeholder:text-gray-400 
+         focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500;
+}
+.input-lg {
+  @apply h-12 text-[15px];
+}
+.label {
+  @apply block text-sm font-medium mb-1;
+}
+.req {
+  @apply text-rose-500;
+}
+.btn-primary {
+  @apply inline-flex items-center gap-2 px-4 h-10 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm;
+}
+
 input, select, textarea { width: 100%; padding: 8px 10px; border: 1px solid #e5e7eb; border-radius: 8px; font: inherit; }
 input[readonly] { background: #f9fafb; }
 .file input[type=file] { border: 1px dashed #cbd5e1; padding: 10px; }
