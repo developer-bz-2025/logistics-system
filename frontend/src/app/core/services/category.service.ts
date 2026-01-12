@@ -126,6 +126,13 @@ export class AssetService {
     return this.http.put<any>(`${this.apiUrl}/items/${id}`, data);
   }
 
+  // Update asset photo only
+  updateAssetPhoto(id: number, photoFile: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('photo', photoFile);
+    return this.http.post<any>(`${this.apiUrl}/items/${id}/photo`, formData);
+  }
+
   // Create new asset
   createAsset(data: any): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/items`, data);
@@ -141,5 +148,13 @@ export class AssetService {
       payload.notes = notes.trim();
     }
     return this.http.post<any>(`${this.apiUrl}/location-change-requests`, payload);
+  }
+
+  // Get asset history/lifecycle
+  getAssetHistory(itemId: number, page: number = 1, perPage: number = 15): Observable<any> {
+    const params = new HttpParams()
+      .set('page', String(page))
+      .set('per_page', String(perPage));
+    return this.http.get<any>(`${this.apiUrl}/items/${itemId}/history`, { params });
   }
 }

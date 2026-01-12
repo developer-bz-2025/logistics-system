@@ -12,7 +12,7 @@
         </p>
       </div>
       <div class="flex gap-3">
-        <button mat-raised-button color="default" (click)="onPick(fileInput)">Import Excel</button>
+        <!-- <button mat-raised-button color="default" (click)="onPick(fileInput)">Import Excel</button> -->
 <input #fileInput type="file" accept=".xlsx,.xls" (change)="onFileSelected($event)" hidden>
 
 <div *ngIf="isUploading" style="margin-top:8px;width:320px;height:10px;background:#eee;border-radius:6px;overflow:hidden;">

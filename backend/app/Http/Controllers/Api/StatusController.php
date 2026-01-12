@@ -10,6 +10,15 @@ class StatusController extends Controller
     public function index()
     {
         $rows = DB::table('status')->select('id','name')->orderBy('name')->get();
-        return response()->json(['data' => $rows]);
+        
+        // Cast IDs to integers
+        $data = $rows->map(function ($row) {
+            return [
+                'id' => (int) $row->id,
+                'name' => $row->name,
+            ];
+        });
+        
+        return response()->json(['data' => $data]);
     }
 }

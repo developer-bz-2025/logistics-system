@@ -221,30 +221,30 @@ class ItemController extends Controller
             }
 
             return [
-                'id'                   => $row->id,
+                'id'                   => (int) $row->id,
                 'sn'                   => $row->sn,
-                'fixed_item_id'        => $row->fixed_item_id,
+                'fixed_item_id'        => $row->fixed_item_id !== null ? (int) $row->fixed_item_id : null,
                 'fixed_item_name'      => $row->fixed_item_name,
 
                 'description'          => $row->description,
-                'category_id'          => $row->category_id,
+                'category_id'          => $row->category_id !== null ? (int) $row->category_id : null,
                 'category_name'        => $row->category_name,
-                'sub_category_id'      => $row->sub_category_id,
+                'sub_category_id'      => $row->sub_category_id !== null ? (int) $row->sub_category_id : null,
                 'sub_category_name'    => $row->sub_category_name,
 
-                'status_id'            => $row->status_id,
+                'status_id'            => $row->status_id !== null ? (int) $row->status_id : null,
                 'status_name'          => $row->status_name,
-                'location_id'          => $row->location_id,
+                'location_id'          => $row->location_id !== null ? (int) $row->location_id : null,
                 'location_name'        => $row->location_name,
-                'floor_id'             => $row->floor_id,
+                'floor_id'             => $row->floor_id !== null ? (int) $row->floor_id : null,
                 'floor_name'           => $row->floor_name,
-                'supplier_id'          => $row->supplier_id,
+                'supplier_id'          => $row->supplier_id !== null ? (int) $row->supplier_id : null,
                 'supplier_name'        => $row->supplier_name,
-                'brand_id'             => $row->brand_id,
+                'brand_id'             => $row->brand_id !== null ? (int) $row->brand_id : null,
                 'brand_name'           => $row->brand_name,
-                'color_id'             => $row->color_id,
+                'color_id'             => $row->color_id !== null ? (int) $row->color_id : null,
                 'color_name'           => $row->color_name,
-                'holder_user_id'       => $row->holder_user_id,
+                'holder_user_id'       => $row->holder_user_id !== null ? (int) $row->holder_user_id : null,
                 'holder_name'          => $row->holder_name,
 
                 // keep as strings; DB::table returns scalar values (no Carbon here)
@@ -255,7 +255,7 @@ class ItemController extends Controller
 
                 'budget_code'          => $row->budget_code,
                 'budget_donor'         => $row->budget_donor,
-                'pr_id'                => $row->pr_id,
+                'pr_id'                => $row->pr_id !== null ? (int) $row->pr_id : null,
                 'notes'                => $row->notes,
                 'photo_path'           => $row->photo_path,
                 'details_pdf_path'     => $row->details_pdf_path,
@@ -360,30 +360,30 @@ class ItemController extends Controller
         }
 
         $result = [
-            'id'                   => $item->id,
+            'id'                   => (int) $item->id,
             'sn'                   => $item->sn,
-            'fixed_item_id'        => $item->fixed_item_id,
+            'fixed_item_id'        => $item->fixed_item_id !== null ? (int) $item->fixed_item_id : null,
             'fixed_item_name'      => $item->fixed_item_name,
 
             'description'          => $item->description,
-            'category_id'          => $item->category_id,
+            'category_id'          => $item->category_id !== null ? (int) $item->category_id : null,
             'category_name'        => $item->category_name,
-            'sub_category_id'      => $item->sub_category_id,
+            'sub_category_id'      => $item->sub_category_id !== null ? (int) $item->sub_category_id : null,
             'sub_category_name'    => $item->sub_category_name,
 
-            'status_id'            => $item->status_id,
+            'status_id'            => $item->status_id !== null ? (int) $item->status_id : null,
             'status_name'          => $item->status_name,
-            'location_id'          => $item->location_id,
+            'location_id'          => $item->location_id !== null ? (int) $item->location_id : null,
             'location_name'        => $item->location_name,
-            'floor_id'             => $item->floor_id,
+            'floor_id'             => $item->floor_id !== null ? (int) $item->floor_id : null,
             'floor_name'           => $item->floor_name,
-            'supplier_id'          => $item->supplier_id,
+            'supplier_id'          => $item->supplier_id !== null ? (int) $item->supplier_id : null,
             'supplier_name'        => $item->supplier_name,
-            'brand_id'             => $item->brand_id,
+            'brand_id'             => $item->brand_id !== null ? (int) $item->brand_id : null,
             'brand_name'           => $item->brand_name,
-            'color_id'             => $item->color_id,
+            'color_id'             => $item->color_id !== null ? (int) $item->color_id : null,
             'color_name'           => $item->color_name,
-            'holder_user_id'       => $item->holder_user_id,
+            'holder_user_id'       => $item->holder_user_id !== null ? (int) $item->holder_user_id : null,
             'holder_name'          => $item->holder_name,
 
             'acquisition_date'      => $item->acquisition_date,
@@ -393,7 +393,7 @@ class ItemController extends Controller
 
             'budget_code'          => $item->budget_code,
             'budget_donor'         => $item->budget_donor,
-            'pr_id'                => $item->pr_id,
+            'pr_id'                => $item->pr_id !== null ? (int) $item->pr_id : null,
             'notes'                => $item->notes,
             'photo_path'           => $item->photo_path,
             'details_pdf_path'     => $item->details_pdf_path,
@@ -637,10 +637,31 @@ class ItemController extends Controller
         ];
 
         foreach ($fieldsToCheck as $field) {
-            if (isset($validated[$field]) && $currentItem->$field != $validated[$field]) {
-                $changes[] = $field;
-                $oldValues[$field] = $currentItem->$field;
-                $newValues[$field] = $validated[$field];
+            if (!isset($validated[$field])) {
+                continue;
+            }
+
+            $oldValue = $currentItem->$field;
+            $newValue = $validated[$field];
+
+            // For date fields, compare as dates, not strings
+            if (in_array($field, $dateFields)) {
+                $oldDate = $oldValue ? \Carbon\Carbon::parse($oldValue)->format('Y-m-d') : null;
+                $newDate = $newValue ? \Carbon\Carbon::parse($newValue)->format('Y-m-d') : null;
+                
+                // Only mark as changed if dates are actually different
+                if ($oldDate !== $newDate) {
+                    $changes[] = $field;
+                    $oldValues[$field] = $oldValue;
+                    $newValues[$field] = $validated[$field];
+                }
+            } else {
+                // For non-date fields, use regular comparison
+                if ($oldValue != $newValue) {
+                    $changes[] = $field;
+                    $oldValues[$field] = $oldValue;
+                    $newValues[$field] = $newValue;
+                }
             }
         }
 
@@ -710,11 +731,15 @@ class ItemController extends Controller
 
         // Log the update if there were changes
         if (!empty($changes)) {
-            ItemHistoryService::logItemUpdated($id, [
-                'changes' => $changes,
-                'old_values' => $oldValues,
-                'new_values' => $newValues
-            ]);
+            ItemHistoryService::logItemUpdated(
+                $id,
+                [
+                    'changes' => $changes,
+                    'old_values' => $oldValues,
+                    'new_values' => $newValues
+                ],
+                auth()->id() // Pass authenticated user ID
+            );
         }
 
         // Return the updated item
@@ -733,7 +758,70 @@ class ItemController extends Controller
 
     private function fileUrl(?string $path): ?string
     {
-        return $path ? asset('storage/' . ltrim($path, '/')) : null;
+        if (!$path) {
+            return null;
+        }
+        
+        // Use API route to serve files through Laravel (avoids web server 403 issues)
+        return url('api/storage/' . ltrim($path, '/'));
+    }
+
+    /**
+     * POST /api/items/{id}/photo - Update item photo
+     */
+    public function updatePhoto(Request $request, $id)
+    {
+        // Validate item exists
+        $item = DB::table('items')->where('id', $id)->first();
+        if (!$item) {
+            return response()->json(['error' => 'Item not found'], 404);
+        }
+
+        // Validate photo file
+        $request->validate([
+            'photo' => 'required|image|max:10240', // Max 10MB
+        ]);
+
+        if (!$request->hasFile('photo')) {
+            return response()->json([
+                'error' => 'Photo file is required',
+                'errors' => ['photo' => ['The photo field is required.']]
+            ], 422);
+        }
+
+        // Delete old photo if exists
+        if ($item->photo_path && Storage::disk('public')->exists($item->photo_path)) {
+            Storage::disk('public')->delete($item->photo_path);
+        }
+
+        // Compress and store new photo
+        $newPhotoPath = $this->compressAndStorePhoto($request->file('photo'));
+
+        // Update item photo_path
+        DB::table('items')
+            ->where('id', $id)
+            ->update([
+                'photo_path' => $newPhotoPath,
+                'updated_at' => now(),
+            ]);
+
+        // Log the photo update in history
+        ItemHistoryService::logEvent(
+            $id,
+            'photo_updated',
+            'Item photo updated',
+            [
+                'old_photo_path' => $item->photo_path,
+                'new_photo_path' => $newPhotoPath,
+            ],
+            auth()->id()
+        );
+
+        return response()->json([
+            'message' => 'Photo updated successfully',
+            'photo_path' => $newPhotoPath,
+            'photo_url' => $this->fileUrl($newPhotoPath),
+        ], 200);
     }
 
     /**

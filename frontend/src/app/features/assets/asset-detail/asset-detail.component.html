@@ -77,15 +77,41 @@
     </div>
 
     <!-- Asset Photo -->
-    <div class="asset-photo" *ngIf="asset.photo_url; else placeholderPhoto" (click)="openPhotoPreview()">
-      <img [src]="asset.photo_url" alt="Asset photo" />
-    </div>
-    <ng-template #placeholderPhoto>
-      <div class="asset-photo placeholder">
-        <mat-icon>photo_camera</mat-icon>
-        <span>No photo uploaded</span>
+    <div class="asset-photo-container">
+      <div class="asset-photo" *ngIf="asset.photo_url; else placeholderPhoto" (click)="openPhotoPreview()">
+        <img [src]="asset.photo_url" alt="Asset photo" />
+        <div class="photo-overlay" *ngIf="canEditAsset">
+          <button 
+            mat-icon-button 
+            class="photo-edit-btn"
+            (click)="onPhotoEditClick($event)"
+            [disabled]="isUploadingPhoto"
+            matTooltip="Update photo">
+            <mat-icon>{{ isUploadingPhoto ? 'hourglass_empty' : 'edit' }}</mat-icon>
+          </button>
+        </div>
+        <div *ngIf="isUploadingPhoto" class="photo-upload-overlay">
+          <mat-spinner diameter="40"></mat-spinner>
+          <span>Uploading...</span>
+        </div>
       </div>
-    </ng-template>
+      <ng-template #placeholderPhoto>
+        <div class="asset-photo placeholder" [class.editable]="canEditAsset">
+          <mat-icon>photo_camera</mat-icon>
+          <span>No photo uploaded</span>
+          <button 
+            *ngIf="canEditAsset"
+            mat-raised-button 
+            color="primary"
+            class="upload-photo-btn"
+            (click)="onPhotoEditClick($event)"
+            [disabled]="isUploadingPhoto">
+            <mat-icon>add_photo_alternate</mat-icon>
+            <span>Upload Photo</span>
+          </button>
+        </div>
+      </ng-template>
+    </div>
 
     <!-- Compact Information Display -->
     <div *ngIf="!isEditing" class="compact-info-section">
@@ -226,6 +252,128 @@
                 <p>{{ asset.notes }}</p>
               </div>
             </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Asset Lifecycle/History -->
+    <div *ngIf="!isEditing" class="history-section">
+      <mat-card class="history-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>history</mat-icon>
+            Asset Lifecycle
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div *ngIf="historyLoading" class="history-loading">
+            <mat-spinner diameter="30"></mat-spinner>
+            <span>Loading history...</span>
+          </div>
+
+          <div *ngIf="!historyLoading && history.length === 0" class="history-empty">
+            <mat-icon>info</mat-icon>
+            <p>No history available for this asset.</p>
+          </div>
+
+          <div *ngIf="!historyLoading && history.length > 0" class="history-timeline">
+            <div *ngFor="let event of history; let i = index" class="timeline-item">
+              <div class="timeline-marker" [ngClass]="getEventColor(event.event_type)">
+                <mat-icon>{{ getEventIcon(event.event_type) }}</mat-icon>
+              </div>
+              <div class="timeline-content">
+                <div class="timeline-header">
+                  <span class="event-summary">{{ event.summary }}</span>
+                  <span class="event-date">{{ formatHistoryDate(event.occurred_at) }}</span>
+                </div>
+                <div class="timeline-user">
+                  <mat-icon class="user-icon">person</mat-icon>
+                  <span>{{ event.by_user?.name || 'Unknown' }}</span>
+                  <span class="user-email">({{ event.by_user?.email || '' }})</span>
+                </div>
+                
+                <!-- Location Change Details -->
+                <div *ngIf="event.event_type === 'location_changed' && event.payload" class="event-details">
+                  <div class="location-change">
+                    <span class="old-location">{{ event.payload.old_location }}</span>
+                    <mat-icon>arrow_forward</mat-icon>
+                    <span class="new-location">{{ event.payload.new_location }}</span>
+                  </div>
+                </div>
+
+                <!-- Update Changes Details -->
+                <div *ngIf="event.event_type === 'updated' && event.payload?.changes?.changes" class="event-details update-details">
+                  <div class="update-changes">
+                    <div *ngFor="let field of event.payload.changes.changes" class="change-item">
+                      <div class="change-field-name">{{ formatFieldName(field) }}</div>
+                      <div class="change-values">
+                        <span class="old-value">{{ formatFieldValue(event.payload.changes.old_values[field], field, event.payload.changes.old_values) }}</span>
+                        <mat-icon class="change-arrow">arrow_forward</mat-icon>
+                        <span class="new-value">{{ formatFieldValue(event.payload.changes.new_values[field], field, event.payload.changes.new_values) }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Location Change Request Details -->
+                <div *ngIf="event.location_change_request" class="event-details request-details">
+                  <div class="request-info">
+                    <div class="request-locations">
+                      <span class="label">From:</span>
+                      <span>{{ event.location_change_request.current_location?.name }}</span>
+                      <span class="label">To:</span>
+                      <span>{{ event.location_change_request.requested_location?.name }}</span>
+                    </div>
+                    <div *ngIf="event.location_change_request.requested_by" class="requested-by">
+                      <span class="label">Requested by:</span>
+                      <span>{{ event.location_change_request.requested_by.name }}</span>
+                    </div>
+                    <div *ngIf="event.location_change_request.approved_by" class="approved-by">
+                      <span class="label">Approved by:</span>
+                      <span>{{ event.location_change_request.approved_by.name }}</span>
+                    </div>
+                    <div *ngIf="event.payload?.reason" class="rejection-reason">
+                      <span class="label">Reason:</span>
+                      <span class="reason-text">{{ event.payload.reason }}</span>
+                    </div>
+                    <div *ngIf="event.location_change_request.notes" class="request-notes">
+                      <span class="label">Notes:</span>
+                      <span>{{ event.location_change_request.notes }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pagination -->
+          <div *ngIf="!historyLoading && history.length > 0 && historyLastPage > 1" class="history-pagination">
+            <button
+              mat-button
+              [disabled]="historyPage === 1"
+              (click)="goToHistoryPage(1)">
+              First
+            </button>
+            <button
+              mat-button
+              [disabled]="historyPage === 1"
+              (click)="previousHistoryPage()">
+              Previous
+            </button>
+            <span class="page-info">Page {{ historyPage }} of {{ historyLastPage }}</span>
+            <button
+              mat-button
+              [disabled]="historyPage >= historyLastPage"
+              (click)="nextHistoryPage()">
+              Next
+            </button>
+            <button
+              mat-button
+              [disabled]="historyPage >= historyLastPage"
+              (click)="goToHistoryPage(historyLastPage)">
+              Last
+            </button>
           </div>
         </mat-card-content>
       </mat-card>

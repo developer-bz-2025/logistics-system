@@ -33,6 +33,10 @@ export class AuthService {
     return this.http.post<{ access_token: string; refresh_token: string }>(`${this.apiUrl}/login`, data);
   }
 
+  changePassword(data: { current_password: string; new_password: string; confirm_password: string }) {
+    return this.http.post(`${this.apiUrl}/change-password`, data);
+  }
+
   // Save tokens and hydrate user from backend
   initializeFromTokens(accessToken: string, refreshToken?: string): Observable<AppUser | null> {
     console.log('[AuthService] initializeFromTokens accessToken len:', accessToken?.length ?? 0);

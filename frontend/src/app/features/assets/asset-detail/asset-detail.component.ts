@@ -28,6 +28,7 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
   isLoading = false;
   isEditing = false;
   isSaving = false;
+  isUploadingPhoto = false;
   prCode: string = '';
 
   // Form
@@ -53,6 +54,14 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
   userLocationIds: number[] = [];
   userRole: string | null = null;
 
+  // History/Lifecycle
+  history: any[] = [];
+  historyLoading = false;
+  historyPage = 1;
+  historyPerPage = 15;
+  historyTotal = 0;
+  historyLastPage = 1;
+
   // Autocomplete observables
   filteredSuppliers$: Observable<any[]> = of([]);
   filteredUsers$: Observable<any[]> = of([]);
@@ -75,8 +84,51 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
     this.auth.user$.pipe(takeUntil(this.destroy$)).subscribe(user => {
       this.currentUser = user;
       this.userRole = this.resolveRoleName(user);
-      this.userLocationIds = ((user as any)?.locations || []).map((loc: any) => loc.id);
-      this.updatePermissions();
+      // Extract location IDs - handle multiple possible structures
+      const userLocations = (user as any)?.locations || [];
+      this.userLocationIds = Array.isArray(userLocations) 
+        ? userLocations.map((loc: any) => {
+            // Handle both { id: number } and number formats
+            return typeof loc === 'object' && loc !== null ? (loc.id ?? loc.location_id ?? loc) : loc;
+          }).filter((id: any) => id != null && !isNaN(Number(id)))
+        : [];
+      
+      console.log('[AssetDetail] User loaded from auth:', {
+        userId: user?.id,
+        role: this.userRole,
+        locations: userLocations,
+        locationIds: this.userLocationIds
+      });
+      
+      // If locations are missing and user is log_admin, try fetching full user details
+      if (this.userRole === 'log_admin' && (!userLocations || userLocations.length === 0) && user?.id) {
+        console.log('[AssetDetail] Locations missing, fetching user details...');
+        this.userService.getUser(user.id).pipe(takeUntil(this.destroy$)).subscribe({
+          next: (fullUser: any) => {
+            const fetchedLocations = fullUser?.locations || [];
+            this.userLocationIds = Array.isArray(fetchedLocations)
+              ? fetchedLocations.map((loc: any) => {
+                  return typeof loc === 'object' && loc !== null ? (loc.id ?? loc.location_id ?? loc) : loc;
+                }).filter((id: any) => id != null && !isNaN(Number(id)))
+              : [];
+            console.log('[AssetDetail] User details fetched:', {
+              locations: fetchedLocations,
+              locationIds: this.userLocationIds
+            });
+            // Update current user with locations if available
+            if (fetchedLocations.length > 0) {
+              this.currentUser = { ...this.currentUser, locations: fetchedLocations };
+            }
+            this.updatePermissions();
+          },
+          error: (err) => {
+            console.error('[AssetDetail] Failed to fetch user details:', err);
+            this.updatePermissions();
+          }
+        });
+      } else {
+        this.updatePermissions();
+      }
     });
   }
 
@@ -86,6 +138,54 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
       data: { url: this.asset.photo_url },
       panelClass: 'photo-preview-dialog',
     });
+  }
+
+  onPhotoEditClick(event: Event): void {
+    event.stopPropagation(); // Prevent opening preview when clicking edit
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.onchange = (e: any) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        this.updatePhoto(file);
+      }
+    };
+    fileInput.click();
+  }
+
+  updatePhoto(file: File): void {
+    if (!this.assetId) return;
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      this.toast.error('Please select a valid image file', 'Invalid File');
+      return;
+    }
+
+    // Validate file size (e.g., max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      this.toast.error('Image size must be less than 5MB', 'File Too Large');
+      return;
+    }
+
+    this.isUploadingPhoto = true;
+    this.assets.updateAssetPhoto(this.assetId, file)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          // Reload asset (which also reloads history) to get updated photo URL and new history entry
+          this.loadAsset();
+          this.isUploadingPhoto = false;
+          this.toast.success(response?.message || 'Photo updated successfully', 'Update Photo');
+        },
+        error: (error) => {
+          console.error('Error updating photo:', error);
+          this.isUploadingPhoto = false;
+          this.toast.error(error?.error?.message || 'Failed to update photo', 'Update Photo Failed');
+        }
+      });
   }
 
   ngOnInit() {
@@ -214,6 +314,7 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
         this.loadCategoryAttributes();
         this.loadPrDetails();
         this.updatePermissions();
+        this.loadHistory();
         this.isLoading = false;
       },
       error: (error) => {
@@ -222,6 +323,137 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
         this.toast.error('Failed to load asset details.', 'Error');
       }
     });
+  }
+
+  private loadHistory(): void {
+    if (!this.assetId) return;
+    this.historyLoading = true;
+    this.assets.getAssetHistory(this.assetId, this.historyPage, this.historyPerPage)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          this.history = res.data || [];
+          this.historyTotal = res.total || 0;
+          this.historyLastPage = res.last_page || 1;
+          this.historyLoading = false;
+        },
+        error: (error) => {
+          console.error('Error loading asset history:', error);
+          this.history = [];
+          this.historyLoading = false;
+        }
+      });
+  }
+
+  getEventIcon(eventType: string): string {
+    const iconMap: { [key: string]: string } = {
+      'location_changed': 'swap_horiz',
+      'location_change_request_submitted': 'send',
+      'location_change_request_approved': 'check_circle',
+      'location_change_request_rejected': 'cancel',
+      'status_changed': 'update',
+      'holder_changed': 'person',
+      'created': 'add_circle',
+      'updated': 'edit'
+    };
+    return iconMap[eventType] || 'event';
+  }
+
+  getEventColor(eventType: string): string {
+    if (eventType.includes('approved')) return 'text-green-600';
+    if (eventType.includes('rejected')) return 'text-rose-600';
+    if (eventType.includes('submitted')) return 'text-amber-600';
+    return 'text-indigo-600';
+  }
+
+  formatHistoryDate(dateStr: string): string {
+    if (!dateStr) return '';
+    return new Date(dateStr).toLocaleString();
+  }
+
+  formatFieldName(fieldName: string): string {
+    const fieldMap: { [key: string]: string } = {
+      'description': 'Description',
+      'acquisition_date': 'Acquisition Date',
+      'acquisition_cost': 'Acquisition Cost',
+      'warranty_start_date': 'Warranty Start Date',
+      'warranty_end_date': 'Warranty End Date',
+      'status_id': 'Status',
+      'location_id': 'Location',
+      'floor_id': 'Floor',
+      'supplier_id': 'Supplier',
+      'brand_id': 'Brand',
+      'color_id': 'Color',
+      'holder_user_id': 'Holder',
+      'sn': 'Serial Number',
+      'budget_code': 'Budget Code',
+      'budget_donor': 'Budget Donor',
+      'notes': 'Notes'
+    };
+    return fieldMap[fieldName] || fieldName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  }
+
+  formatFieldValue(value: any, fieldName: string, valuesObject?: any): string {
+    if (value === null || value === undefined || value === '') return '—';
+    
+    // Check if there's a corresponding _name field (e.g., status_id -> status_name)
+    if (fieldName.endsWith('_id') && valuesObject) {
+      const nameField = fieldName.replace('_id', '_name');
+      if (valuesObject[nameField]) {
+        return String(valuesObject[nameField]);
+      }
+      
+      // Also check for supplier_id -> supplier_name, holder_user_id -> holder_name, etc.
+      if (fieldName === 'supplier_id' && valuesObject.supplier_name) {
+        return String(valuesObject.supplier_name);
+      }
+      if (fieldName === 'holder_user_id' && valuesObject.holder_name) {
+        return String(valuesObject.holder_name);
+      }
+      if (fieldName === 'brand_id' && valuesObject.brand_name) {
+        return String(valuesObject.brand_name);
+      }
+      if (fieldName === 'color_id' && valuesObject.color_name) {
+        return String(valuesObject.color_name);
+      }
+      if (fieldName === 'location_id' && valuesObject.location_name) {
+        return String(valuesObject.location_name);
+      }
+    }
+    
+    // Format dates
+    if (fieldName.includes('date') || fieldName.includes('Date')) {
+      try {
+        const date = new Date(value);
+        if (!isNaN(date.getTime())) {
+          return date.toLocaleDateString();
+        }
+      } catch (e) {
+        // If date parsing fails, return as is
+      }
+    }
+    
+    return String(value);
+  }
+
+  goToHistoryPage(page: number): void {
+    if (page < 1 || page > this.historyLastPage) return;
+    this.historyPage = page;
+    this.loadHistory();
+  }
+
+  nextHistoryPage(): void {
+    if (this.historyPage < this.historyLastPage) {
+      this.historyPage++;
+      this.loadHistory();
+    }
+  }
+
+  previousHistoryPage(): void {
+    if (this.historyPage > 1) {
+      this.historyPage--;
+      this.loadHistory();
+    }
   }
 
   private loadDropdownData() {
@@ -439,12 +671,11 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
 
     this.assets.updateAsset(this.assetId, formData).pipe(takeUntil(this.destroy$)).subscribe({
       next: (updatedAsset) => {
-        this.asset = updatedAsset.data || updatedAsset;
         this.isEditing = false;
         this.isSaving = false;
         this.toast.success('Asset updated successfully.', 'Update Asset');
-        // Reload attributes after update
-        this.loadCategoryAttributes();
+        // Reload asset (which also reloads history) to get updated data and new history entry
+        this.loadAsset();
       },
       error: (error) => {
         console.error('Error updating asset:', error);
@@ -580,12 +811,24 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
   private updatePermissions(): void {
     if (!this.asset || !this.currentUser) {
       this.canEditAsset = false;
+      console.log('[AssetDetail] updatePermissions: No asset or user', {
+        hasAsset: !!this.asset,
+        hasUser: !!this.currentUser
+      });
       return;
     }
 
     const role = this.userRole;
     const assetLocationId = this.asset.location_id;
     const availableLocations = (this.locations?.length ? this.locations : ((this.currentUser as any)?.locations || [])) || [];
+
+    console.log('[AssetDetail] updatePermissions:', {
+      role,
+      assetLocationId,
+      userLocationIds: this.userLocationIds,
+      locationMatch: assetLocationId ? this.userLocationIds.includes(assetLocationId) : false,
+      availableLocationsCount: availableLocations.length
+    });
 
     if (role === 'super_admin') {
       this.canEditAsset = false;
@@ -594,8 +837,17 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
     }
 
     if (role === 'log_admin') {
-      this.canEditAsset = !!assetLocationId && this.userLocationIds.includes(assetLocationId);
+      // For log_admin, check if asset location matches any of user's locations
+      // Also handle case where location_id might be a number or string
+      const assetLocId = assetLocationId != null ? Number(assetLocationId) : null;
+      const hasMatchingLocation = assetLocId != null && this.userLocationIds.some(id => Number(id) === assetLocId);
+      this.canEditAsset = hasMatchingLocation;
       this.allowedMoveLocations = availableLocations;
+      console.log('[AssetDetail] log_admin permissions:', {
+        assetLocId,
+        hasMatchingLocation,
+        canEditAsset: this.canEditAsset
+      });
       return;
     }
 

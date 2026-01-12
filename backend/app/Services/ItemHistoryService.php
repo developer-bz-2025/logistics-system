@@ -74,19 +74,14 @@ class ItemHistoryService
     /**
      * Log item update
      */
-    public static function logItemUpdated(int $itemId, array $changes = []): ItemHistory
+    public static function logItemUpdated(int $itemId, array $changes = [], ?int $byUserId = null): ItemHistory
     {
-        $summary = 'Item updated';
-        if (!empty($changes)) {
-            $changedFields = array_keys($changes);
-            $summary = 'Updated: ' . implode(', ', $changedFields);
-        }
-
         return self::logEvent(
             $itemId,
             'updated',
-            $summary,
-            ['changes' => $changes]
+            'Item updated',
+            ['changes' => $changes],
+            $byUserId
         );
     }
 

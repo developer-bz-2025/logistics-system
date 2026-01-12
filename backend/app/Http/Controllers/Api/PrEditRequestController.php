@@ -354,13 +354,26 @@ class PrEditRequestController extends Controller
     }
 
     /** Only allow action on pending requests */
+    // private function assertPending(PrEditRequest $req): void
+    // {
+    //     $pendingIds = DB::table('change_status')->whereIn('value', ['Pending', 'Pending Approval'])->pluck('id')->all();
+    //     if (!in_array((int)$req->status_id, $pendingIds, true)) {
+    //         throw ValidationException::withMessages(['status' => 'This request is not pending.']);
+    //     }
+    // }
+
     private function assertPending(PrEditRequest $req): void
-    {
-        $pendingIds = DB::table('change_status')->whereIn('value', ['Pending', 'Pending Approval'])->pluck('id')->all();
-        if (!in_array((int)$req->status_id, $pendingIds, true)) {
-            throw ValidationException::withMessages(['status' => 'This request is not pending.']);
-        }
+{
+    $pendingIds = DB::table('change_status')
+        ->whereIn('value', ['Pending', 'Pending Approval'])
+        ->pluck('id')
+        ->map(fn($id) => (int) $id)
+        ->all();
+    
+    if (!in_array((int)$req->status_id, $pendingIds)) {  // Remove strict comparison
+        throw ValidationException::withMessages(['status' => 'This request is not pending.']);
     }
+}
 
     /**
      * POST /pr-edit-requests/{id}/reject

@@ -28,6 +28,12 @@ export const navItems: NavItem[] = [
     roles: ['super_admin']
   },
   {
+    displayName: 'Location Change Requests',
+    iconName: 'map-pin',
+    route: '/dashboard/my-assets/location-change-requests',
+    roles: ['log_admin']
+  },
+  {
     displayName: 'References',
     iconName: 'database',
     route: '/dashboard/references',

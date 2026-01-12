@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Location;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Validator;
 
 class LocationController extends Controller
@@ -40,8 +41,19 @@ class LocationController extends Controller
         ], 201);
     }
 
-    public function update(Request $request, Location $location): JsonResponse
+    public function update(Request $request, $id): JsonResponse
     {
+        $location = Location::find($id);
+
+        if (!$location) {
+            return response()->json([
+                'message' => 'Location not found.',
+                'errors' => [
+                    'id' => ['The location with the given ID does not exist.']
+                ]
+            ], 404);
+        }
+
         $validator = Validator::make($request->all(), [
             'name' => ['required', 'string', 'max:255'],
         ]);
@@ -60,8 +72,52 @@ class LocationController extends Controller
         ]);
     }
 
-    public function destroy(Location $location): JsonResponse
+    public function destroy($id): JsonResponse|Response
     {
+        $location = Location::find($id);
+
+        if (!$location) {
+            return response()->json([
+                'message' => 'Location not found.',
+                'errors' => [
+                    'id' => ['The location with the given ID does not exist.']
+                ]
+            ], 404);
+        }
+
+        // Check if location has related items
+        if ($location->items()->count() > 0) {
+            return response()->json([
+                'message' => 'Cannot delete location. It is associated with one or more items.',
+                'errors' => [
+                    'location_id' => ['This location cannot be deleted because it has associated items. Please reassign or remove the items first.']
+                ]
+            ], 422);
+        }
+
+        // Check if location has associated users
+        if ($location->users()->count() > 0) {
+            return response()->json([
+                'message' => 'Cannot delete location. It is assigned to one or more users.',
+                'errors' => [
+                    'location_id' => ['This location cannot be deleted because it is assigned to users. Please unassign the users first.']
+                ]
+            ], 422);
+        }
+
+        // Check if location has change requests
+        $hasChangeRequests = $location->currentChangeRequests()->count() > 0 
+            || $location->requestedChangeRequests()->count() > 0;
+        
+        if ($hasChangeRequests) {
+            return response()->json([
+                'message' => 'Cannot delete location. It has associated location change requests.',
+                'errors' => [
+                    'location_id' => ['This location cannot be deleted because it has associated location change requests.']
+                ]
+            ], 422);
+        }
+
         $location->delete();
 
         return response()->noContent();

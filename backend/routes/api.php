@@ -26,6 +26,7 @@ Route::post('/refresh', [AuthController::class, 'refresh']);
 Route::middleware('jwt.auth')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/change-password', [AuthController::class, 'changePassword']);
 });
 
 
@@ -62,6 +63,34 @@ Route::middleware(['jwt.auth','super.admin'])->prefix('super-admin')->group(func
     Route::get('/log-admin-candidates', [LocationAdminAssignmentController::class, 'index']);
     Route::post('/log-admin-assignments', [LocationAdminAssignmentController::class, 'store']);
 });
+
+// Serve storage files through API (public access, no auth required)
+Route::get('/storage/{path}', function ($path) {
+    $fullPath = storage_path('app/public/' . $path);
+    
+    if (!file_exists($fullPath)) {
+        abort(404, 'File not found');
+    }
+    
+    $mimeType = mime_content_type($fullPath);
+    if (!$mimeType) {
+        // Try to determine from extension
+        $extension = pathinfo($fullPath, PATHINFO_EXTENSION);
+        $mimeTypes = [
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'gif' => 'image/gif',
+            'pdf' => 'application/pdf',
+        ];
+        $mimeType = $mimeTypes[strtolower($extension)] ?? 'application/octet-stream';
+    }
+    
+    return response()->file($fullPath, [
+        'Content-Type' => $mimeType,
+        'Cache-Control' => 'public, max-age=31536000', // Cache for 1 year
+    ]);
+})->where('path', '.*');
 
 Route::get('/catalog/structure', function () {
     $categories = \App\Models\Category::with([
@@ -132,16 +161,26 @@ Route::get('/categories/{category}/attributes', [AttributeController::class, 'by
     ->whereNumber('category');
 
 Route::get('/items', [ItemController::class, 'index']);
-Route::post('/items', [ItemController::class, 'store']);
 Route::get('/items/{item}', [ItemController::class, 'show'])
-    ->whereNumber('item');
-Route::put('/items/{item}', [ItemController::class, 'update'])
     ->whereNumber('item');
 Route::get('/items/{item}/history', [\App\Http\Controllers\Api\ItemHistoryController::class, 'index'])
     ->whereNumber('item');
 
 Route::middleware(['jwt.auth'])->group(function () {
+    Route::post('/items', [ItemController::class, 'store']);
+    Route::put('/items/{item}', [ItemController::class, 'update'])
+        ->whereNumber('item');
+    Route::post('/items/{item}/photo', [ItemController::class, 'updatePhoto'])
+        ->whereNumber('item');
+});
+
+Route::middleware(['jwt.auth'])->group(function () {
+    Route::get('/location-change-requests', [LocationChangeRequestController::class, 'index']);
     Route::post('/location-change-requests', [LocationChangeRequestController::class, 'store']);
+    Route::post('/location-change-requests/{id}/approve', [LocationChangeRequestController::class, 'approve'])
+        ->whereNumber('id');
+    Route::post('/location-change-requests/{id}/reject', [LocationChangeRequestController::class, 'reject'])
+        ->whereNumber('id');
 });
 
 Route::get('/statuses', [StatusController::class, 'index']);
@@ -155,10 +194,10 @@ Route::get('/floors', [FloorController::class, 'index']);
 Route::middleware(['jwt.auth','super.admin'])->group(function () {
     // Locations
     Route::post('/locations', [LocationController::class, 'store']);
-    Route::put('/locations/{location}', [LocationController::class, 'update'])
-        ->whereNumber('location');
-    Route::delete('/locations/{location}', [LocationController::class, 'destroy'])
-        ->whereNumber('location');
+    Route::put('/locations/{id}', [LocationController::class, 'update'])
+        ->whereNumber('id');
+    Route::delete('/locations/{id}', [LocationController::class, 'destroy'])
+        ->whereNumber('id');
 
     // Brands
     Route::post('/brands', [BrandController::class, 'store']);

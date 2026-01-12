@@ -92,6 +92,54 @@ class AuthController extends Controller
         }
     }
 
+    public function changePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required|string',
+            'new_password' => 'required|string|min:6',
+            'confirm_password' => 'required|string|same:new_password',
+        ], [
+            'confirm_password.same' => 'The new password and confirmation password do not match.',
+            'new_password.min' => 'The new password must be at least 6 characters.',
+        ]);
+
+        $user = auth()->user();
+
+        if (!$user) {
+            return response()->json([
+                'error' => 'User not authenticated.'
+            ], 401);
+        }
+
+        // Verify current password
+        if (!Hash::check($request->current_password, $user->password)) {
+            return response()->json([
+                'error' => 'Current password is incorrect.',
+                'errors' => [
+                    'current_password' => ['The current password you entered is incorrect.']
+                ]
+            ], 422);
+        }
+
+        // Check if new password is different from current password
+        if (Hash::check($request->new_password, $user->password)) {
+            return response()->json([
+                'error' => 'New password must be different from your current password.',
+                'errors' => [
+                    'new_password' => ['The new password must be different from your current password.']
+                ]
+            ], 422);
+        }
+
+        // Update password
+        $user->password = Hash::make($request->new_password);
+        $user->save();
+
+        return response()->json([
+            'message' => 'Password changed successfully.'
+        ], 200);
+    }
+
     protected function respondWithToken($token)
     {
         // For now, use the same token as both access and refresh token
