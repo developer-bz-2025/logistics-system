@@ -9,6 +9,7 @@ use App\Models\Supplier;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use App\Services\ActivityLogService;
 
 class SupplierController extends Controller
 {
@@ -50,6 +51,9 @@ class SupplierController extends Controller
             'name' => trim($validator->validated()['name']),
         ]);
 
+        // Log activity
+        ActivityLogService::logSupplierCreated(auth()->id(), $supplier->id, $supplier->name);
+
         return response()->json([
             'id' => $supplier->id,
             'name' => $supplier->name,
@@ -66,8 +70,15 @@ class SupplierController extends Controller
             return response()->json(['errors' => $validator->errors()], 400);
         }
 
+        $oldName = $supplier->name;
         $supplier->update([
             'name' => trim($validator->validated()['name']),
+        ]);
+
+        // Log activity
+        ActivityLogService::logSupplierUpdated(auth()->id(), $supplier->id, $supplier->name, [
+            'old_name' => $oldName,
+            'new_name' => $supplier->name,
         ]);
 
         return response()->json([
@@ -78,7 +89,12 @@ class SupplierController extends Controller
 
     public function destroy(Supplier $supplier): JsonResponse
     {
+        $supplierName = $supplier->name;
+        $supplierId = $supplier->id;
         $supplier->delete();
+
+        // Log activity
+        ActivityLogService::logSupplierDeleted(auth()->id(), $supplierId, $supplierName);
 
         return response()->noContent();
     }

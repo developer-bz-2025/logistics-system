@@ -26,6 +26,7 @@
           <th class="py-3 text-left">PR Code</th>
           <th class="py-3 text-left">PR Date</th>
           <th class="py-3 text-left">Total Price</th>
+          <th class="py-3 text-left">Location</th>
           <th class="py-3 text-left">Items (Expected)</th>
           <th class="py-3 text-left">PR Document</th>
           <th class="py-3 text-left w-20">Actions</th>
@@ -42,6 +43,11 @@
           <td class="py-4">
             <div class="text-gray-800">
               {{ r.total_price}} $
+            </div>
+          </td>
+          <td class="py-4">
+            <div class="text-gray-800">
+              {{ r.location.name}} 
             </div>
           </td>
           <td class="py-4">

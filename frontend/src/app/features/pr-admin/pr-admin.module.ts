@@ -9,7 +9,8 @@ import { PrItemTableComponent } from './components/pr-item-table/pr-item-table.c
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { SupplierTypeaheadComponent } from './components/supplier-typeahead/supplier-typeahead.component';
 import { PrEditComponent } from './pages/pr-edit/pr-edit.component';
-
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
 
 
 @NgModule({
@@ -26,7 +27,9 @@ import { PrEditComponent } from './pages/pr-edit/pr-edit.component';
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
-    PrAdminRoutingModule
+    PrAdminRoutingModule,
+    MatFormFieldModule,
+    MatSelectModule
   ]
 })
 export class PrAdminModule { }

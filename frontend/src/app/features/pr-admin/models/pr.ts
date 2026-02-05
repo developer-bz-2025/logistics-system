@@ -12,14 +12,19 @@ export interface PrItem {
   category_id:number;
   sub_category_id: number;
 }
-
+export interface location {
+  id: number;
+  name: string;
+}
 
 export interface PrRow {
+  location: location;
   id: number;
   pr_code: string;
   pr_date: string;          // 'YYYY-MM-DD'
   total_price: number;
   pr_path?: string | null;  // storage path or url
+  url?: string | null;      // full document URL (if provided by backend)
   supplier_name?: string;   // if you have one dominant supplier per PR (optional)
   items?: PrItem[];         // include if API returns items in list
 }

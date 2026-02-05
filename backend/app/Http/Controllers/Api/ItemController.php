@@ -8,18 +8,20 @@ use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Services\ItemHistoryService;
+use App\Services\ActivityLogService;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
+use App\Models\Pr;
 
 class ItemController extends Controller
 {
     // GET /api/items
     public function index(Request $request)
     {
-        $pageSize = min(max((int)$request->integer('pageSize', 10), 1), 100);
-        $sort     = $request->get('sort', 'items.created_at');
-        $dir      = strtolower($request->get('dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+        $pageSize = min(max((int) $request->integer('pageSize', 10), 1), 100);
+        $sort = $request->get('sort', 'items.created_at');
+        $dir = strtolower($request->get('dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
         // Base query + joins
         $q = DB::table('items')
@@ -75,10 +77,14 @@ class ItemController extends Controller
             ]);
 
         // Standard filters
-        if ($v = $request->integer('category_id'))     $q->where('categories.id', $v);
-        if ($v = $request->integer('sub_category_id')) $q->where('sub_category.id', $v);
-        if ($v = $request->integer('fixed_item_id'))   $q->where('items.fixed_item_id', $v);
-        if ($v = $request->integer('status_id'))       $q->where('items.status_id', $v);
+        if ($v = $request->integer('category_id'))
+            $q->where('categories.id', $v);
+        if ($v = $request->integer('sub_category_id'))
+            $q->where('sub_category.id', $v);
+        if ($v = $request->integer('fixed_item_id'))
+            $q->where('items.fixed_item_id', $v);
+        if ($v = $request->integer('status_id'))
+            $q->where('items.status_id', $v);
 
         $locationIds = $request->input('location_ids');
         if (is_array($locationIds)) {
@@ -90,15 +96,18 @@ class ItemController extends Controller
             $q->where('items.location_id', $v);
         }
 
-        if ($v = $request->integer('floor_id'))        $q->where('items.floor_id', $v);
-        if ($v = $request->integer('supplier_id'))     $q->where('items.supplier_id', $v);
-        if ($v = $request->integer('holder_user_id'))  $q->where('items.holder_user_id', $v);
+        if ($v = $request->integer('floor_id'))
+            $q->where('items.floor_id', $v);
+        if ($v = $request->integer('supplier_id'))
+            $q->where('items.supplier_id', $v);
+        if ($v = $request->integer('holder_user_id'))
+            $q->where('items.holder_user_id', $v);
 
         // Search (SN / description)
-        if ($s = trim((string)$request->get('search'))) {
+        if ($s = trim((string) $request->get('search'))) {
             $q->where(function ($qq) use ($s) {
                 $qq->where('items.sn', 'like', "%{$s}%")
-                   ->orWhere('items.description', 'like', "%{$s}%");
+                    ->orWhere('items.description', 'like', "%{$s}%");
             });
         }
 
@@ -117,12 +126,13 @@ class ItemController extends Controller
 
         if (is_array($attr) && count($attr)) {
             foreach ($attr as $attName => $optionText) {
-                if ($optionText === null || $optionText === '') continue;
+                if ($optionText === null || $optionText === '')
+                    continue;
 
-                $aliasA   = 'a_'  . md5($attName);
-                $aliasCA  = 'ca_' . md5($attName);
+                $aliasA = 'a_' . md5($attName);
+                $aliasCA = 'ca_' . md5($attName);
                 $aliasIAV = 'iav_' . md5($attName);
-                $aliasAO  = 'ao_' . md5($attName);
+                $aliasAO = 'ao_' . md5($attName);
 
                 // attribute by name
                 $q->join("attributes as {$aliasA}", function ($j) use ($aliasA, $attName) {
@@ -132,32 +142,33 @@ class ItemController extends Controller
                 // ensure attribute is allowed for this category
                 $q->join("category_attributes as {$aliasCA}", function ($j) use ($aliasCA, $aliasA) {
                     $j->on("{$aliasCA}.att_id", '=', "{$aliasA}.id")
-                      ->on("{$aliasCA}.category_id", '=', "categories.id");
+                        ->on("{$aliasCA}.category_id", '=', "categories.id");
                 });
 
                 // item values for that attribute
                 $q->join("item_attribute_values as {$aliasIAV}", function ($j) use ($aliasIAV, $aliasA) {
                     $j->on("{$aliasIAV}.item_id", '=', 'items.id')
-                      ->on("{$aliasIAV}.att_id", '=', "{$aliasA}.id");
+                        ->on("{$aliasIAV}.att_id", '=', "{$aliasA}.id");
                 });
 
                 // chosen option by text
                 $q->join("att_options as {$aliasAO}", function ($j) use ($aliasAO, $aliasA) {
                     $j->on("{$aliasAO}.att_id", '=', "{$aliasA}.id")
-                      ->on("{$aliasAO}.id", '=', DB::raw("{$aliasAO}.id")); // no-op to allow where below
+                        ->on("{$aliasAO}.id", '=', DB::raw("{$aliasAO}.id")); // no-op to allow where below
                 });
 
                 $q->where("{$aliasAO}.value", '=', $optionText)
-                  ->where("{$aliasIAV}.att_option_id", '=', DB::raw("{$aliasAO}.id"));
+                    ->where("{$aliasIAV}.att_option_id", '=', DB::raw("{$aliasAO}.id"));
             }
         }
 
         if (is_array($attrId) && count($attrId)) {
             foreach ($attrId as $attName => $attOptionId) {
-                if (!$attOptionId) continue;
+                if (!$attOptionId)
+                    continue;
 
-                $aliasA   = 'a2_'  . md5($attName);
-                $aliasCA  = 'ca2_' . md5($attName);
+                $aliasA = 'a2_' . md5($attName);
+                $aliasCA = 'ca2_' . md5($attName);
                 $aliasIAV = 'iav2_' . md5($attName);
 
                 $q->join("attributes as {$aliasA}", function ($j) use ($aliasA, $attName) {
@@ -166,13 +177,13 @@ class ItemController extends Controller
 
                 $q->join("category_attributes as {$aliasCA}", function ($j) use ($aliasCA, $aliasA) {
                     $j->on("{$aliasCA}.att_id", '=', "{$aliasA}.id")
-                      ->on("{$aliasCA}.category_id", '=', "categories.id");
+                        ->on("{$aliasCA}.category_id", '=', "categories.id");
                 });
 
                 $q->join("item_attribute_values as {$aliasIAV}", function ($j) use ($aliasIAV, $aliasA, $attOptionId) {
                     $j->on("{$aliasIAV}.item_id", '=', 'items.id')
-                      ->on("{$aliasIAV}.att_id", '=', "{$aliasA}.id")
-                      ->where("{$aliasIAV}.att_option_id", '=', (int)$attOptionId);
+                        ->on("{$aliasIAV}.att_id", '=', "{$aliasA}.id")
+                        ->where("{$aliasIAV}.att_option_id", '=', (int) $attOptionId);
                 });
             }
         }
@@ -188,7 +199,8 @@ class ItemController extends Controller
             'fixed_items.name',
             'status.name',
         ];
-        if (!in_array($sort, $sortable, true)) $sort = 'items.created_at';
+        if (!in_array($sort, $sortable, true))
+            $sort = 'items.created_at';
         $q->orderBy($sort, $dir);
 
         // Paginate
@@ -221,57 +233,57 @@ class ItemController extends Controller
             }
 
             return [
-                'id'                   => (int) $row->id,
-                'sn'                   => $row->sn,
-                'fixed_item_id'        => $row->fixed_item_id !== null ? (int) $row->fixed_item_id : null,
-                'fixed_item_name'      => $row->fixed_item_name,
+                'id' => (int) $row->id,
+                'sn' => $row->sn,
+                'fixed_item_id' => $row->fixed_item_id !== null ? (int) $row->fixed_item_id : null,
+                'fixed_item_name' => $row->fixed_item_name,
 
-                'description'          => $row->description,
-                'category_id'          => $row->category_id !== null ? (int) $row->category_id : null,
-                'category_name'        => $row->category_name,
-                'sub_category_id'      => $row->sub_category_id !== null ? (int) $row->sub_category_id : null,
-                'sub_category_name'    => $row->sub_category_name,
+                'description' => $row->description,
+                'category_id' => $row->category_id !== null ? (int) $row->category_id : null,
+                'category_name' => $row->category_name,
+                'sub_category_id' => $row->sub_category_id !== null ? (int) $row->sub_category_id : null,
+                'sub_category_name' => $row->sub_category_name,
 
-                'status_id'            => $row->status_id !== null ? (int) $row->status_id : null,
-                'status_name'          => $row->status_name,
-                'location_id'          => $row->location_id !== null ? (int) $row->location_id : null,
-                'location_name'        => $row->location_name,
-                'floor_id'             => $row->floor_id !== null ? (int) $row->floor_id : null,
-                'floor_name'           => $row->floor_name,
-                'supplier_id'          => $row->supplier_id !== null ? (int) $row->supplier_id : null,
-                'supplier_name'        => $row->supplier_name,
-                'brand_id'             => $row->brand_id !== null ? (int) $row->brand_id : null,
-                'brand_name'           => $row->brand_name,
-                'color_id'             => $row->color_id !== null ? (int) $row->color_id : null,
-                'color_name'           => $row->color_name,
-                'holder_user_id'       => $row->holder_user_id !== null ? (int) $row->holder_user_id : null,
-                'holder_name'          => $row->holder_name,
+                'status_id' => $row->status_id !== null ? (int) $row->status_id : null,
+                'status_name' => $row->status_name,
+                'location_id' => $row->location_id !== null ? (int) $row->location_id : null,
+                'location_name' => $row->location_name,
+                'floor_id' => $row->floor_id !== null ? (int) $row->floor_id : null,
+                'floor_name' => $row->floor_name,
+                'supplier_id' => $row->supplier_id !== null ? (int) $row->supplier_id : null,
+                'supplier_name' => $row->supplier_name,
+                'brand_id' => $row->brand_id !== null ? (int) $row->brand_id : null,
+                'brand_name' => $row->brand_name,
+                'color_id' => $row->color_id !== null ? (int) $row->color_id : null,
+                'color_name' => $row->color_name,
+                'holder_user_id' => $row->holder_user_id !== null ? (int) $row->holder_user_id : null,
+                'holder_name' => $row->holder_name,
 
                 // keep as strings; DB::table returns scalar values (no Carbon here)
-                'acquisition_date'      => $row->acquisition_date,
-                'acquisition_cost'      => $row->acquisition_cost !== null ? (float)$row->acquisition_cost : null,
-                'warranty_start_date'  => $row->warranty_start_date,
-                'warranty_end_date'    => $row->warranty_end_date,
+                'acquisition_date' => $row->acquisition_date,
+                'acquisition_cost' => $row->acquisition_cost !== null ? (float) $row->acquisition_cost : null,
+                'warranty_start_date' => $row->warranty_start_date,
+                'warranty_end_date' => $row->warranty_end_date,
 
-                'budget_code'          => $row->budget_code,
-                'budget_donor'         => $row->budget_donor,
-                'pr_id'                => $row->pr_id !== null ? (int) $row->pr_id : null,
-                'notes'                => $row->notes,
-                'photo_path'           => $row->photo_path,
-                'details_pdf_path'     => $row->details_pdf_path,
-                'photo_url'            => $this->fileUrl($row->photo_path),
-                'details_pdf_url'      => $this->fileUrl($row->details_pdf_path),
-                'created_at'           => $row->created_at,
-                'updated_at'           => $row->updated_at,
+                'budget_code' => $row->budget_code,
+                'budget_donor' => $row->budget_donor,
+                'pr_id' => $row->pr_id !== null ? (int) $row->pr_id : null,
+                'notes' => $row->notes,
+                'photo_path' => $row->photo_path,
+                'details_pdf_path' => $row->details_pdf_path,
+                'photo_url' => $this->fileUrl($row->photo_path),
+                'details_pdf_url' => $this->fileUrl($row->details_pdf_path),
+                'created_at' => $row->created_at,
+                'updated_at' => $row->updated_at,
 
-                'attributes'           => (object)$attrs,
+                'attributes' => (object) $attrs,
             ];
         });
 
         return response()->json([
-            'data'     => $data,
-            'total'    => $result->total(),
-            'page'     => $result->currentPage(),
+            'data' => $data,
+            'total' => $result->total(),
+            'page' => $result->currentPage(),
             'pageSize' => $result->perPage(),
         ]);
     }
@@ -360,49 +372,49 @@ class ItemController extends Controller
         }
 
         $result = [
-            'id'                   => (int) $item->id,
-            'sn'                   => $item->sn,
-            'fixed_item_id'        => $item->fixed_item_id !== null ? (int) $item->fixed_item_id : null,
-            'fixed_item_name'      => $item->fixed_item_name,
+            'id' => (int) $item->id,
+            'sn' => $item->sn,
+            'fixed_item_id' => $item->fixed_item_id !== null ? (int) $item->fixed_item_id : null,
+            'fixed_item_name' => $item->fixed_item_name,
 
-            'description'          => $item->description,
-            'category_id'          => $item->category_id !== null ? (int) $item->category_id : null,
-            'category_name'        => $item->category_name,
-            'sub_category_id'      => $item->sub_category_id !== null ? (int) $item->sub_category_id : null,
-            'sub_category_name'    => $item->sub_category_name,
+            'description' => $item->description,
+            'category_id' => $item->category_id !== null ? (int) $item->category_id : null,
+            'category_name' => $item->category_name,
+            'sub_category_id' => $item->sub_category_id !== null ? (int) $item->sub_category_id : null,
+            'sub_category_name' => $item->sub_category_name,
 
-            'status_id'            => $item->status_id !== null ? (int) $item->status_id : null,
-            'status_name'          => $item->status_name,
-            'location_id'          => $item->location_id !== null ? (int) $item->location_id : null,
-            'location_name'        => $item->location_name,
-            'floor_id'             => $item->floor_id !== null ? (int) $item->floor_id : null,
-            'floor_name'           => $item->floor_name,
-            'supplier_id'          => $item->supplier_id !== null ? (int) $item->supplier_id : null,
-            'supplier_name'        => $item->supplier_name,
-            'brand_id'             => $item->brand_id !== null ? (int) $item->brand_id : null,
-            'brand_name'           => $item->brand_name,
-            'color_id'             => $item->color_id !== null ? (int) $item->color_id : null,
-            'color_name'           => $item->color_name,
-            'holder_user_id'       => $item->holder_user_id !== null ? (int) $item->holder_user_id : null,
-            'holder_name'          => $item->holder_name,
+            'status_id' => $item->status_id !== null ? (int) $item->status_id : null,
+            'status_name' => $item->status_name,
+            'location_id' => $item->location_id !== null ? (int) $item->location_id : null,
+            'location_name' => $item->location_name,
+            'floor_id' => $item->floor_id !== null ? (int) $item->floor_id : null,
+            'floor_name' => $item->floor_name,
+            'supplier_id' => $item->supplier_id !== null ? (int) $item->supplier_id : null,
+            'supplier_name' => $item->supplier_name,
+            'brand_id' => $item->brand_id !== null ? (int) $item->brand_id : null,
+            'brand_name' => $item->brand_name,
+            'color_id' => $item->color_id !== null ? (int) $item->color_id : null,
+            'color_name' => $item->color_name,
+            'holder_user_id' => $item->holder_user_id !== null ? (int) $item->holder_user_id : null,
+            'holder_name' => $item->holder_name,
 
-            'acquisition_date'      => $item->acquisition_date,
-            'acquisition_cost'      => $item->acquisition_cost !== null ? (float)$item->acquisition_cost : null,
-            'warranty_start_date'  => $item->warranty_start_date,
-            'warranty_end_date'    => $item->warranty_end_date,
+            'acquisition_date' => $item->acquisition_date,
+            'acquisition_cost' => $item->acquisition_cost !== null ? (float) $item->acquisition_cost : null,
+            'warranty_start_date' => $item->warranty_start_date,
+            'warranty_end_date' => $item->warranty_end_date,
 
-            'budget_code'          => $item->budget_code,
-            'budget_donor'         => $item->budget_donor,
-            'pr_id'                => $item->pr_id !== null ? (int) $item->pr_id : null,
-            'notes'                => $item->notes,
-            'photo_path'           => $item->photo_path,
-            'details_pdf_path'     => $item->details_pdf_path,
-            'photo_url'            => $this->fileUrl($item->photo_path),
-            'details_pdf_url'      => $this->fileUrl($item->details_pdf_path),
-            'created_at'           => $item->created_at,
-            'updated_at'           => $item->updated_at,
+            'budget_code' => $item->budget_code,
+            'budget_donor' => $item->budget_donor,
+            'pr_id' => $item->pr_id !== null ? (int) $item->pr_id : null,
+            'notes' => $item->notes,
+            'photo_path' => $item->photo_path,
+            'details_pdf_path' => $item->details_pdf_path,
+            'photo_url' => $this->fileUrl($item->photo_path),
+            'details_pdf_url' => $this->fileUrl($item->details_pdf_path),
+            'created_at' => $item->created_at,
+            'updated_at' => $item->updated_at,
 
-            'attributes'           => (object)$attrs,
+            'attributes' => (object) $attrs,
         ];
 
         return response()->json($result);
@@ -415,7 +427,7 @@ class ItemController extends Controller
     {
         $user = $request->user();
 
-        if (! $user || $user->role?->name !== Role::LOG_ADMIN) {
+        if (!$user || $user->role?->name !== Role::LOG_ADMIN) {
             return response()->json([
                 'message' => 'This action is authorized for log admins only.',
             ], 403);
@@ -453,7 +465,7 @@ class ItemController extends Controller
             'supplier_id' => 'nullable|integer|exists:suppliers,id',
             'brand_id' => 'nullable|integer|exists:brands,id',
             'color_id' => 'nullable|integer|exists:colors,id',
-            'pr_id' => 'nullable|max:255',
+            'pr_id' => 'nullable|integer|exists:prs,id',
             'acquisition_cost' => 'nullable|numeric|min:0',
             'acquisition_date' => 'nullable|date',
             'warranty_start_date' => 'nullable|date',
@@ -508,6 +520,14 @@ class ItemController extends Controller
         // Create the item
         $itemId = DB::table('items')->insertGetId($validated);
 
+        // Update PR remaining_items_count if pr_id is provided
+        if (!empty($validated['pr_id'])) {
+            DB::table('prs')
+                ->where('id', $validated['pr_id'])
+                ->where('remaining_items_count', '>', 0)
+                ->decrement('remaining_items_count');
+        }
+
         // Handle attributes
         if (isset($attributes) && is_array($attributes)) {
             // Get category for this fixed item to validate attributes
@@ -522,14 +542,16 @@ class ItemController extends Controller
 
                 // Validate that attribute exists and is allowed for category
                 $attrExists = DB::table('attributes')->where('id', $attId)->exists();
-                if (!$attrExists) continue;
+                if (!$attrExists)
+                    continue;
 
                 $allowedForCategory = DB::table('category_attributes')
                     ->where('category_id', $categoryId)
                     ->where('att_id', $attId)
                     ->exists();
 
-                if (!$allowedForCategory) continue;
+                if (!$allowedForCategory)
+                    continue;
 
                 // Validate that option exists for this attribute
                 $optionExists = DB::table('att_options')
@@ -537,7 +559,8 @@ class ItemController extends Controller
                     ->where('att_id', $attId)
                     ->exists();
 
-                if (!$optionExists) continue;
+                if (!$optionExists)
+                    continue;
 
                 // Check if option is allowed for subcategory
                 $subCategoryId = DB::table('fixed_items')
@@ -549,7 +572,8 @@ class ItemController extends Controller
                     ->where('att_option_id', $attOptionId)
                     ->exists();
 
-                if (!$allowedForSubcategory) continue;
+                if (!$allowedForSubcategory)
+                    continue;
 
                 // Insert attribute value
                 DB::table('item_attribute_values')->insert([
@@ -563,6 +587,21 @@ class ItemController extends Controller
         // Log item creation
         ItemHistoryService::logItemCreated($itemId, $validated, auth()->id());
 
+        // Log activity
+        $fixedItemName = DB::table('fixed_items')->where('id', $validated['fixed_item_id'])->value('name') ?? 'Unknown';
+        ActivityLogService::logAssetCreated(auth()->id(), $itemId, [
+            'sn' => $validated['sn'] ?? null,
+            'fixed_item_id' => $validated['fixed_item_id'],
+            'fixed_item_name' => $fixedItemName,
+            'pr_id' => $validated['pr_id'] ?? null,
+        ]);
+
+        // Log PR linking if applicable
+        if (!empty($validated['pr_id'])) {
+            $prCode = DB::table('prs')->where('id', $validated['pr_id'])->value('pr_code') ?? 'Unknown';
+            ActivityLogService::logAssetLinkedToPr(auth()->id(), $itemId, $validated['pr_id'], $prCode);
+        }
+
         // Return the created item
         return response()->json([
             'id' => $itemId,
@@ -573,6 +612,28 @@ class ItemController extends Controller
             'photo_path' => $validated['photo_path'] ?? null,
             'photo_url' => $this->fileUrl($validated['photo_path'] ?? null),
         ], 201);
+    }
+
+    /**
+     * GET /api/prs-for-asset-creation - Get PRs available for asset creation
+     */
+    public function getPrsForAssetCreation(Request $request)
+    {
+        $user = auth()->user();
+
+        $query = Pr::query()
+            ->select(['id', 'pr_code', 'pr_date', 'remaining_items_count'])
+            ->where('remaining_items_count', '>', 0);
+
+        // Filter by user's assigned locations if Logistics Admin
+        if ($user->role?->name === Role::LOG_ADMIN) {
+            $userLocationIds = $user->locations()->pluck('locations.id')->toArray();
+            $query->whereIn('location_id', $userLocationIds);
+        }
+
+        $prs = $query->orderBy('pr_date', 'desc')->get();
+
+        return response()->json(['data' => $prs]);
     }
 
     /**
@@ -597,7 +658,7 @@ class ItemController extends Controller
             'location_id' => 'nullable|integer|exists:locations,id',
             'floor_id' => 'nullable|integer|exists:floors,id',
             'holder_user_id' => 'nullable|integer|exists:users,id',
-            'pr_id' => 'nullable|max:255',
+            'pr_id' => 'nullable|integer|exists:prs,id',
             'acquisition_date' => 'nullable|date',
             'acquisition_cost' => 'nullable|numeric|min:0',
             'warranty_start_date' => 'nullable|date',
@@ -623,6 +684,31 @@ class ItemController extends Controller
         $attributes = $validated['attributes'] ?? null;
         unset($validated['attributes']);
 
+        // Track PR changes for count adjustment (only if pr_id is explicitly provided)
+        $oldPrId = $currentItem->pr_id;
+        $prIdChanged = false;
+
+        if (isset($validated['pr_id'])) {
+            $newPrId = $validated['pr_id'] !== null ? (int) $validated['pr_id'] : null;
+            $oldPrId = $oldPrId !== null ? (int) $oldPrId : null;
+            $prIdChanged = ($oldPrId !== $newPrId);
+        } else {
+            // pr_id not provided in request, keep old value
+            $newPrId = $oldPrId;
+        }
+
+        // Fetch PR codes for history logging if pr_id changed
+        $oldPrCode = null;
+        $newPrCode = null;
+        if (isset($validated['pr_id']) && ($oldPrId !== $newPrId)) {
+            if ($oldPrId !== null) {
+                $oldPrCode = DB::table('prs')->where('id', $oldPrId)->value('pr_code');
+            }
+            if ($newPrId !== null) {
+                $newPrCode = DB::table('prs')->where('id', $newPrId)->value('pr_code');
+            }
+        }
+
         // Track changes for history logging
         $changes = [];
         $oldValues = [];
@@ -630,10 +716,22 @@ class ItemController extends Controller
 
         // Compare each field and track changes
         $fieldsToCheck = [
-            'description', 'sn', 'color_id', 'brand_id', 'supplier_id',
-            'status_id', 'location_id', 'floor_id', 'holder_user_id',
-            'acquisition_date', 'acquisition_cost', 'warranty_start_date', 'warranty_end_date',
-            'budget_code', 'budget_donor', 'notes'
+            'description',
+            'sn',
+            'color_id',
+            'brand_id',
+            'supplier_id',
+            'status_id',
+            'location_id',
+            'floor_id',
+            'holder_user_id',
+            'acquisition_date',
+            'acquisition_cost',
+            'warranty_start_date',
+            'warranty_end_date',
+            'budget_code',
+            'budget_donor',
+            'notes'
         ];
 
         foreach ($fieldsToCheck as $field) {
@@ -648,7 +746,7 @@ class ItemController extends Controller
             if (in_array($field, $dateFields)) {
                 $oldDate = $oldValue ? \Carbon\Carbon::parse($oldValue)->format('Y-m-d') : null;
                 $newDate = $newValue ? \Carbon\Carbon::parse($newValue)->format('Y-m-d') : null;
-                
+
                 // Only mark as changed if dates are actually different
                 if ($oldDate !== $newDate) {
                     $changes[] = $field;
@@ -665,12 +763,49 @@ class ItemController extends Controller
             }
         }
 
+        // Handle pr_id separately to store PR codes instead of IDs
+        if (isset($validated['pr_id']) && ($oldPrId !== $newPrId)) {
+            $changes[] = 'pr_id';
+            // Store PR codes (or null if PR doesn't exist)
+            $oldValues['pr_id'] = $oldPrCode ?? null;
+            $newValues['pr_id'] = $newPrCode ?? null;
+            // Also store IDs for reference
+            $oldValues['pr_id_id'] = $oldPrId;
+            $newValues['pr_id_id'] = $newPrId;
+        }
+
         // Update the item
         DB::table('items')
             ->where('id', $id)
             ->update(array_merge($validated, [
                 'updated_at' => now(),
             ]));
+
+        // Adjust PR counts if pr_id changed
+        if ($prIdChanged) {
+            // If item was linked to a PR, increment that PR's remaining count
+            if ($oldPrId !== null) {
+                DB::table('prs')
+                    ->where('id', $oldPrId)
+                    ->increment('remaining_items_count');
+
+                // Log PR unlinking
+                $oldPrCode = DB::table('prs')->where('id', $oldPrId)->value('pr_code') ?? 'Unknown';
+                ActivityLogService::logAssetUnlinkedFromPr(auth()->id(), $id, $oldPrId, $oldPrCode);
+            }
+
+            // If item is now linked to a new PR, decrement that PR's remaining count
+            if ($newPrId !== null) {
+                DB::table('prs')
+                    ->where('id', $newPrId)
+                    ->where('remaining_items_count', '>', 0)
+                    ->decrement('remaining_items_count');
+
+                // Log PR linking
+                $newPrCode = DB::table('prs')->where('id', $newPrId)->value('pr_code') ?? 'Unknown';
+                ActivityLogService::logAssetLinkedToPr(auth()->id(), $id, $newPrId, $newPrCode);
+            }
+        }
 
         // Handle attributes update
         if (isset($attributes) && is_array($attributes)) {
@@ -687,7 +822,8 @@ class ItemController extends Controller
 
                 // Validate that attribute exists
                 $attr = DB::table('attributes')->where('id', $attId)->first();
-                if (!$attr) continue;
+                if (!$attr)
+                    continue;
 
                 // Check if attribute is allowed for category
                 $allowed = DB::table('category_attributes')
@@ -695,7 +831,8 @@ class ItemController extends Controller
                     ->where('att_id', $attId)
                     ->exists();
 
-                if (!$allowed) continue;
+                if (!$allowed)
+                    continue;
 
                 // Validate that option exists for this attribute
                 $option = DB::table('att_options')
@@ -703,7 +840,8 @@ class ItemController extends Controller
                     ->where('att_id', $attId)
                     ->first();
 
-                if (!$option) continue;
+                if (!$option)
+                    continue;
 
                 // Get current attribute value for change tracking
                 $currentAttrValue = DB::table('item_attribute_values as iav')
@@ -740,6 +878,29 @@ class ItemController extends Controller
                 ],
                 auth()->id() // Pass authenticated user ID
             );
+
+            // Log activity
+            ActivityLogService::logAssetUpdated(auth()->id(), $id, [
+                'changes' => $changes,
+                'changed_fields' => count($changes),
+            ]);
+
+            // Log status change if applicable
+            if (in_array('status_id', $changes)) {
+                $oldStatus = DB::table('status')->where('id', $oldValues['status_id'])->value('name') ?? 'Unknown';
+                $newStatus = DB::table('status')->where('id', $newValues['status_id'])->value('name') ?? 'Unknown';
+                ActivityLogService::logAssetStatusChanged(auth()->id(), $id, $oldStatus, $newStatus);
+            }
+
+            // Log holder assignment if applicable
+            if (in_array('holder_user_id', $changes)) {
+                ActivityLogService::logAssetHolderAssigned(
+                    auth()->id(),
+                    $id,
+                    $oldValues['holder_user_id'] ?? null,
+                    $newValues['holder_user_id'] ?? null
+                );
+            }
         }
 
         // Return the updated item
@@ -761,7 +922,7 @@ class ItemController extends Controller
         if (!$path) {
             return null;
         }
-        
+
         // Use API route to serve files through Laravel (avoids web server 403 issues)
         return url('api/storage/' . ltrim($path, '/'));
     }
@@ -816,6 +977,9 @@ class ItemController extends Controller
             ],
             auth()->id()
         );
+
+        // Log activity
+        ActivityLogService::logAssetPhotoUpdated(auth()->id(), $id);
 
         return response()->json([
             'message' => 'Photo updated successfully',

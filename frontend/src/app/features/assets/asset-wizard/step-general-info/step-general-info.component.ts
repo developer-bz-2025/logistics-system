@@ -88,4 +88,10 @@ export class StepGeneralInfoComponent implements OnInit, OnDestroy {
   displayBrand(brand: any): string {
     return brand && brand.name ? brand.name : '';
   }
+
+  getSelectedPr(): PrListItem | null {
+    const prId = this.form.get('pr_id')?.value;
+    if (!prId) return null;
+    return this.prs.find(p => p.id === prId) || null;
+  }
 }

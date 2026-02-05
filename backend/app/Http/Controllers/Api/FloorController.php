@@ -7,6 +7,7 @@ use App\Models\Floor;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use App\Services\ActivityLogService;
 
 class FloorController extends Controller
 {
@@ -34,6 +35,9 @@ class FloorController extends Controller
             'name' => trim($validator->validated()['name']),
         ]);
 
+        // Log activity
+        ActivityLogService::logFloorCreated(auth()->id(), $floor->id, $floor->name);
+
         return response()->json([
             'id' => $floor->id,
             'name' => $floor->name,
@@ -50,8 +54,15 @@ class FloorController extends Controller
             return response()->json(['errors' => $validator->errors()], 400);
         }
 
+        $oldName = $floor->name;
         $floor->update([
             'name' => trim($validator->validated()['name']),
+        ]);
+
+        // Log activity
+        ActivityLogService::logFloorUpdated(auth()->id(), $floor->id, $floor->name, [
+            'old_name' => $oldName,
+            'new_name' => $floor->name,
         ]);
 
         return response()->json([
@@ -62,7 +73,12 @@ class FloorController extends Controller
 
     public function destroy(Floor $floor): JsonResponse
     {
+        $floorName = $floor->name;
+        $floorId = $floor->id;
         $floor->delete();
+
+        // Log activity
+        ActivityLogService::logFloorDeleted(auth()->id(), $floorId, $floorName);
 
         return response()->noContent();
     }

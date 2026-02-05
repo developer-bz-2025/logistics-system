@@ -15,6 +15,7 @@ export const navItems: NavItem[] = [
     navCap: 'Managment',
     roles: ['super_admin']
   },
+  { displayName: 'Purchase Requests', iconName: 'file-text', route: '/pr/list', roles: ['pr_admin','log_admin'] },
   {
     displayName: 'PR Edit Requests',
     iconName: 'layout-dashboard',

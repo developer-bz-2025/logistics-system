@@ -21,6 +21,10 @@ import { NavService } from '../../../../core/services/nav.service';
     .children-list .child-menu-item .hide-menu {
       opacity: 0.85;
     }
+
+    .hide-menu.small-text {
+      font-size: 0.80rem;
+    }
   `],
 })
 export class AppNavItemComponent implements OnChanges {

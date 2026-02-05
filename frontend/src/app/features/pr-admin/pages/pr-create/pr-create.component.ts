@@ -9,8 +9,8 @@ import { of, Subscription } from 'rxjs';
 import { startWith, switchMap } from 'rxjs/operators';
 import { PrService } from 'src/app/core/services/pr.service';
 import { ToastService } from 'src/app/core/services/toast.service';
-
-
+import { UserService } from 'src/app/core/services/user.service';
+import { AuthService } from 'src/app/core/services/auth.service';
 
 @Component({
   selector: 'app-pr-create',
@@ -37,17 +37,20 @@ serverErrors: string[] = []; // collect backend validation
   uploadedFile: File | null = null;
   trackByIndex = (_: number, __: any) => _;
   submitting = false;
+  locations: Array<{ id: number; name: string }> = [];
 
 
-  constructor(private fb: FormBuilder, private cdr: ChangeDetectorRef, private ref: ReferenceService,  private prService: PrService,private router: Router,  private toast: ToastService
-  ) {
+
+  constructor(private fb: FormBuilder, private cdr: ChangeDetectorRef, private ref: ReferenceService,  private prService: PrService,private router: Router,  private toast: ToastService, private userService: UserService
+  , private auth: AuthService) {
 
     this.form = this.fb.group({
       prCode: [{ value: '', disabled: false }, [Validators.required, Validators.maxLength(30)]],
       prDate: [null, Validators.required],
       notes: [''],
+      location: [null, Validators.required],           
       items: this.fb.array([this.createItemRow()]),
-      document: [null,Validators.required], // keep as File | null; template handles preview
+      document: [null,Validators.required], 
     });
   }
 
@@ -95,6 +98,21 @@ private extractErrors(err: any): string[] {
       this.cdr.markForCheck();
     });
     this.setupRowStreams(0);
+    
+    this.auth.ensureUserLoaded().subscribe(() => {
+      const u = this.auth.user(); // or subscribe to user$ if you prefer
+      if (u?.id) {
+        // use user service to fetch full user with locations if needed
+        this.userService.getUser(u.id).subscribe(userFull => {
+          // expected shape: userFull.locations = [{ id, name }, ...]
+          this.locations = (userFull?.locations || []).map((l: any) => ({ id: l.id, name: l.name }));
+          if (this.locations.length === 1) {
+            this.form.get('location')!.setValue(this.locations[0].id);
+          }
+          // if multiple, form control stays null and template shows select
+        });
+      }
+    });
   }
 
   addItemRow() {
@@ -233,6 +251,7 @@ private setupRowStreams(i: number) {
     // total_price optional (server recomputes); you can omit or include
     const total_price = items.reduce((s, r) => s + r.qty * r.unit_cost, 0);
     fd.append('total_price', String(total_price));
+    fd.append('location_id', String(this.form.get('location')!.value));
   
     // IMPORTANT: bracketed array fields — NOT JSON
     items.forEach((it, i) => {

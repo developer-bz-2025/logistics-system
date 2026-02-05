@@ -15,10 +15,10 @@ class SubCategoryResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'          => $this->id,
+            'id'          => (int) $this->id,
             'name'        => $this->name,
             'description' => $this->description,
-            'category_id' => $this->cat_id,
+            'category_id' => $this->cat_id !== null ? (int) $this->cat_id : null,
         ];
     }
 }

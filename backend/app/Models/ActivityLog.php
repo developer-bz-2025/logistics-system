@@ -11,9 +11,12 @@ class ActivityLog extends Model
 
     protected $table = 'activity_log';
     public $timestamps = false;
-    protected $fillable = ['user_id','action_id','created_at'];
+    protected $fillable = ['user_id','action_id','context','created_at'];
 
-    protected $casts = ['created_at' => 'datetime'];
+    protected $casts = [
+        'created_at' => 'datetime',
+        'context' => 'array',
+    ];
 
     public function user()   { return $this->belongsTo(User::class); }
     public function action() { return $this->belongsTo(Action::class, 'action_id'); }

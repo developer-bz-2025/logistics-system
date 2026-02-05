@@ -3,7 +3,10 @@
     <!-- Card -->
     <div *ngFor="let c of cards"
          class="rounded-2xl border border-gray-200 bg-white shadow-sm p-5 md:p-6 h-30
-                flex items-center gap-4"
+                flex items-center gap-4 cursor-pointer hover:shadow-md transition-shadow"
+         [class.opacity-50]="!c.categoryId"
+         [class.cursor-not-allowed]="!c.categoryId"
+         (click)="onCardClicked(c)"
          style="container-type: inline-size;">
       <!-- Left: label + number -->
       <div class="min-w-0 flex-1 overflow-hidden pr-2">

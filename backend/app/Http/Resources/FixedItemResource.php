@@ -15,9 +15,9 @@ class FixedItemResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'        => $this->id,
+            'id'        => (int) $this->id,
             'name'      => $this->name,
-            'sub_id'    => $this->sub_id,
+            'sub_id'    => $this->sub_id !== null ? (int) $this->sub_id : null,
         ];
     }
 }

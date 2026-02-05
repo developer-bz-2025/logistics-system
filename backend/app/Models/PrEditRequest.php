@@ -11,9 +11,10 @@ class PrEditRequest extends Model
 
     protected $table = 'pr_edit_requests';
     protected $fillable = [
-        'pr_id','requested_by_admin_id','status_id','request_date',
+        'pr_id','requested_by_admin_id','approved_by_admin_id','status_id','request_date',
         'old_pr_code','new_pr_code','old_acquisition_date','new_acquisition_date',
         'old_pr_path','new_pr_path','old_total_price','new_total_price','reason',
+        'old_location_id','new_location_id',
     ];
 
     protected $casts = [

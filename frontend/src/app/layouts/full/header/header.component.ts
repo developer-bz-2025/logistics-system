@@ -4,13 +4,18 @@ import {
   EventEmitter,
   Input,
   ViewEncapsulation,
+  OnInit,
+  OnDestroy,
 } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { UserService } from 'src/app/core/services/user.service';
 import { JwtService } from 'src/app/core/services/jwt.service';
+import { NotificationService } from 'src/app/core/services/notification.service';
 import { FormControl } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Location } from '@angular/common';
+import { Subject, interval } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 // import jwt_decode from 'jwt-decode';
 // import {jwtDecode} from 'jwt-decode';
@@ -22,21 +27,28 @@ import { Location } from '@angular/common';
   templateUrl: './header.component.html',
   encapsulation: ViewEncapsulation.None,
 })
-export class HeaderComponent {
+export class HeaderComponent implements OnInit, OnDestroy {
   @Input() showToggle = true;
   @Input() toggleChecked = false;
   @Output() toggleMobileNav = new EventEmitter<void>();
   @Output() toggleMobileFilterNav = new EventEmitter<void>();
   @Output() toggleCollapsed = new EventEmitter<void>();
 
+  private destroy$ = new Subject<void>();
+
   showFiller = false;
   user: any = null;
+  unreadCount = 0;
 
   q = new FormControl('');
 
-
-
-  constructor(public dialog: MatDialog, private userService: UserService, private jwtService: JwtService, private router: Router, private location: Location
+  constructor(
+    public dialog: MatDialog,
+    private userService: UserService,
+    private jwtService: JwtService,
+    private notificationService: NotificationService,
+    private router: Router,
+    private location: Location
   ) { }
 
 
@@ -93,6 +105,42 @@ export class HeaderComponent {
         }
       });
     }
+
+    // Load unread count
+    this.loadUnreadCount();
+
+    // Refresh unread count every 30 seconds
+    interval(30000)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.loadUnreadCount();
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  loadUnreadCount(): void {
+    this.notificationService.getUnreadCount()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (count) => {
+          this.unreadCount = count;
+        },
+        error: (error) => {
+          console.error('Failed to load unread count', error);
+        }
+      });
+  }
+
+  navigateToNotifications(): void {
+    console.log('Navigating to /notifications');
+    this.router.navigate(['/notifications']).then(
+      (success) => console.log('Navigation success:', success),
+      (error) => console.error('Navigation error:', error)
+    );
   }
 
   roleGradientMap: { [key: string]: string } = {

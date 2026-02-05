@@ -9,9 +9,10 @@ use App\Models\Location;
 use App\Models\LocationChangeRequest;
 use App\Models\ChangeStatus;
 use App\Models\Role;
-use App\Models\ActivityLog;
-use App\Models\Action;
+use App\Models\User;
 use App\Services\ItemHistoryService;
+use App\Services\NotificationService;
+use App\Services\ActivityLogService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -97,19 +98,14 @@ class LocationChangeRequestController extends Controller
                     $requestedLocation
                 );
 
-                // Log activity for super admin
-                $this->logActivity(
-                    $requestedByAdminId,
-                    'Location Changed',
-                    [
-                        'item_id' => $item->id,
-                        'old_location_id' => $currentLocationId,
-                        'old_location_name' => $oldLocation->name ?? null,
-                        'new_location_id' => $requestedLocationId,
-                        'new_location_name' => $requestedLocation->name ?? null,
-                        'moved_immediately' => true,
-                    ]
-                );
+                // Log activity
+                ActivityLogService::logLocationChanged($requestedByAdminId, $item->id, [
+                    'old_location_id' => $currentLocationId,
+                    'old_location_name' => $oldLocation->name ?? null,
+                    'new_location_id' => $requestedLocationId,
+                    'new_location_name' => $requestedLocation->name ?? null,
+                    'moved_immediately' => true,
+                ]);
 
                 return response()->json([
                     'message' => 'Location changed successfully.',
@@ -154,20 +150,27 @@ class LocationChangeRequestController extends Controller
                     $requestedByAdminId
                 );
 
-                // Log activity for super admin
-                $this->logActivity(
+                // Log activity
+                ActivityLogService::logLocationChangeRequestCreated($requestedByAdminId, $locationChangeRequest->id, $itemId, [
+                    'current_location_id' => $currentLocationId,
+                    'current_location_name' => $currentLocation->name ?? null,
+                    'requested_location_id' => $requestedLocationId,
+                    'requested_location_name' => $requestedLocation->name ?? null,
+                    'status' => 'Pending',
+                    'notes' => $notes,
+                ]);
+
+                // Send notification to log admins of the requested location
+                $requester = User::find($requestedByAdminId);
+                NotificationService::notifyLocationChangeRequestReceived(
+                    $locationChangeRequest->id,
+                    $itemId,
+                    $item->description ?? $item->sn ?? "Item #{$itemId}",
+                    $currentLocation->name ?? 'Unknown',
+                    $requestedLocation->name ?? 'Unknown',
                     $requestedByAdminId,
-                    'Location Change Request Created',
-                    [
-                        'request_id' => $locationChangeRequest->id,
-                        'item_id' => $itemId,
-                        'current_location_id' => $currentLocationId,
-                        'current_location_name' => $currentLocation->name ?? null,
-                        'requested_location_id' => $requestedLocationId,
-                        'requested_location_name' => $requestedLocation->name ?? null,
-                        'status' => 'Pending',
-                        'notes' => $notes,
-                    ]
+                    $requester->name ?? 'Unknown',
+                    $requestedLocationId
                 );
 
                 $locationChangeRequest->load([
@@ -237,32 +240,6 @@ class LocationChangeRequestController extends Controller
         return !empty(array_intersect($admins1, $admins2));
     }
 
-    /**
-     * Ensure action exists and return its ID
-     */
-    private function ensureAction(string $actionName): int
-    {
-        $action = Action::firstOrCreate(
-            ['action' => $actionName],
-            ['action' => $actionName]
-        );
-
-        return $action->id;
-    }
-
-    /**
-     * Log activity to activity_log table
-     */
-    private function logActivity(int $userId, string $actionName, array $context = []): void
-    {
-        $actionId = $this->ensureAction($actionName);
-
-        ActivityLog::create([
-            'user_id' => $userId,
-            'action_id' => $actionId,
-            'created_at' => now(),
-        ]);
-    }
 
     /**
      * GET /api/location-change-requests
@@ -443,16 +420,34 @@ class LocationChangeRequestController extends Controller
                 $user->id
             );
 
-            // Log activity for super admin
-            $this->logActivity(
+            // Log activity
+            ActivityLogService::logLocationChangeRequestApproved($user->id, $locationChangeRequest->id, $item->id, [
+                'old_location_id' => $locationChangeRequest->current_location_id,
+                'old_location_name' => $oldLocation->name ?? null,
+                'new_location_id' => $locationChangeRequest->requested_location_id,
+                'new_location_name' => $newLocation->name ?? null,
+            ]);
+            
+            ActivityLogService::logLocationChanged($user->id, $item->id, [
+                'old_location_id' => $locationChangeRequest->current_location_id,
+                'old_location_name' => $oldLocation->name ?? null,
+                'new_location_id' => $locationChangeRequest->requested_location_id,
+                'new_location_name' => $newLocation->name ?? null,
+                'via_request' => true,
+                'request_id' => $locationChangeRequest->id,
+            ]);
+
+            // Send notification to requester
+            $requester = User::find($locationChangeRequest->requested_by_admin_id);
+            NotificationService::notifyLocationChangeRequestApproved(
+                $locationChangeRequest->id,
+                $item->id,
+                $item->description ?? $item->sn ?? "Item #{$item->id}",
+                $oldLocation->name ?? 'Unknown',
+                $newLocation->name ?? 'Unknown',
                 $user->id,
-                'Location Change Request Approved',
-                [
-                    'request_id' => $locationChangeRequest->id,
-                    'item_id' => $item->id,
-                    'old_location_id' => $locationChangeRequest->current_location_id,
-                    'new_location_id' => $locationChangeRequest->requested_location_id,
-                ]
+                $user->name ?? 'Unknown',
+                $locationChangeRequest->requested_by_admin_id
             );
 
             return response()->json([
@@ -560,15 +555,27 @@ class LocationChangeRequestController extends Controller
                 $user->id
             );
 
-            // Log activity for super admin
-            $this->logActivity(
+            // Log activity
+            ActivityLogService::logLocationChangeRequestRejected(
                 $user->id,
-                'Location Change Request Rejected',
-                [
-                    'request_id' => $locationChangeRequest->id,
-                    'item_id' => $locationChangeRequest->item_id,
-                    'reason' => $data['reason'] ?? null,
-                ]
+                $locationChangeRequest->id,
+                $locationChangeRequest->item_id,
+                $data['reason'] ?? null
+            );
+
+            // Send notification to requester
+            $requester = User::find($locationChangeRequest->requested_by_admin_id);
+            $item = $locationChangeRequest->item;
+            NotificationService::notifyLocationChangeRequestRejected(
+                $locationChangeRequest->id,
+                $locationChangeRequest->item_id,
+                $item->description ?? $item->sn ?? "Item #{$locationChangeRequest->item_id}",
+                $locationChangeRequest->current->name ?? 'Unknown',
+                $locationChangeRequest->requested->name ?? 'Unknown',
+                $user->id,
+                $user->name ?? 'Unknown',
+                $locationChangeRequest->requested_by_admin_id,
+                $data['reason'] ?? null
             );
 
             return response()->json([

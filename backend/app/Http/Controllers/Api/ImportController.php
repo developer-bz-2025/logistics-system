@@ -3,6 +3,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Requests\ImportAssetsRequest;
 use App\Services\ImportAssetsService;
+use App\Services\ActivityLogService;
 use App\Http\Controllers\Controller;
 
 use Illuminate\Support\Facades\Storage;
@@ -53,6 +54,18 @@ public function import(ImportAssetsRequest $request, ImportAssetsService $servic
         // 4) Pass the SAME absolute path to the service
         [$summary, $report] = $service->run($absPath);
 
+        // Log activity
+        $totalInserted = 0;
+        foreach ($report as $sheetReport) {
+            $totalInserted += ($sheetReport['inserted'] ?? 0);
+        }
+        
+        ActivityLogService::logAssetsImported(auth()->id(), $totalInserted, [
+            'file_name' => $request->file('file')->getClientOriginalName(),
+            'summary' => $summary,
+            'sheets_processed' => count($report),
+        ]);
+
         return response()->json([
             'ok'      => true,
             'summary' => $summary,
@@ -73,6 +86,13 @@ public function import(ImportAssetsRequest $request, ImportAssetsService $servic
             'file' => $e->getFile(),
             'line' => $e->getLine(),
             'trace' => $e->getTraceAsString()
+        ]);
+
+        // Log activity
+        ActivityLogService::logImportFailed(auth()->id(), $e->getMessage(), [
+            'file_name' => $request->file('file')->getClientOriginalName() ?? 'Unknown',
+            'error_file' => $e->getFile(),
+            'error_line' => $e->getLine(),
         ]);
 
         return response()->json([

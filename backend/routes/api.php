@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\LocationAdminAssignmentController;
 use App\Http\Controllers\Api\LocationChangeRequestController;
 use App\Http\Controllers\Api\FloorController;
+use App\Http\Controllers\Api\NotificationController;
 
 
 // Group all API routes
@@ -27,11 +28,13 @@ Route::middleware('jwt.auth')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/change-password', [AuthController::class, 'changePassword']);
+    Route::get('/users/{id}', [UserController::class, 'show']);
+    Route::get('/prs-for-asset-creation', [ItemController::class, 'getPrsForAssetCreation']);
+
 });
 
 
-Route::middleware(['jwt.auth'])->group(function () {
-    Route::get('/users/{id}', [UserController::class, 'show']);
+Route::middleware(['jwt.auth','logistics.admin.pr.access'])->group(function () {
     Route::post('/prs', [PrController::class, 'store']);
     Route::get('/prs', [PrController::class, 'index']);
 
@@ -175,11 +178,25 @@ Route::middleware(['jwt.auth'])->group(function () {
 });
 
 Route::middleware(['jwt.auth'])->group(function () {
+    Route::get('/dashboard/log-admin-stats', [\App\Http\Controllers\Api\DashboardController::class, 'logAdminStats']);
+
     Route::get('/location-change-requests', [LocationChangeRequestController::class, 'index']);
     Route::post('/location-change-requests', [LocationChangeRequestController::class, 'store']);
     Route::post('/location-change-requests/{id}/approve', [LocationChangeRequestController::class, 'approve'])
         ->whereNumber('id');
     Route::post('/location-change-requests/{id}/reject', [LocationChangeRequestController::class, 'reject'])
+        ->whereNumber('id');
+});
+
+Route::middleware(['jwt.auth'])->group(function () {
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::get('/notifications/{id}', [NotificationController::class, 'show'])
+        ->whereNumber('id');
+    Route::put('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])
+        ->whereNumber('id');
+    Route::put('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
+    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])
         ->whereNumber('id');
 });
 

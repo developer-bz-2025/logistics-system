@@ -18,7 +18,7 @@ return new class extends Migration
             $table->date('pr_date')->nullable();
 
             // $table->foreignId('supplier_id')->nullable()->constrained('suppliers');
-            // $table->foreignId('location_id')->nullable()->constrained('locations');
+            $table->foreignId('location_id')->nullable()->constrained('locations');
 
             $table->decimal('total_price', 14, 2)->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users');

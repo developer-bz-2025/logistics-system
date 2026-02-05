@@ -7,9 +7,11 @@ use App\Http\Requests\AssignLocationAdminRequest;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\UserLocation;
+use App\Models\Location;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Services\ActivityLogService;
 
 class LocationAdminAssignmentController extends Controller
 {
@@ -86,6 +88,9 @@ class LocationAdminAssignmentController extends Controller
             abort(500, 'Log admin role is not configured.');
         }
 
+        // Get old locations before sync
+        $oldLocationIds = $user->locations()->pluck('locations.id')->toArray();
+        
         DB::transaction(function () use ($user, $locationIds, $logAdminRoleId) {
             UserLocation::whereIn('location_id', $locationIds)->delete();
             $user->locations()->sync($locationIds);
@@ -96,6 +101,25 @@ class LocationAdminAssignmentController extends Controller
         });
 
         $user->load('role:id,name', 'locations:id,name');
+
+        // Log activity for assigned locations
+        $newLocationIds = $user->locations()->pluck('locations.id')->toArray();
+        $locationsToAssign = array_diff($newLocationIds, $oldLocationIds);
+        $locationsToUnassign = array_diff($oldLocationIds, $newLocationIds);
+
+        foreach ($locationsToAssign as $locationId) {
+            $location = Location::find($locationId);
+            if ($location) {
+                ActivityLogService::logLogAdminAssigned(auth()->id(), $user->id, $locationId, $location->name);
+            }
+        }
+
+        foreach ($locationsToUnassign as $locationId) {
+            $location = Location::find($locationId);
+            if ($location) {
+                ActivityLogService::logLogAdminUnassigned(auth()->id(), $user->id, $locationId, $location->name);
+            }
+        }
 
         return response()->json([
             'message' => 'Locations assigned successfully.',

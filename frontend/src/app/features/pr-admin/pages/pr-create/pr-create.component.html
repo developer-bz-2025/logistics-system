@@ -60,6 +60,17 @@
                 placeholder="Optional short note"
                 formControlName="notes" />
             </div> -->
+
+            <div class="md:col-span-1"> 
+              <label class="block text-sm font-medium mb-1">Location<span class="text-rose-500">*</span></label>
+              <mat-form-field appearance="fill">
+                <mat-label>Location</mat-label>
+                <mat-select formControlName="location" required>
+                  <mat-option *ngFor="let loc of locations" [value]="loc.id">{{ loc.name }}</mat-option>
+                </mat-select>
+                <mat-error *ngIf="form.get('location')?.hasError('required')">Location is required</mat-error>
+              </mat-form-field>
+            </div>
             </div>
           </div>
 

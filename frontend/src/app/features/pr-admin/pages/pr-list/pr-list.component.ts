@@ -120,14 +120,26 @@ export class PrListComponent implements OnInit {
   // }
 
   docUrl(row: PrRow): string | null {
+    // Check if backend provides a full URL in 'url' field first
+    if (row?.url) {
+      const url = String(row.url).trim();
+      // Handle escaped slashes in JSON response
+      const unescaped = url.replace(/\\\//g, '/');
+      if (unescaped) return unescaped;
+    }
+    
+    // Fallback to pr_path
     const raw = (row?.pr_path || '').trim();
     if (!raw) return null;
   
+    // Handle escaped slashes in JSON response
+    const unescaped = raw.replace(/\\\//g, '/');
+  
     // If backend already sent an absolute URL, just return it.
-    if (/^https?:\/\//i.test(raw)) return raw;
+    if (/^https?:\/\//i.test(unescaped)) return unescaped;
   
     // Normalize: remove leading slashes
-    const path = raw.replace(/^\/+/, '');
+    const path = unescaped.replace(/^\/+/, '');
   
     // For Laravel public disk, the public URL is usually /storage/<path>
     // If the value doesn't already begin with 'storage/', prefix it.

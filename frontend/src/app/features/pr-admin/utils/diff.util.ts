@@ -7,15 +7,24 @@ export class DiffService {
   buildSummary(original: PRDto, current: any): string[] {
     const lines: string[] = [];
     const fmt = (d: any) => (d ? String(d).slice(0, 10) : '');
-  
+
     // Header changes
     const oldDate = fmt(original.pr_date);
     const newDate = fmt(current.pr_date);
     if (oldDate !== newDate) lines.push(`PR Date: ${oldDate} → ${newDate}`);
     if (original.pr_code !== current.pr_code) lines.push(`PR Code: ${original.pr_code} → ${current.pr_code}`);
-  
+
+    // detect location change 
+    const oldLocId = (original as any)?.location_id ?? (original as any)?.location?.id ?? null;
+    const newLocId = (current as any)?.location_id ?? (current as any)?.location?.id ?? null;
+    if (oldLocId !== newLocId) {
+      const oldLocName = (original as any)?.location_name ?? (original as any)?.location?.name ?? (oldLocId ? `#${oldLocId}` : '—');
+      const newLocName = (current as any)?.location_name ?? (current as any)?.location?.name ?? (newLocId ? `#${newLocId}` : '—');
+      lines.push(`Location: ${oldLocName} → ${newLocName}`);
+    }
+
     const origItems = (original.items ?? []);
-    const curItems  = (current.items  ?? []) as Array<{
+    const curItems = (current.items ?? []) as Array<{
       pr_item_id?: number | null;
       fixed_item_id: number;
       fixed_item_name?: string;
@@ -23,7 +32,7 @@ export class DiffService {
       supplier_name?: string;
       unit_cost: number;
     }>;
-  
+
     // Index originals by pr_item_id (DB id). This avoids collisions on fixed_item_id.
     const origById = new Map<number, typeof origItems[number]>();
     for (const oi of origItems) {
@@ -33,7 +42,7 @@ export class DiffService {
         origById.set(oi.pr_item_id as any, oi as any);
       }
     }
-  
+
     // 1) Compare each original row to current by pr_item_id
     for (const oi of origItems) {
       const id: any = (oi as any).pr_item_id; // or oi.id if that's your field
@@ -42,29 +51,29 @@ export class DiffService {
         continue;
       }
       const ci = curItems.find(it => it.pr_item_id === id);
-  
+
       const nameOld = oi.fixed_item_name ?? `#${oi.fixed_item_id}`;
-  
+
       if (!ci) {
         // Missing now → removed
         lines.push(`Item ${nameOld}: Removed`);
         continue;
       }
-  
+
       const nameNew = ci.fixed_item_name ?? nameOld;
-      const supOld  = oi.supplier_name ?? `#${oi.supplier_id}`;
-      const supNew  = ci.supplier_name ?? `#${ci.supplier_id}`;
-  
+      const supOld = oi.supplier_name ?? `#${oi.supplier_id}`;
+      const supNew = ci.supplier_name ?? `#${ci.supplier_id}`;
+
       // Item (catalog) changed?
       if (oi.fixed_item_id !== ci.fixed_item_id) {
         lines.push(`Item ${nameOld}: Changed to ${nameNew}`);
       }
-  
+
       // Supplier changed?
       if (oi.supplier_id !== ci.supplier_id) {
         lines.push(`Item ${nameNew}: Supplier ${supOld} → ${supNew}`);
       }
-  
+
       // Price changed?
       const oldPrice = Number(oi.unit_cost).toFixed(2);
       const newPrice = Number(ci.unit_cost).toFixed(2);
@@ -72,7 +81,7 @@ export class DiffService {
         lines.push(`Item ${nameNew}: Price ${oi.unit_cost} → ${ci.unit_cost}`);
       }
     }
-  
+
     // 2) Additions = any current row that has no pr_item_id OR pr_item_id not in originals
     for (const ci of curItems) {
       const isNew = ci.pr_item_id == null || !origById.has(Number(ci.pr_item_id));
@@ -81,10 +90,10 @@ export class DiffService {
         lines.push(`Item ${name}: Added`);
       }
     }
-  
+
     return lines.length ? lines : ['No changes detected yet.'];
   }
-  
+
   // buildSummary(original: PRDto, current: any): string[] {
   //   const lines: string[] = [];
 

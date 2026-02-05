@@ -6,6 +6,7 @@ import { LogAdminRoutingModule } from './log-admin-routing.module';
 import { MyAssetsComponent } from './pages/my-assets/my-assets.component';
 import { LocationChangeRequestsComponent } from './pages/location-change-requests/location-change-requests.component';
 import { RejectDialogComponent } from './pages/location-change-requests/reject-dialog.component';
+import { DashboardModule } from '../dashboard/dashboard.module';
 
 @NgModule({
   declarations: [
@@ -13,7 +14,7 @@ import { RejectDialogComponent } from './pages/location-change-requests/reject-d
     LocationChangeRequestsComponent,
     RejectDialogComponent
   ],
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, MaterialModule, LogAdminRoutingModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, MaterialModule, LogAdminRoutingModule,DashboardModule],
 })
 export class LogAdminModule {}
 

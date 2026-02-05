@@ -16,6 +16,12 @@ class PrEditRequestResource extends JsonResource
             'pr_code' => ['old' => $this->old_pr_code, 'new' => $this->new_pr_code],
             'acquisition_date' => ['old' => $this->old_acquisition_date, 'new' => $this->new_acquisition_date],
             'total_price' => ['old' => $this->old_total_price, 'new' => $this->new_total_price],
+            'location' => [
+                'old' => $this->old_location_id,
+                'old_name' => $this->old_location_id ? \App\Models\Location::find($this->old_location_id)?->name : null,
+                'new' => $this->new_location_id,
+                'new_name' => $this->new_location_id ? \App\Models\Location::find($this->new_location_id)?->name : null,
+            ],
             'pr_path' => [
                 'old' => $this->old_pr_path,
                 'old_url' => $this->old_pr_path ? Storage::disk('public')->url($this->old_pr_path) : null,
@@ -70,6 +76,7 @@ class PrEditRequestResource extends JsonResource
             'request_date' => $this->request_date,
             'requested_by' => $requester,
             'approved_by_admin_id' => $this->approved_by_admin_id,
+            'reason' => $this->reason,
             'header_diffs' => $header,
             'items_diffs' => $items,
             'items_counts' => $counts,

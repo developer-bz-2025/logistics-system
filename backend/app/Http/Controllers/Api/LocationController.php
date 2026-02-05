@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Validator;
+use App\Services\ActivityLogService;
 
 class LocationController extends Controller
 {
@@ -34,6 +35,9 @@ class LocationController extends Controller
         $location = Location::create([
             'name' => trim($validator->validated()['name']),
         ]);
+
+        // Log activity
+        ActivityLogService::logLocationCreated(auth()->id(), $location->id, $location->name);
 
         return response()->json([
             'id' => $location->id,
@@ -62,8 +66,15 @@ class LocationController extends Controller
             return response()->json(['errors' => $validator->errors()], 400);
         }
 
+        $oldName = $location->name;
         $location->update([
             'name' => trim($validator->validated()['name']),
+        ]);
+
+        // Log activity
+        ActivityLogService::logLocationUpdated(auth()->id(), $location->id, $location->name, [
+            'old_name' => $oldName,
+            'new_name' => $location->name,
         ]);
 
         return response()->json([
@@ -118,7 +129,12 @@ class LocationController extends Controller
             ], 422);
         }
 
+        $locationName = $location->name;
+        $locationId = $location->id;
         $location->delete();
+
+        // Log activity
+        ActivityLogService::logLocationDeleted(auth()->id(), $locationId, $locationName);
 
         return response()->noContent();
     }

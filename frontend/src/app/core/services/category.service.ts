@@ -116,6 +116,11 @@ export class AssetService {
     return this.http.get<any>(`${this.apiUrl}/dashboard/stats`);
   }
 
+  getLogAdminStats(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/dashboard/log-admin-stats`);
+  }
+
+
   // Get single asset details
   getAsset(id: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/items/${id}`);

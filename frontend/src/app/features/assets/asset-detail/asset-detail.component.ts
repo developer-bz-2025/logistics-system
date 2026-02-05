@@ -718,6 +718,12 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
     return pr?.pr_code || '';
   }
 
+  getSelectedPr(): any {
+    const prId = this.assetForm.get('pr_id')?.value;
+    if (!prId) return null;
+    return this.prs.find(p => p.id === prId) || null;
+  }
+
   getAttributeFieldClass(attr: any): string {
     // Make full-width fields span the entire width
     return attr.fullWidth ? 'full-width' : '';

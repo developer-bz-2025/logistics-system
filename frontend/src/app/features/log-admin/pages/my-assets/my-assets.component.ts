@@ -1,10 +1,20 @@
-import { Component, OnDestroy, OnInit, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild, AfterViewInit, inject } from '@angular/core';
 import { FormBuilder } from '@angular/forms';
 import { MatPaginator, PageEvent } from '@angular/material/paginator';
 import { Subject, takeUntil, combineLatest, startWith, map, switchMap, tap, defer, BehaviorSubject, distinctUntilChanged, debounceTime } from 'rxjs';
 import { LogAdminAsset, LogAdminAssetsService } from '../../services/log-admin-assets.service';
-import { AssetService } from 'src/app/core/services/category.service';
+import { AssetService, CategoryService } from 'src/app/core/services/category.service';
 import { Router } from '@angular/router';
+
+type DashboardCardKey = 'furniture'|'appliances'|'machine'|'vehicle'|'electronics'|'it'|'computer';
+
+type ExternalCard = {
+  key: DashboardCardKey;
+  label?: string;
+  count: number;
+  tint?: 'indigo'|'green'|'violet'|'orange'|'rose'|'teal'|'cyan';
+  categoryId?: number;
+};
 
 @Component({
   selector: 'app-my-assets',
@@ -14,6 +24,11 @@ import { Router } from '@angular/router';
 export class MyAssetsComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
+
+
+  // inside component class
+  stats: any = null;
+statsCards: Array<{ key: string; label?: string; count: number; route?: string; categoryId?: number }> = [];  
   form = this.fb.group({
     search: [''],
     status_id: [null as number | null],
@@ -24,10 +39,13 @@ export class MyAssetsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   displayedColumns = ['sn', 'fixed_item', 'acquisition_date', 'status', 'location', 'brand'];
   data: LogAdminAsset[] = [];
-  
+
   total = 0;
   loading = false;
   statuses: any[] = [];
+  
+
+  
 
   private destroy$ = new Subject<void>();
   private pageState$ = new BehaviorSubject<{ page: number; pageSize: number }>({ page: 1, pageSize: 10 });
@@ -36,8 +54,9 @@ export class MyAssetsComponent implements OnInit, AfterViewInit, OnDestroy {
     private fb: FormBuilder,
     private logAssets: LogAdminAssetsService,
     private assetService: AssetService,
-    private router: Router
-  ) {}
+    private categoryService: CategoryService,
+    public router: Router
+  ) { }
 
   ngOnInit(): void {
     this.assetService.getStatuses().pipe(takeUntil(this.destroy$)).subscribe(statuses => {
@@ -57,7 +76,7 @@ export class MyAssetsComponent implements OnInit, AfterViewInit, OnDestroy {
     this.form.valueChanges.pipe(
       takeUntil(this.destroy$),
       debounceTime(100),
-      distinctUntilChanged((prev, curr) => 
+      distinctUntilChanged((prev, curr) =>
         prev.search === curr.search &&
         prev.status_id === curr.status_id &&
         prev.sort === curr.sort &&
@@ -65,7 +84,7 @@ export class MyAssetsComponent implements OnInit, AfterViewInit, OnDestroy {
         prev.per_page === curr.per_page
       )
     ).subscribe(formValue => {
-      const filtersChanged = 
+      const filtersChanged =
         formValue.search !== previousFilters.search ||
         formValue.status_id !== previousFilters.status_id ||
         formValue.sort !== previousFilters.sort ||
@@ -81,9 +100,9 @@ export class MyAssetsComponent implements OnInit, AfterViewInit, OnDestroy {
         }, 0);
       } else if (formValue.per_page !== previousFilters.per_page) {
         // Update pageSize when per_page changes, but keep current page
-        this.pageState$.next({ 
-          page: this.pageState$.value.page, 
-          pageSize: formValue.per_page || 10 
+        this.pageState$.next({
+          page: this.pageState$.value.page,
+          pageSize: formValue.per_page || 10
         });
       }
 
@@ -102,56 +121,110 @@ export class MyAssetsComponent implements OnInit, AfterViewInit, OnDestroy {
         })
       ))
     ])
-    .pipe(
-      map(([pageState, form]) => {
-        const params: any = {
-          search: form.search,
-          status_id: form.status_id,
-          sort: form.sort || 'acquisition_date',
-          dir: form.dir || 'desc',
-          page: pageState.page,
-          per_page: pageState.pageSize,
+      .pipe(
+        map(([pageState, form]) => {
+          const params: any = {
+            search: form.search,
+            status_id: form.status_id,
+            sort: form.sort || 'acquisition_date',
+            dir: form.dir || 'desc',
+            page: pageState.page,
+            per_page: pageState.pageSize,
+          };
+          // Remove null/undefined/empty values
+          Object.keys(params).forEach((key: string) => {
+            if (params[key] === null || params[key] === undefined || params[key] === '') {
+              delete params[key];
+            }
+          });
+          return params;
+        }),
+        switchMap(params => {
+          this.loading = true;
+          return this.logAssets.getAssets(params);
+        })
+      )
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          console.log('Full API Response:', JSON.stringify(res, null, 2));
+          console.log('res.data:', res.data);
+          console.log('res.meta:', res.meta);
+          console.log('(res as any).total:', (res as any).total);
+          this.data = res.data || [];
+          // Handle both response structures: meta.total or direct total
+          this.total = (res as any).total ?? res.meta?.total ?? 0;
+          console.log('Final total set to:', this.total);
+          this.loading = false;
+          // Sync paginator with current pageState after data loads
+          setTimeout(() => {
+            if (this.paginator) {
+              const currentState = this.pageState$.value;
+              this.paginator.pageIndex = currentState.page - 1;
+              this.paginator.pageSize = currentState.pageSize;
+            }
+          }, 0);
+        },
+        error: (err) => {
+          console.error('Error fetching assets:', err);
+          this.data = [];
+          this.total = 0;
+          this.loading = false;
+        }
+      });
+    this.loadLogAdminStats();
+  }
+
+  loadLogAdminStats() {
+    this.assetService.getLogAdminStats().subscribe({
+      next: (res: any) => {
+        const stats = res?.data ?? res ?? {};
+        const apiToCardKey: Record<string, ExternalCard['key']> = {
+          appliances: 'appliances',
+          electronics: 'electronics',
+          furniture: 'furniture',
+          it_equipment: 'it',
+          machine: 'machine',
+          vehicle: 'vehicle'
         };
-        // Remove null/undefined/empty values
-        Object.keys(params).forEach((key: string) => {
-          if (params[key] === null || params[key] === undefined || params[key] === '') {
-            delete params[key];
-          }
+  
+        // Build externalCards array using dashboard keys
+        const externalCards = Object.values({
+          furniture: { key: 'furniture' as const },
+          appliances: { key: 'appliances' as const },
+          machine: { key: 'machine' as const },
+          vehicle: { key: 'vehicle' as const },
+          electronics: { key: 'electronics' as const },
+          computer: { key: 'computer' as const },
+          it: { key: 'it' as const }
+        }).map(def => {
+          // find api key mapped to this card key
+          const apiKey = Object.keys(apiToCardKey).find(k => apiToCardKey[k] === def.key);
+          const count = apiKey ? Number(stats[apiKey] ?? 0) : 0;
+          return { key: def.key, count };
         });
-        return params;
-      }),
-      switchMap(params => {
-        this.loading = true;
-        return this.logAssets.getAssets(params);
-      })
-    )
-    .pipe(takeUntil(this.destroy$))
-    .subscribe({
-      next: (res) => {
-        console.log('Full API Response:', JSON.stringify(res, null, 2));
-        console.log('res.data:', res.data);
-        console.log('res.meta:', res.meta);
-        console.log('(res as any).total:', (res as any).total);
-        this.data = res.data || [];
-        // Handle both response structures: meta.total or direct total
-        this.total = (res as any).total ?? res.meta?.total ?? 0;
-        console.log('Final total set to:', this.total);
-        this.loading = false;
-        // Sync paginator with current pageState after data loads
-        setTimeout(() => {
-          if (this.paginator) {
-            const currentState = this.pageState$.value;
-            this.paginator.pageIndex = currentState.page - 1;
-            this.paginator.pageSize = currentState.pageSize;
-          }
-        }, 0);
+  
+        // assign to input bound to <app-dashboard-cards>
+        this.statsCards = externalCards;
+        // optionally resolve categoryId afterwards (if you want click to filter)
+        this.categoryService.getCategories().subscribe(categories => {
+          const nameMap: Record<string, string[]> = {
+            furniture: ['Furniture'],
+            appliances: ['Appliances'],
+            machine: ['Machine','Machines'],
+            vehicle: ['Vehicle','Vehicles'],
+            electronics: ['Electronics'],
+            computer: ['Computer','Computers'],
+            it: ['IT Equipment','IT']
+          };
+          this.statsCards = this.statsCards.map(card => {
+            const names = nameMap[card.key] ?? [];
+            const cat = categories.find(c => names.some(n => c.name.toLowerCase().includes(n.toLowerCase())));
+            return { ...card, categoryId: cat?.id };
+          });
+        });
       },
-      error: (err) => {
-        console.error('Error fetching assets:', err);
-        this.data = [];
-        this.total = 0;
-        this.loading = false;
-      }
+      error: err => console.error('Failed to load log-admin stats', err)
     });
   }
 
@@ -201,9 +274,9 @@ export class MyAssetsComponent implements OnInit, AfterViewInit, OnDestroy {
     // Update the form's per_page control to keep it in sync
     this.form.patchValue({ per_page: event.pageSize }, { emitEvent: false });
     // Update page state which triggers the data fetch
-    this.pageState$.next({ 
-      page: event.pageIndex + 1, 
-      pageSize: event.pageSize 
+    this.pageState$.next({
+      page: event.pageIndex + 1,
+      pageSize: event.pageSize
     });
   }
 

@@ -7,6 +7,7 @@ use App\Models\Brand;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use App\Services\ActivityLogService;
 
 class BrandController extends Controller
 {
@@ -37,6 +38,9 @@ class BrandController extends Controller
             'name' => trim($validator->validated()['name']),
         ]);
 
+        // Log activity
+        ActivityLogService::logBrandCreated(auth()->id(), $brand->id, $brand->name);
+
         return response()->json([
             'id' => $brand->id,
             'name' => $brand->name,
@@ -53,8 +57,15 @@ class BrandController extends Controller
             return response()->json(['errors' => $validator->errors()], 400);
         }
 
+        $oldName = $brand->name;
         $brand->update([
             'name' => trim($validator->validated()['name']),
+        ]);
+
+        // Log activity
+        ActivityLogService::logBrandUpdated(auth()->id(), $brand->id, $brand->name, [
+            'old_name' => $oldName,
+            'new_name' => $brand->name,
         ]);
 
         return response()->json([
@@ -65,7 +76,12 @@ class BrandController extends Controller
 
     public function destroy(Brand $brand): JsonResponse
     {
+        $brandName = $brand->name;
+        $brandId = $brand->id;
         $brand->delete();
+
+        // Log activity
+        ActivityLogService::logBrandDeleted(auth()->id(), $brandId, $brandName);
 
         return response()->noContent();
     }

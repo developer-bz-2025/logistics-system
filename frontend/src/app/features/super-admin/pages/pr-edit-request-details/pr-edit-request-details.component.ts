@@ -43,6 +43,26 @@ export class PrEditRequestDetailsComponent {
     );
   }
 
+  // return numeric id or null
+getLocationOldId(d?: PrEditRequestDetailDto): number | null {
+  const loc = d?.header_diffs?.location as any;
+  return (loc?.old?.id ?? loc?.old ?? null);
+}
+getLocationNewId(d?: PrEditRequestDetailDto): number | null {
+  const loc = d?.header_diffs?.location as any;
+  return (loc?.new?.id ?? loc?.new ?? null);
+}
+
+// return display name or null
+getLocationOldName(d?: PrEditRequestDetailDto): string | null {
+  const loc = d?.header_diffs?.location as any;
+  return loc?.old?.name ?? loc?.old_name ?? null;
+}
+getLocationNewName(d?: PrEditRequestDetailDto): string | null {
+  const loc = d?.header_diffs?.location as any;
+  return loc?.new?.name ?? loc?.new_name ?? null;
+}
+
   // ---- helpers ----
   lcStatus() { return (this.detail?.status || '').toLowerCase(); }
   statusClass() {

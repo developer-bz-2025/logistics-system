@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'jwt.auth'     => \App\Http\Middleware\JwtMiddleware::class,
             'super.admin'  => \App\Http\Middleware\EnsureSuperAdmin::class,
+            'logistics.admin.pr.access' => \App\Http\Middleware\LogisticsAdminPrAccess::class,
         ]);
 
         $middleware->append(HandleCors::class);

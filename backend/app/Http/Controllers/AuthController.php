@@ -10,6 +10,7 @@ use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 use PHPOpenSourceSaver\JWTAuth\Exceptions\JWTException;
 use PHPOpenSourceSaver\JWTAuth\Exceptions\TokenExpiredException;
 use PHPOpenSourceSaver\JWTAuth\Exceptions\TokenInvalidException;
+use App\Services\ActivityLogService;
 
 
 class AuthController extends Controller
@@ -42,6 +43,9 @@ class AuthController extends Controller
         /** @var string $token */
         $token = Auth::guard('api')->login($user);
 
+        // Log login activity
+        ActivityLogService::logUserLogin($user->id, $request->ip());
+
         return $this->respondWithToken($token);
     }
 
@@ -49,6 +53,10 @@ class AuthController extends Controller
 
     public function logout()
     {
+        $user = auth()->user();
+        if ($user) {
+            ActivityLogService::logUserLogout($user->id);
+        }
         auth()->logout();
         return response()->json(['message' => 'Successfully logged out']);
     }
@@ -134,6 +142,9 @@ class AuthController extends Controller
         // Update password
         $user->password = Hash::make($request->new_password);
         $user->save();
+
+        // Log password change
+        ActivityLogService::logPasswordChanged($user->id);
 
         return response()->json([
             'message' => 'Password changed successfully.'

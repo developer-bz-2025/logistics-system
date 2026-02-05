@@ -34,6 +34,8 @@ export interface PrListItem {
   pr_date: string;
   total_price: number;
   status?: string;
+  total_items_count?: number;
+  remaining_items_count?: number;
 }
 
 @Injectable({
@@ -59,5 +61,9 @@ export class PrService {
       map((res: any) => Array.isArray(res) ? res : (res?.data || []))
     );
   }
+
+getPrsForAssetCreation(): Observable<any> {
+  return this.http.get(`${this.base}/prs-for-asset-creation`);
+}
 
 }

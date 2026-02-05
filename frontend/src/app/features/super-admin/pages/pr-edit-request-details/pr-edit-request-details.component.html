@@ -32,6 +32,14 @@
               </span>
             </div>
           </div>
+
+        <!-- Reason for Edit Request -->
+        <div class="app-card" *ngIf="d.reason">
+          <h2 class="font-medium mb-3">Reason for Edit Request</h2>
+          <div class="text-sm text-gray-700 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            {{ d.reason }}
+          </div>
+        </div>
           
         <!-- Header diffs -->
         <div class="grid md:grid-cols-2 gap-4">
@@ -39,6 +47,7 @@
                 <h2 class="font-medium mb-3">Original</h2>
                 <div *ngIf="detail as d" class="text-sm space-y-1">
                     <div><span class="text-gray-500">PR Code:</span> {{ d.header_diffs.pr_code.old || '—' }}</div>
+                    <div><span class="text-gray-500">Location:</span> {{ getLocationOldName(d) || '—' }}</div>
                     <div><span class="text-gray-500">Date:</span> {{ dateStr(d.header_diffs.acquisition_date.old) }}
                     </div>
                     <div><span class="text-gray-500">Total:</span> {{ money(d.header_diffs.total_price.old) }}</div>
@@ -67,6 +76,16 @@
                             <span>{{ pref(d.header_diffs.pr_code.old, d.header_diffs.pr_code.new) }}</span>
                         </ng-template>
                     </div>
+                    <div>
+                        <span class="text-gray-500">Location:</span>
+                        <ng-container *ngIf="showChanged(getLocationOldId(d), getLocationNewId(d)); else locSingle">
+                          <span class="line-through text-gray-500">{{ getLocationOldName(d) || '—' }}</span> →
+                          <span class="font-medium">{{ getLocationNewName(d) || '—' }}</span>
+                        </ng-container>
+                        <ng-template #locSingle>
+                          <span>{{ getLocationOldName(d) ?? getLocationNewName(d) ?? '—' }}</span>
+                        </ng-template>
+                      </div>
 
                     <!-- Date -->
                     <div>
@@ -256,10 +275,10 @@
 
         <!-- Actions -->
         <div class="app-card flex flex-col gap-3 md:flex-row md:items-center md:justify-between" *ngIf="d.status=='Pending'">
-            <div class="flex-1">
+            <!-- <div class="flex-1">
                 <label class="text-sm font-medium">Rejection reason (optional)</label>
                 <textarea class="mt-1 w-full rounded-xl border px-3 py-2" rows="2" [(ngModel)]="reason"></textarea>
-            </div>
+            </div> -->
             <div class="flex gap-2">
                 <button class="rounded-xl bg-rose-600 text-white px-4 py-2 hover:bg-rose-700 disabled:opacity-60"
                     [disabled]="saving" (click)="reject()">Reject</button>

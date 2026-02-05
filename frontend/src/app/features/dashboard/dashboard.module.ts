@@ -15,6 +15,9 @@ import { LocationCategoryChartComponent } from './components/location-category-c
     DashboardComponent,
     LocationCategoryChartComponent
   ],
+  exports: [
+    DashboardCardsComponent     
+  ],
   imports: [
     CommonModule,
     FormsModule,

@@ -25,6 +25,7 @@ export interface PrEditRequestRow {
   requested_by: RequestedBy;
   approved_by_admin_id: number | null;
   header_diffs: HeaderDiffs;
+  location?: { old?: number | null; old_name?: string | null; new?: number | null; new_name?: string | null };
 }
 
 export interface PageMeta {
@@ -45,12 +46,16 @@ export interface Paged<T> {
   meta?: PageMeta;
 }
 
+export interface NameId { id: number | null; name: string | null; }
+
+
 
 export interface PrHeaderDiffs {
   pr_code: { old: string | null; new: string | null };
   acquisition_date: { old: string | null; new: string | null };
   total_price: { old: number | null; new: number | null };
   pr_path: { old: string | null; new: string | null; old_url?: string | null; new_url?: string | null };
+  location?: { old: NameId | null; new: NameId | null };
 }
 
 export type ItemAction = 'add' | 'delete' | 'update_supplier' | 'update_cost' | string;
@@ -129,6 +134,7 @@ export interface PrEditRequestDetailDto {
   request_date: string;
   requested_by: { id: number; name: string; email: string };
   approved_by_admin_id: number | null;
+  reason: string | null; 
   header_diffs: PrHeaderDiffs;
   items_diffs: ItemDiff[];
   items_counts: ItemsCounts;

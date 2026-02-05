@@ -58,12 +58,30 @@
     <mat-form-field appearance="outline" class="w-full">
       <mat-label>PR </mat-label>
       <mat-select [formControl]="$any(form.get('pr_id'))">
-        <mat-option *ngFor="let pr of prs" [value]="pr.id">
+        <mat-option *ngFor="let pr of prs" [value]="pr.id" [disabled]="pr.remaining_items_count === 0">
           {{ pr.pr_code }}
+          <span class="ml-2 text-gray-500" *ngIf="pr.remaining_items_count !== undefined && pr.remaining_items_count !== null && pr.remaining_items_count > 0">
+            ({{ pr.remaining_items_count }} remaining)
+          </span>
+          <span *ngIf="pr.remaining_items_count === 0" class="text-gray-400 ml-2">(No remaining items)</span>
         </mat-option>
       </mat-select>
       <mat-hint>Required purchase request selection</mat-hint>
     </mat-form-field>
+  </div>
+
+  <!-- PR Details (shown when PR is selected) -->
+  <div *ngIf="getSelectedPr()" class="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <span class="text-sm font-medium text-gray-700">Total Items:</span>
+        <span class="ml-2 text-sm text-gray-900">{{ getSelectedPr()?.total_items_count ?? '—' }}</span>
+      </div>
+      <div>
+        <span class="text-sm font-medium text-gray-700">Remaining Items:</span>
+        <span class="ml-2 text-sm text-gray-900">{{ getSelectedPr()?.remaining_items_count ?? '—' }}</span>
+      </div>
+    </div>
   </div>
 
   <!-- Acquisition Cost -->

@@ -54,7 +54,38 @@
                   </p>
                 </div>
 
-                <div class="md:col-span-1 mt-8">
+                <!-- Reason for Edit -->
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-medium mb-1">Reason for Edit <span class="text-rose-500">*</span></label>
+                  <textarea 
+                    class="input w-full min-h-[100px]" 
+                    placeholder="Please provide a detailed reason for the changes you are making to this PR..."
+                    formControlName="reason"
+                    rows="4"></textarea>
+                  <p *ngIf="form.get('reason')?.touched && form.get('reason')?.hasError('required')"
+                    class="text-xs text-rose-600 mt-1">
+                    Reason for edit is required.
+                  </p>
+                  <p *ngIf="form.get('reason')?.touched && form.get('reason')?.hasError('minlength')"
+                    class="text-xs text-rose-600 mt-1">
+                    Reason must be at least 10 characters long.
+                  </p>
+                  <p class="text-xs text-gray-500 mt-1">Explain why you are requesting these changes to the PR.</p>
+                </div>
+
+                <div class="md:col-span-1 mt-5">
+                  <label class="block text-sm font-medium mb-1">Location<span class="text-rose-500">*</span></label>
+                  <select class="input" formControlName="location_id">
+                    <option [ngValue]="null" disabled>Select location..</option>
+                    <option *ngFor="let loc of availableLocations" [ngValue]="loc.id">{{ loc.name }}</option>
+                  </select>
+                  <p *ngIf="form.get('location_id')?.touched && form.get('location_id')?.invalid"
+                    class="text-xs text-rose-600 mt-1">
+                    Location is required.
+                  </p>
+                  
+                </div>
+                <div class="md:col-span-1 ">
                   <label class="block text-lg font-semibold mb-1">Current Document</label>
                   <div class="flex items-center justify-between rounded-xl border border-gray-200 p-3 bg-gray-50">
                     <div class="text-sm truncate font-medium">

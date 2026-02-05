@@ -7,6 +7,7 @@ use App\Models\Pr;
 use App\Models\PrItem;
 use App\Models\PrEditRequest;
 use App\Models\PrEditRequestItem;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -15,9 +16,12 @@ use App\Http\Requests\ListPrEditRequests;
 use App\Http\Resources\PrEditRequestResource;
 
 use App\Services\PrEditPreviewService;
+use App\Services\NotificationService;
+use App\Services\ActivityLogService;
 use App\Http\Requests\ShowPrRequest;
 use Illuminate\Validation\ValidationException;
-
+use App\Models\Role;
+use App\Models\Location;
 
 class PrEditRequestController extends Controller
 {
@@ -28,8 +32,9 @@ class PrEditRequestController extends Controller
         $validated = $request->validate([
             'pr_code' => ['required', 'string', 'max:190'],        // uniqueness checked at approval time
             'pr_date' => ['required', 'date_format:Y-m-d'],
-            // 'reason'    => ['required', 'string', 'min:10'],
+            'reason' => ['nullable', 'string', 'min:3'],
             'pr_file' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:10240'],
+            'location_id' => ['nullable', 'integer', 'exists:locations,id'],
 
             'items' => ['required', 'array', 'min:1'],
             'items.*.pr_item_id' => ['nullable', 'integer', 'exists:pr_items,id'],
@@ -44,6 +49,22 @@ class PrEditRequestController extends Controller
         ]);
 
         
+        $user = auth()->user();
+
+// Validate location access for Logistics Admins
+if ($user->role?->name === Role::LOG_ADMIN) {
+    $userLocationIds = $user->locations()->pluck('locations.id')->toArray();
+    
+    if ($request->filled('location_id')) {
+        $requestedLocationId = $request->input('location_id');
+        if (!in_array($requestedLocationId, $userLocationIds)) {
+            return response()->json([
+                'message' => 'You can only request location changes to locations you are assigned to.',
+                'available_locations' => $userLocationIds
+            ], 403);
+        }
+    }
+}
 
 
         $userId = auth()->id() ?? optional($request->user())->id;
@@ -209,8 +230,11 @@ class PrEditRequestController extends Controller
                 'old_total_price' => (float) $pr->total_price,
                 'new_total_price' => (float) $newTotal,
 
-                // If you added a `reason` column on pr_edit_requests, include it:
-                // 'reason' => $validated['reason'],
+                'old_location_id' => $pr->location_id,
+                'new_location_id' => $validated['location_id'] ?? null, 
+            
+
+                'reason' => $validated['reason'] ?? null,
             ]);
 
             foreach ($reqItemRows as $row) {
@@ -228,6 +252,18 @@ class PrEditRequestController extends Controller
 
             return $req->load('items');
         });
+
+        // Send notification to super admin
+        $requester = User::find($userId);
+        NotificationService::notifyPrEditRequestSubmitted(
+            $editReq->id,
+            $validated['pr_code'],
+            $userId,
+            $requester->name ?? 'Unknown'
+        );
+
+        // Log activity
+        ActivityLogService::logPrEditRequestSubmitted($userId, $editReq->id, $pr->id, $validated['pr_code']);
 
         return response()->json([
             'id' => $editReq->id,
@@ -335,6 +371,17 @@ class PrEditRequestController extends Controller
             return response()->json(['message' => 'Not found'], 404);
         }
 
+        if ($include->contains('preview')) {
+            $model->preview_after = $preview->buildPreview($model);
+            
+            // Add location info to preview
+            if ($model->old_location_id || $model->new_location_id) {
+                $model->preview_after['location_changes'] = [
+                    'old_location' => $model->old_location_id ? Location::find($model->old_location_id)?->name : null,
+                    'new_location' => $model->new_location_id ? Location::find($model->new_location_id)?->name : null,
+                ];
+            }
+        }
         // Build preview only if requested
         if ($include->contains('preview')) {
             $model->preview_after = $preview->buildPreview($model);
@@ -395,8 +442,24 @@ class PrEditRequestController extends Controller
             $req->status_id = $rejectedId;
             // Append/admin reason (keep user-provided reason if any)
             $req->reason = trim(($req->reason ? $req->reason . "\n" : '') . ($data['reason'] ?? ''));
+            $req->approved_by_admin_id = auth()->id();
             $req->save();
         });
+
+        // Send notification to PR admin (requester)
+        $rejecter = auth()->user();
+        NotificationService::notifyPrEditRequestRejected(
+            $req->id,
+            $req->new_pr_code ?? $req->old_pr_code ?? 'Unknown',
+            $rejecter->id,
+            $rejecter->name ?? 'Unknown',
+            $req->requested_by_admin_id,
+            $data['reason'] ?? null
+        );
+
+        // Log activity
+        $prCode = $req->new_pr_code ?? $req->old_pr_code ?? 'Unknown';
+        ActivityLogService::logPrEditRequestRejected($rejecter->id, $req->id, $req->pr_id, $prCode, $data['reason'] ?? null);
 
         return response()->json([
             'message' => 'PR edit request rejected.',
@@ -436,6 +499,10 @@ class PrEditRequestController extends Controller
             }
             if ($req->new_acquisition_date) {     // ← if your PR date column is pr_date, map accordingly
                 $pr->pr_date = $req->new_acquisition_date;
+            }
+
+            if ($req->new_location_id !== null) { // Add this check
+                $pr->location_id = $req->new_location_id;
             }
 
             // 1.a) Move/attach new PR file if present
@@ -535,8 +602,28 @@ class PrEditRequestController extends Controller
 
             // 4) Mark request as approved
             $req->status_id = $approvedId;
+            $req->approved_by_admin_id = auth()->id();
             $req->save();
         });
+
+        // Send notification to PR admin (requester)
+        $approver = auth()->user();
+        $requester = User::find($req->requested_by_admin_id);
+        NotificationService::notifyPrEditRequestApproved(
+            $req->id,
+            $req->new_pr_code ?? $req->old_pr_code ?? 'Unknown',
+            $approver->id,
+            $approver->name ?? 'Unknown',
+            $req->requested_by_admin_id
+        );
+
+        // Log activity
+        $prCode = $req->new_pr_code ?? $req->old_pr_code ?? 'Unknown';
+        ActivityLogService::logPrEditRequestApproved($approver->id, $req->id, $req->pr_id, $prCode);
+        ActivityLogService::logPrUpdated($approver->id, $req->pr_id, $prCode, [
+            'via_edit_request' => true,
+            'edit_request_id' => $req->id,
+        ]);
 
         return response()->json([
             'message' => 'PR edit request approved and applied successfully.',

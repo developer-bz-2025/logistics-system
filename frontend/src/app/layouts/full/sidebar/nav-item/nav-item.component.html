@@ -14,7 +14,7 @@
     }"
   >
     <i-tabler class="routeIcon" name="{{ item.iconName }}" matListItemIcon></i-tabler>
-    <span class="hide-menu">{{ item.displayName }}</span>
+    <span class="hide-menu" [class.small-text]="item.displayName === 'Location Change Requests'">{{ item.displayName }}</span>
   </a>
 
   <div *ngIf="item.expandable">
@@ -24,7 +24,7 @@
       (click)="item.expanded = !item.expanded"
     >
       <i-tabler class="routeIcon" name="{{ item.iconName }}" matListItemIcon></i-tabler>
-      <span class="hide-menu">{{ item.displayName }}</span>
+      <span class="hide-menu" [class.small-text]="item.displayName === 'Location Change Requests'">{{ item.displayName }}</span>
       <span class="ml-auto">
         <i-tabler name="chevron-down" *ngIf="!item.expanded"></i-tabler>
         <i-tabler name="chevron-up" *ngIf="item.expanded"></i-tabler>

@@ -31,6 +31,23 @@
   <span class="flex-1-auto"></span> -->
 
   <!-- --------------------------------------------------------------- -->
+  <!-- Notification Bell -->
+  <!-- --------------------------------------------------------------- -->
+  <button
+    mat-icon-button
+    aria-label="Notifications"
+    (click)="navigateToNotifications()"
+    class="relative mr-2">
+    <i-tabler class="d-flex" name="bell"></i-tabler>
+    <span
+      *ngIf="unreadCount > 0"
+      class="absolute top-0 right-0 bg-red-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center"
+      style="transform: translate(25%, -25%);">
+      {{ unreadCount > 99 ? '99+' : unreadCount }}
+    </span>
+  </button>
+
+  <!-- --------------------------------------------------------------- -->
   <!-- profile Dropdown -->
   <!-- --------------------------------------------------------------- -->
   <div class="ml-auto flex items-center gap-2">
