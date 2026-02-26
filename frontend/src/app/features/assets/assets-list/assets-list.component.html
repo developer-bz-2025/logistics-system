@@ -24,7 +24,7 @@
           <mat-icon class="mr-1">upload</mat-icon>
           Import
         </button> -->
-        <button mat-raised-button color="primary" [routerLink]="['/assets/new']">
+        <button *ngIf="canCreateAsset" mat-raised-button color="primary" [routerLink]="['/assets/new']">
           <mat-icon class="mr-1">add</mat-icon>
           Create Asset
         </button>

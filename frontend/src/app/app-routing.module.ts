@@ -25,14 +25,21 @@ const routes: Routes = [
         loadChildren: () =>
           import('./features/dashboard/dashboard.module').then(m => m.DashboardModule),
         canMatch: [AuthGuard],
-        data: { roles: ['log_admin', 'super_admin'] }
+        data: { roles: ['log_admin', 'super_admin', 'finance'] }
       },
       {
         path: 'assets',
         loadChildren: () =>
           import('./features/assets/assets.module').then(m => m.AssetsModule),
         canMatch: [AuthGuard],
-        data: { roles: ['log_admin', 'super_admin'] }
+        data: { roles: ['log_admin', 'super_admin', 'finance'] }
+      },
+      {
+        path: 'finance',
+        loadChildren: () =>
+          import('./features/finance/finance.module').then(m => m.FinanceModule),
+        canMatch: [AuthGuard],
+        data: { roles: ['finance'] }
       },
       {
         path: 'notifications',

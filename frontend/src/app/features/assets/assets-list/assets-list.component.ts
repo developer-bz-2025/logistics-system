@@ -8,6 +8,7 @@ import { AssetService, CategoryService } from 'src/app/core/services/category.se
 import { Category, SubCategory, FixedItem, AssetListItem, PagedResult } from 'src/app/core/models/reference';
 import { ImportExcelService } from 'src/app/core/services/import-excel.service';
 import { HttpEventType } from '@angular/common/http';
+import { AuthService } from 'src/app/core/services/auth.service';
 
 
 @Component({
@@ -76,16 +77,22 @@ export class AssetsListComponent  implements OnInit, OnDestroy {
     readonly withCredentials = false;
 
 
+  canCreateAsset = false;
+
   constructor(
     private fb: FormBuilder,
     private cats: CategoryService,
     private assets: AssetService,
     private route: ActivatedRoute,
     private importer: ImportExcelService,
-    private router: Router
+    private router: Router,
+    private auth: AuthService
   ) {}
 
   ngOnInit(): void {
+    // Check if user can create assets (only log_admin)
+    this.canCreateAsset = this.auth.hasAnyRole(['log_admin']);
+
     // First, initialize form with URL values
     const initialQp = this.route.snapshot.queryParamMap;
     const initialValues = {

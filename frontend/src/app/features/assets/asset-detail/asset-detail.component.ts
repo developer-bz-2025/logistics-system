@@ -155,7 +155,7 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
   }
 
   updatePhoto(file: File): void {
-    if (!this.assetId) return;
+    if (!this.assetId || !this.canEditAsset) return;
     
     // Validate file type
     if (!file.type.startsWith('image/')) {
@@ -299,6 +299,7 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
       warranty_end_date: [''],
       budget_code: [''],
       budget_donor: [''],
+      donor_id: [null],
       pr_id: [null],
       notes: [''],
       attributes: this.fb.array([])
@@ -323,6 +324,16 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
         this.toast.error('Failed to load asset details.', 'Error');
       }
     });
+  }
+
+  getDonorDisplay(): string {
+    if (this.asset?.donor_name) {
+      return this.asset.donor_name;
+    }
+    if (this.asset?.budget_donor) {
+      return this.asset.budget_donor;
+    }
+    return 'Not specified';
   }
 
   private loadHistory(): void {
@@ -610,6 +621,7 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
       warranty_end_date: this.asset.warranty_end_date || '',
       budget_code: this.asset.budget_code || '',
       budget_donor: this.asset.budget_donor || '',
+      donor_id: this.asset.donor_id || null,
       pr_id: this.asset.pr_id || null,
       notes: this.asset.notes || ''
     };
@@ -836,7 +848,7 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
       availableLocationsCount: availableLocations.length
     });
 
-    if (role === 'super_admin') {
+    if (role === 'super_admin' || role === 'finance') {
       this.canEditAsset = false;
       this.allowedMoveLocations = [];
       return;

@@ -1,0 +1,56 @@
+<div class="container mx-auto px-4 py-6">
+  <div class="app-card">
+    <div class="p-6">
+      <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">Donors Management</h1>
+        <button mat-raised-button color="primary" (click)="openCreateDialog()">
+          <mat-icon>add</mat-icon>
+          Add Donor
+        </button>
+      </div>
+
+      <div *ngIf="loading" class="flex justify-center items-center py-12">
+        <mat-spinner diameter="50"></mat-spinner>
+      </div>
+
+      <div *ngIf="!loading && donors.length === 0" class="text-center py-12">
+        <mat-icon class="text-gray-400" style="font-size: 64px; width: 64px; height: 64px;">inbox</mat-icon>
+        <p class="text-gray-500 mt-4">No donors found. Click "Add Donor" to create one.</p>
+      </div>
+
+      <table *ngIf="!loading && donors.length > 0" class="w-full">
+        <thead>
+          <tr class="text-sm text-gray-500 border-b">
+            <th class="py-3 text-left">Account No</th>
+            <th class="py-3 text-left">Donor Name</th>
+            <th class="py-3 text-left">Department</th>
+            <th class="py-3 text-left">Finance Officer</th>
+            <th class="py-3 text-left">Areas</th>
+            <th class="py-3 text-left">End Date</th>
+            <th class="py-3 text-left w-24">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y">
+          <tr *ngFor="let donor of donors" class="hover:bg-gray-50">
+            <td class="py-4">{{ donor.account_no || '—' }}</td>
+            <td class="py-4 font-medium">{{ donor.donor }}</td>
+            <td class="py-4">{{ getDepartmentLabel(donor.department_name) }}</td>
+            <td class="py-4">{{ donor.finance_officer?.name || '—' }}</td>
+            <td class="py-4">{{ getLocationsDisplay(donor.locations) }}</td>
+            <td class="py-4">{{ donor.end_date ? (donor.end_date | date:'shortDate') : '—' }}</td>
+            <td class="py-4">
+              <div class="flex gap-2">
+                <button mat-icon-button (click)="openEditDialog(donor)" matTooltip="Edit">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button mat-icon-button color="warn" (click)="deleteDonor(donor)" matTooltip="Delete">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

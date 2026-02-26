@@ -14,6 +14,7 @@ export class RoleRedirectComponent implements OnInit {
     if (this.auth.hasAnyRole(['pr_admin'])) return this.router.navigateByUrl('/pr');
     if (this.auth.hasAnyRole(['super_admin'])) return this.router.navigateByUrl('/dashboard');
     if (this.auth.hasAnyRole(['log_admin']))  return this.router.navigateByUrl('/dashboard');
+    if (this.auth.hasAnyRole(['finance'])) return this.router.navigateByUrl('/dashboard');
 
     // fall back to workspace for viewer roles
     return this.router.navigateByUrl('/dashboard');

@@ -27,6 +27,15 @@ class LocationChangeRequestController extends Controller
      */
     public function store(CreateLocationChangeRequestRequest $request): JsonResponse
     {
+        $user = auth()->user();
+        
+        // Only log_admin can create location change requests
+        if (!$user || $user->role?->name !== Role::LOG_ADMIN) {
+            return response()->json([
+                'message' => 'This action is authorized for log admins only.',
+            ], 403);
+        }
+
         $validated = $request->validated();
         $itemId = $validated['item_id'];
         $requestedLocationId = $validated['requested_location_id'];

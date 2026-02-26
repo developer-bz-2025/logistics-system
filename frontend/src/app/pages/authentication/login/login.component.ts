@@ -61,6 +61,7 @@ export class AppSideLoginComponent {
           if (roles.includes('super_admin')) this.router.navigateByUrl('/dashboard');
           else if (roles.includes('pr_admin')) this.router.navigateByUrl('/pr');
           else if (roles.includes('log_admin')) this.router.navigateByUrl('/dashboard');
+          else if (roles.includes('finance')) this.router.navigateByUrl('/finance');
           else this.router.navigateByUrl('/');
           console.log('[Login] Navigation attempted based on roles');
         });

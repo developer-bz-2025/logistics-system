@@ -15,6 +15,7 @@ class RoleSeeder extends Seeder
             'pr_admin',
             'log_admin',
             'super_admin',
+            'finance',
         ];
 
         foreach ($roles as $role) {

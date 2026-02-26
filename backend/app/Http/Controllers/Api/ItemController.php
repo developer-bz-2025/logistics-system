@@ -35,6 +35,7 @@ class ItemController extends Controller
             ->leftJoin('brands', 'items.brand_id', '=', 'brands.id')
             ->leftJoin('colors', 'items.color_id', '=', 'colors.id')
             ->leftJoin('users as holders', 'items.holder_user_id', '=', 'holders.id')
+            ->leftJoin('donors', 'items.donor_id', '=', 'donors.id')
             ->select([
                 'items.id',
                 'items.fixed_item_id',
@@ -49,6 +50,7 @@ class ItemController extends Controller
                 'items.warranty_end_date',
                 'items.budget_code',
                 'items.budget_donor',
+                'items.donor_id',
                 'items.supplier_id',
                 'items.location_id',
                 'items.floor_id',
@@ -74,6 +76,7 @@ class ItemController extends Controller
                 'brands.name as brand_name',
                 'colors.name as color_name',
                 'holders.name as holder_name',
+                'donors.donor as donor_name',
             ]);
 
         // Standard filters
@@ -267,6 +270,8 @@ class ItemController extends Controller
 
                 'budget_code' => $row->budget_code,
                 'budget_donor' => $row->budget_donor,
+                'donor_id' => $row->donor_id !== null ? (int) $row->donor_id : null,
+                'donor_name' => $row->donor_name,
                 'pr_id' => $row->pr_id !== null ? (int) $row->pr_id : null,
                 'notes' => $row->notes,
                 'photo_path' => $row->photo_path,
@@ -305,6 +310,7 @@ class ItemController extends Controller
             ->leftJoin('brands', 'items.brand_id', '=', 'brands.id')
             ->leftJoin('colors', 'items.color_id', '=', 'colors.id')
             ->leftJoin('users as holders', 'items.holder_user_id', '=', 'holders.id')
+            ->leftJoin('donors', 'items.donor_id', '=', 'donors.id')
             ->where('items.id', $id)
             ->select([
                 'items.id',
@@ -320,6 +326,7 @@ class ItemController extends Controller
                 'items.warranty_end_date',
                 'items.budget_code',
                 'items.budget_donor',
+                'items.donor_id',
                 'items.supplier_id',
                 'items.location_id',
                 'items.floor_id',
@@ -345,6 +352,7 @@ class ItemController extends Controller
                 'brands.name as brand_name',
                 'colors.name as color_name',
                 'holders.name as holder_name',
+                'donors.donor as donor_name',
             ])
             ->first();
 
@@ -405,6 +413,8 @@ class ItemController extends Controller
 
             'budget_code' => $item->budget_code,
             'budget_donor' => $item->budget_donor,
+            'donor_id' => $item->donor_id !== null ? (int) $item->donor_id : null,
+            'donor_name' => $item->donor_name ?? null,
             'pr_id' => $item->pr_id !== null ? (int) $item->pr_id : null,
             'notes' => $item->notes,
             'photo_path' => $item->photo_path,
@@ -453,10 +463,36 @@ class ItemController extends Controller
     }
 
     /**
+     * GET /api/finance/assets - Fetch all assets for finance role (no location filtering)
+     */
+    public function financeAssets(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user || $user->role?->name !== Role::FINANCE) {
+            return response()->json([
+                'message' => 'This action is authorized for finance role only.',
+            ], 403);
+        }
+
+        // Return all assets without location filtering
+        return $this->index($request);
+    }
+
+    /**
      * POST /api/items - Create new asset
      */
     public function store(Request $request)
     {
+        $user = $request->user();
+        
+        // Only log_admin can create assets
+        if (!$user || $user->role?->name !== Role::LOG_ADMIN) {
+            return response()->json([
+                'message' => 'This action is authorized for log admins only.',
+            ], 403);
+        }
+
         $this->normalizeArrayPayloads($request);
 
         // Validate the request
@@ -479,6 +515,7 @@ class ItemController extends Controller
             'sn' => 'nullable|string|max:255',
             'budget_code' => 'nullable|string|max:255',
             'budget_donor' => 'nullable|string|max:255',
+            'donor_id' => 'nullable|integer|exists:donors,id',
             'attributes' => 'nullable|array',
             'attributes.*.att_id' => 'required_with:attributes|integer',
             'attributes.*.att_option_id' => 'required_with:attributes|integer',
@@ -641,6 +678,15 @@ class ItemController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $user = $request->user();
+        
+        // Only log_admin can update assets
+        if (!$user || $user->role?->name !== Role::LOG_ADMIN) {
+            return response()->json([
+                'message' => 'This action is authorized for log admins only.',
+            ], 403);
+        }
+
         // Get the current item data for comparison
         $currentItem = DB::table('items')->where('id', $id)->first();
         if (!$currentItem) {
@@ -665,6 +711,7 @@ class ItemController extends Controller
             'warranty_end_date' => 'nullable|date',
             'budget_code' => 'nullable|string|max:255',
             'budget_donor' => 'nullable|string|max:255',
+            'donor_id' => 'nullable|integer|exists:donors,id',
             'notes' => 'nullable|string',
             'attributes' => 'nullable|array',
             'attributes.*.att_id' => 'required_with:attributes|integer|exists:attributes,id',
@@ -932,6 +979,15 @@ class ItemController extends Controller
      */
     public function updatePhoto(Request $request, $id)
     {
+        $user = $request->user();
+        
+        // Only log_admin can update asset photos
+        if (!$user || $user->role?->name !== Role::LOG_ADMIN) {
+            return response()->json([
+                'message' => 'This action is authorized for log admins only.',
+            ], 403);
+        }
+
         // Validate item exists
         $item = DB::table('items')->where('id', $id)->first();
         if (!$item) {

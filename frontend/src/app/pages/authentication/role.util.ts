@@ -1,5 +1,5 @@
 // role.util.ts
-export type RoleName = 'super_admin' | 'pr_admin' | 'log_admin';
+export type RoleName = 'super_admin' | 'pr_admin' | 'log_admin' | 'finance';
 
 export function extractRoles(user: any): RoleName[] {
   if (!user) return [];
@@ -20,7 +20,7 @@ export function extractRoles(user: any): RoleName[] {
 
   // fallback to role_id mapping (if needed)
   if (user.role_id) {
-    const map: Record<number, RoleName> = { 1: 'pr_admin', 2: 'log_admin', 3: 'super_admin' };
+    const map: Record<number, RoleName> = { 1: 'pr_admin', 2: 'log_admin', 3: 'super_admin', 4: 'finance' };
     return [map[user.role_id] ?? ('' as RoleName)].filter(Boolean) as RoleName[];
   }
 

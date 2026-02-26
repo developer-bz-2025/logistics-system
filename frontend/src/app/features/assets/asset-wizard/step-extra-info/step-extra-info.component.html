@@ -30,11 +30,16 @@
       <mat-hint>Optional budget code</mat-hint>
     </mat-form-field>
 
-    <!-- Budget Donor -->
+    <!-- Donor -->
     <mat-form-field appearance="outline" class="w-full">
-      <mat-label>Budget Donor</mat-label>
-      <input matInput [formControl]="$any(form.get('budget_donor'))" placeholder="e.g., Main Budget">
-      <mat-hint>Optional budget donor</mat-hint>
+      <mat-label>Donor</mat-label>
+      <mat-select [formControl]="$any(form.get('donor_id'))">
+        <mat-option [value]="null">None</mat-option>
+        <mat-option *ngFor="let donor of donors" [value]="donor.id">
+          {{ donor.donor }}
+        </mat-option>
+      </mat-select>
+      <mat-hint>Select donor from finance-managed list</mat-hint>
     </mat-form-field>
   </div>
 

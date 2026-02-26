@@ -12,6 +12,8 @@ import { ToastService } from '../../../core/services/toast.service';
 import { Category, SubCategory, FixedItem, DynamicAttribute, SelectOption } from '../../../core/models/reference';
 import { MatDialog } from '@angular/material/dialog';
 import { AuthService } from 'src/app/core/services/auth.service';
+import { DonorService } from '../../../core/services/donor.service';
+import { DonorListItem } from '../../../core/models/donor.model';
 
 @Component({
   selector: 'app-asset-wizard',
@@ -40,6 +42,7 @@ export class AssetWizardComponent implements OnInit, OnDestroy {
   statuses: any[] = [];
   users: any[] = [];
   prs: PrListItem[] = [];
+  donors: DonorListItem[] = [];
   currentUser: any = null;
 
   // Loading states
@@ -85,7 +88,8 @@ export class AssetWizardComponent implements OnInit, OnDestroy {
     private prService: PrService,
     private toastService: ToastService,
     private dialog: MatDialog,
-    private auth: AuthService
+    private auth: AuthService,
+    private donorService: DonorService
   ) {
     this.form = this.createForm();
     this.auth.user$.pipe(takeUntil(this.destroy$)).subscribe(user => {
@@ -136,7 +140,8 @@ export class AssetWizardComponent implements OnInit, OnDestroy {
         description: [''],
         notes: [''],
         budget_code: [''],
-        budget_donor: ['']
+        budget_donor: [''],
+        donor_id: [null]
       })
     });
   }
@@ -160,10 +165,11 @@ export class AssetWizardComponent implements OnInit, OnDestroy {
       floors: this.assetService.getFloors(),
       statuses: this.assetService.getStatuses(),
       brands: this.referenceService.getBrands(), // Load all brands without category filter
-      prs: this.prService.getPrs()
+      prs: this.prService.getPrs(),
+      donors: this.donorService.getDonorsForAssetCreation()
     }).pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: ({ categories, colors, locations, floors, statuses, brands, prs }) => {
+        next: ({ categories, colors, locations, floors, statuses, brands, prs, donors }) => {
           this.categories = categories;
           this.colors = colors;
           this.locations = locations;
@@ -171,6 +177,7 @@ export class AssetWizardComponent implements OnInit, OnDestroy {
           this.statuses = statuses;
           this.brands = brands; // Store all brands
           this.prs = prs;
+          this.donors = donors;
 
           // Build label maps
           this.buildLabelMaps('categories', categories);
@@ -387,7 +394,8 @@ export class AssetWizardComponent implements OnInit, OnDestroy {
         ...assignmentData,
         ...this.form.value.extra,
         fixed_item_id: this.form.value.classification.fixed_item_id,
-        attributes: this.form.value.classification.attributes
+        attributes: this.form.value.classification.attributes,
+        donor_id: this.form.value.extra.donor_id || null
       };
 
       const body = this.buildRequestBody(payload);

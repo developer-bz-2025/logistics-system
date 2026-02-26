@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\LocationAdminAssignmentController;
 use App\Http\Controllers\Api\LocationChangeRequestController;
 use App\Http\Controllers\Api\FloorController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\DonorController;
 
 
 // Group all API routes
@@ -47,6 +48,8 @@ Route::middleware(['jwt.auth','logistics.admin.pr.access'])->group(function () {
 
 Route::middleware(['jwt.auth'])->group(function () {
     Route::get('/log-admin/assets', [ItemController::class, 'logAdminAssets']);
+    Route::get('/finance/assets', [ItemController::class, 'financeAssets']);
+    Route::get('/donors-for-asset-creation', [DonorController::class, 'getDonorsForAssetCreation']);
 });
 
 
@@ -197,6 +200,17 @@ Route::middleware(['jwt.auth'])->group(function () {
         ->whereNumber('id');
     Route::put('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
     Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])
+        ->whereNumber('id');
+});
+
+Route::middleware(['jwt.auth', 'finance.role'])->prefix('finance')->group(function () {
+    Route::get('/donors', [DonorController::class, 'index']);
+    Route::post('/donors', [DonorController::class, 'store']);
+    Route::get('/donors/{id}', [DonorController::class, 'show'])
+        ->whereNumber('id');
+    Route::put('/donors/{id}', [DonorController::class, 'update'])
+        ->whereNumber('id');
+    Route::delete('/donors/{id}', [DonorController::class, 'destroy'])
         ->whereNumber('id');
 });
 

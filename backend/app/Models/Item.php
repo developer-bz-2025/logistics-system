@@ -12,7 +12,7 @@ class Item extends Model
     protected $fillable = [
         'fixed_item_id','description','sn','color_id','brand_id','pr_id',
         'acquisition_cost','acquisition_date','warranty_start_date','warranty_end_date',
-        'budget_code','budget_donor','supplier_id','location_id','floor_id',
+        'budget_code','budget_donor','donor_id','supplier_id','location_id','floor_id',
         'status_id','notes','holder_user_id','created_by','photo_path','details_pdf_path'
     ];
 
@@ -37,6 +37,7 @@ class Item extends Model
     public function holder()    { return $this->belongsTo(User::class, 'holder_user_id'); }
 
     public function creator() { return $this->belongsTo(User::class, 'created_by'); }
+    public function donor() { return $this->belongsTo(Donor::class); }
 
 
     public function history()

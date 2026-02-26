@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormGroup } from '@angular/forms';
+import { DonorListItem } from '../../../../core/models/donor.model';
 
 @Component({
   selector: 'app-step-extra-info',
@@ -9,6 +10,7 @@ import { FormGroup } from '@angular/forms';
 export class StepExtraInfoComponent {
   @Input() form!: FormGroup;
   @Input() photoPreviewUrl: string | null = null;
+  @Input() donors: DonorListItem[] = [];
   @Output() photoChange = new EventEmitter<File | null>();
 
   onPhotoSelected(event: Event): void {

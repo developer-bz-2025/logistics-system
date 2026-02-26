@@ -148,6 +148,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
     log_admin: 'from-[#72C6EF] to-[#0D9488]',    // Cyan to Teal bg-gradient-to-br from-[#72C6EF] to-[#004E8F]
     pr_admin: 'from-[#00416A] to-[#E4E5E6]',      // Orange bg-gradient-to-br from-[#00416A] to-[#E4E5E6]
     unit_admin: 'from-[#215F00] to-[#E4E4D9]',          // Blue bg-gradient-to-br from-[#215F00] to-[#E4E4D9]
+    finance: 'from-[#4C1D95] to-[#22C55E]',             // Purple to Green for finance
     standard: 'from-[#FCE38A] to-[#F38181]',            // Yellow to Red
     c_level: 'from-[#F2709C] to-[#FF9400]',             // Purple gradient bg-gradient-to-br from-[#F2709C] to-[#FF9472]
     default: 'from-[#D3CCE3] to-[#E9E4F0]'              // Light fallback

@@ -5,9 +5,16 @@ import { AssetsListComponent } from './assets-list/assets-list.component';
 import { AssetDetailComponent } from './asset-detail/asset-detail.component';
 import { AssetWizardComponent } from './asset-wizard/asset-wizard.component';
 
+import { AuthGuard } from 'src/app/core/guards/auth.guard';
+
 const routes: Routes = [
   { path: '', component: AssetsListComponent },
-  { path: 'new', component: AssetWizardComponent },
+  { 
+    path: 'new', 
+    component: AssetWizardComponent,
+    canMatch: [AuthGuard],
+    data: { roles: ['log_admin'] }
+  },
   { path: ':id', component: AssetDetailComponent },
 ];
 

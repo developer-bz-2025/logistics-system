@@ -20,8 +20,14 @@ export class LandingGuard implements CanActivate {
         if (this.auth.hasAnyRole(['pr_admin'])) {
           return this.router.createUrlTree(['/pr']);
         }
+        if (this.auth.hasAnyRole(['super_admin'])) {
+          return this.router.createUrlTree(['/dashboard']);
+        }
         if (this.auth.hasAnyRole(['log_admin'])) {
           return this.router.createUrlTree(['/dashboard']);
+        }
+        if (this.auth.hasAnyRole(['finance'])) {
+          return this.router.createUrlTree(['/finance']);
         }
         
         return this.router.createUrlTree(['/dashboard']);

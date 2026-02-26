@@ -8,7 +8,7 @@ export const navItems: NavItem[] = [
     displayName: 'Dashboard',
     iconName: 'layout-dashboard',
     route: '/dashboard',
-    roles: ['super_admin','log_admin']
+    roles: ['super_admin','log_admin', 'finance']
   },
 
   {
@@ -42,9 +42,12 @@ export const navItems: NavItem[] = [
   },
 
   { navCap: 'Assets' },
-  { displayName: 'All Assets', iconName: 'package', route: '/assets', roles: ['super_admin','log_admin'] },
+  { displayName: 'All Assets', iconName: 'package', route: '/assets', roles: ['super_admin','log_admin', 'finance'] },
   { displayName: 'My Assets', iconName: 'clipboard', route: '/dashboard/my-assets', roles: ['log_admin'] },
+  { displayName: 'Categories', iconName: 'users', expandable: true, expanded: true, roles: ['super_admin','log_admin','finance'], children: [] },
+  
+  { navCap: 'Finance', roles: ['finance'] },
+  { displayName: 'Donors', iconName: 'file-text', route: '/finance', roles: ['finance'] },
 
-  { displayName: 'Categories', iconName: 'users', expandable: true, expanded: true, roles: ['super_admin','log_admin'], children: [] },
 
 ];

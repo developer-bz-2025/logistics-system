@@ -595,9 +595,32 @@ if ($user->role?->name === Role::LOG_ADMIN) {
                 $old->save();
             }
 
-            // 3) Recompute and persist PR total
+            // 3) Recompute and persist PR total & item counts
             $freshItems = PrItem::query()->where('pr_id', $pr->id)->get();
-            $pr->total_price = $freshItems->reduce(fn($c, $it) => $c + ((int)($it->qty ?? 1) * (float)$it->unit_cost), 0.0);
+
+            // Total PR value
+            $pr->total_price = $freshItems->reduce(
+                fn ($c, $it) => $c + ((int) ($it->qty ?? 1) * (float) $it->unit_cost),
+                0.0
+            );
+
+            // Total items count (sum of all requested quantities)
+            $totalItemsCount = $freshItems->reduce(
+                fn ($c, $it) => $c + (int) ($it->qty ?? 1),
+                0
+            );
+
+            // How many assets are already linked to this PR
+            $linkedAssetsCount = DB::table('items')
+                ->where('pr_id', $pr->id)
+                ->count();
+
+            // Remaining items count = total - already linked assets (never negative)
+            $remainingItemsCount = max(0, $totalItemsCount - $linkedAssetsCount);
+
+            $pr->total_items_count = $totalItemsCount;
+            $pr->remaining_items_count = $remainingItemsCount;
+
             $pr->save();
 
             // 4) Mark request as approved

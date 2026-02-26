@@ -214,12 +214,16 @@
                   <span>{{ prCode || 'Not specified' }}</span>
                 </div>
                 <div class="detail-item">
-                  <label>Budget Donor</label>
-                  <span>{{ asset.budget_donor || 'Not specified' }}</span>
+                  <label>Donor</label>
+                  <span>{{ getDonorDisplay() }}</span>
                 </div>
                 <div class="detail-item">
                   <label>Budget Code</label>
                   <span>{{ asset.budget_code || 'Not specified' }}</span>
+                </div>
+                <div class="detail-item" *ngIf="asset.budget_donor && !asset.donor_name">
+                  <label>Budget Donor (Legacy)</label>
+                  <span>{{ asset.budget_donor }}</span>
                 </div>
                 <div class="detail-item">
                   <label>Floor</label>
@@ -472,9 +476,15 @@
               <input matInput formControlName="budget_code">
             </mat-form-field>
 
-            <mat-form-field appearance="outline">
-              <mat-label>Budget Donor</mat-label>
+            <mat-form-field appearance="outline" *ngIf="asset?.donor_id">
+              <mat-label>Donor</mat-label>
+              <input matInput [value]="asset?.donor_name || 'Not specified'" readonly>
+              <mat-hint>Donor is set from donor management. Cannot be edited here.</mat-hint>
+            </mat-form-field>
+            <mat-form-field appearance="outline" *ngIf="!asset?.donor_id">
+              <mat-label>Budget Donor (Legacy)</mat-label>
               <input matInput formControlName="budget_donor">
+              <mat-hint>Legacy field for old assets</mat-hint>
             </mat-form-field>
 
             <mat-form-field appearance="outline">

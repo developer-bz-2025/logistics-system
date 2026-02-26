@@ -12,6 +12,7 @@ class Role extends Model
     public const PR_ADMIN     = 'pr_admin';
     public const LOG_ADMIN    = 'log_admin';
     public const SUPER_ADMIN  = 'super_admin';
+    public const FINANCE      = 'finance';
 
     protected $fillable = ['name'];
 
