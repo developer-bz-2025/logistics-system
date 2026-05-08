@@ -37,7 +37,7 @@ statsCards: Array<{ key: string; label?: string; count: number; route?: string; 
     dir: ['desc' as 'asc' | 'desc'],
   });
 
-  displayedColumns = ['sn', 'fixed_item', 'acquisition_date', 'status', 'location', 'brand'];
+  displayedColumns = ['sn', 'fixed_item', 'acquisition_date', 'status', 'location', 'brand', 'owned_by'];
   data: LogAdminAsset[] = [];
 
   total = 0;

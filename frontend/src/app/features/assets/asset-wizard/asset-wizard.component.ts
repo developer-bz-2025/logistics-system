@@ -134,7 +134,8 @@ export class AssetWizardComponent implements OnInit, OnDestroy {
         location_id: [null, Validators.required],
         floor_id: [null, Validators.required],
         holder_user_id: [null],
-        status_id: [null, Validators.required]
+        status_id: [null, Validators.required],
+        owned_by: ['BZ', Validators.required]
       }),
       extra: this.fb.group({
         description: [''],

@@ -229,6 +229,10 @@
                   <label>Floor</label>
                   <span>{{ asset.floor_name || 'Not specified' }}</span>
                 </div>
+                <div class="detail-item">
+                  <label>Owned By</label>
+                  <span>{{ asset.owned_by_label || (asset.owned_by === 'LANDLORD' ? 'Landlord' : 'B&Z') }}</span>
+                </div>
               </div>
             </div>
 
@@ -499,6 +503,14 @@
                 </mat-option>
               </mat-select>
               <mat-hint>Purchase request selection</mat-hint>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Owned By</mat-label>
+              <mat-select formControlName="owned_by">
+                <mat-option value="BZ">B&Z</mat-option>
+                <mat-option value="LANDLORD">Landlord</mat-option>
+              </mat-select>
             </mat-form-field>
 
             <!-- PR Details (shown when PR is selected) -->

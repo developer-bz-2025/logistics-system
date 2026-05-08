@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Storage;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
 use App\Models\Pr;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class ItemController extends Controller
 {
@@ -56,6 +58,7 @@ class ItemController extends Controller
                 'items.floor_id',
                 'items.status_id',
                 DB::raw('COALESCE(items.Notes, items.notes) as notes'),
+                'items.owned_by',
                 'items.holder_user_id',
                 'items.photo_path',
                 'items.details_pdf_path',
@@ -105,6 +108,9 @@ class ItemController extends Controller
             $q->where('items.supplier_id', $v);
         if ($v = $request->integer('holder_user_id'))
             $q->where('items.holder_user_id', $v);
+        if ($v = $request->get('owned_by')) {
+            $q->where('items.owned_by', $this->normalizeOwnedBy($v));
+        }
 
         // Search (SN / description)
         if ($s = trim((string) $request->get('search'))) {
@@ -274,6 +280,8 @@ class ItemController extends Controller
                 'donor_name' => $row->donor_name,
                 'pr_id' => $row->pr_id !== null ? (int) $row->pr_id : null,
                 'notes' => $row->notes,
+                'owned_by' => $this->normalizeOwnedBy($row->owned_by),
+                'owned_by_label' => $this->ownedByLabel($row->owned_by),
                 'photo_path' => $row->photo_path,
                 'details_pdf_path' => $row->details_pdf_path,
                 'photo_url' => $this->fileUrl($row->photo_path),
@@ -290,6 +298,162 @@ class ItemController extends Controller
             'total' => $result->total(),
             'page' => $result->currentPage(),
             'pageSize' => $result->perPage(),
+        ]);
+    }
+
+    /**
+     * GET /api/items/export - Export filtered assets to Excel
+     */
+    public function export(Request $request)
+    {
+        $sort = $request->get('sort', 'items.created_at');
+        $dir = strtolower($request->get('dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+
+        $q = DB::table('items')
+            ->join('fixed_items', 'items.fixed_item_id', '=', 'fixed_items.id')
+            ->join('sub_category', 'fixed_items.sub_id', '=', 'sub_category.id')
+            ->join('categories', 'sub_category.cat_id', '=', 'categories.id')
+            ->leftJoin('status', 'items.status_id', '=', 'status.id')
+            ->leftJoin('locations', 'items.location_id', '=', 'locations.id')
+            ->leftJoin('floors', 'items.floor_id', '=', 'floors.id')
+            ->leftJoin('suppliers', 'items.supplier_id', '=', 'suppliers.id')
+            ->leftJoin('brands', 'items.brand_id', '=', 'brands.id')
+            ->leftJoin('colors', 'items.color_id', '=', 'colors.id')
+            ->leftJoin('users as holders', 'items.holder_user_id', '=', 'holders.id')
+            ->leftJoin('donors', 'items.donor_id', '=', 'donors.id')
+            ->select([
+                'items.id',
+                'items.sn',
+                'fixed_items.name as fixed_item_name',
+                'categories.name as category_name',
+                'sub_category.name as sub_category_name',
+                'status.name as status_name',
+                'locations.name as location_name',
+                'floors.name as floor_name',
+                'suppliers.name as supplier_name',
+                'brands.name as brand_name',
+                'colors.name as color_name',
+                'holders.name as holder_name',
+                'items.acquisition_date',
+                'items.acquisition_cost',
+                'items.warranty_start_date',
+                'items.warranty_end_date',
+                'items.budget_code',
+                'items.budget_donor',
+                'donors.donor as donor_name',
+                'items.pr_id',
+                DB::raw('COALESCE(items.Notes, items.notes) as notes'),
+                'items.owned_by',
+            ]);
+
+        if ($v = $request->integer('category_id'))
+            $q->where('categories.id', $v);
+        if ($v = $request->integer('sub_category_id'))
+            $q->where('sub_category.id', $v);
+        if ($v = $request->integer('fixed_item_id'))
+            $q->where('items.fixed_item_id', $v);
+        if ($v = $request->integer('status_id'))
+            $q->where('items.status_id', $v);
+        if ($v = $request->integer('location_id'))
+            $q->where('items.location_id', $v);
+        if ($v = $request->integer('floor_id'))
+            $q->where('items.floor_id', $v);
+        if ($v = $request->integer('supplier_id'))
+            $q->where('items.supplier_id', $v);
+        if ($v = $request->integer('holder_user_id'))
+            $q->where('items.holder_user_id', $v);
+        if ($v = $request->get('owned_by'))
+            $q->where('items.owned_by', $this->normalizeOwnedBy($v));
+
+        if ($s = trim((string) $request->get('search'))) {
+            $q->where(function ($qq) use ($s) {
+                $qq->where('items.sn', 'like', "%{$s}%")
+                    ->orWhere('items.description', 'like', "%{$s}%");
+            });
+        }
+
+        $sortable = [
+            'items.created_at',
+            'items.updated_at',
+            'items.acquisition_date',
+            'items.acquisition_cost',
+            'categories.name',
+            'sub_category.name',
+            'fixed_items.name',
+            'status.name',
+        ];
+        if (!in_array($sort, $sortable, true))
+            $sort = 'items.created_at';
+        $q->orderBy($sort, $dir);
+
+        $rows = $q->get();
+
+        $sheet = (new Spreadsheet())->getActiveSheet();
+        $headers = [
+            'ID',
+            'Serial Number',
+            'Item',
+            'Category',
+            'Sub-Category',
+            'Status',
+            'Location',
+            'Floor',
+            'Supplier',
+            'Brand',
+            'Color',
+            'Holder',
+            'Acquisition Date',
+            'Acquisition Cost',
+            'Warranty Start Date',
+            'Warranty End Date',
+            'Budget Code',
+            'Budget Donor',
+            'Donor',
+            'PR ID',
+            'Notes',
+            'Owned By',
+        ];
+        $sheet->fromArray($headers, null, 'A1');
+
+        $excelRows = [];
+        foreach ($rows as $row) {
+            $excelRows[] = [
+                $row->id,
+                $row->sn,
+                $row->fixed_item_name,
+                $row->category_name,
+                $row->sub_category_name,
+                $row->status_name,
+                $row->location_name,
+                $row->floor_name,
+                $row->supplier_name,
+                $row->brand_name,
+                $row->color_name,
+                $row->holder_name,
+                $row->acquisition_date,
+                $row->acquisition_cost,
+                $row->warranty_start_date,
+                $row->warranty_end_date,
+                $row->budget_code,
+                $row->budget_donor,
+                $row->donor_name,
+                $row->pr_id,
+                $row->notes,
+                $this->ownedByLabel($row->owned_by),
+            ];
+        }
+
+        if (!empty($excelRows)) {
+            $sheet->fromArray($excelRows, null, 'A2');
+        }
+
+        $writer = new Xlsx($sheet->getParent());
+        $filename = 'assets-' . now()->format('Ymd-His') . '.xlsx';
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         ]);
     }
 
@@ -332,6 +496,7 @@ class ItemController extends Controller
                 'items.floor_id',
                 'items.status_id',
                 DB::raw('COALESCE(items.Notes, items.notes) as notes'),
+                'items.owned_by',
                 'items.holder_user_id',
                 'items.photo_path',
                 'items.details_pdf_path',
@@ -417,6 +582,8 @@ class ItemController extends Controller
             'donor_name' => $item->donor_name ?? null,
             'pr_id' => $item->pr_id !== null ? (int) $item->pr_id : null,
             'notes' => $item->notes,
+            'owned_by' => $this->normalizeOwnedBy($item->owned_by),
+            'owned_by_label' => $this->ownedByLabel($item->owned_by),
             'photo_path' => $item->photo_path,
             'details_pdf_path' => $item->details_pdf_path,
             'photo_url' => $this->fileUrl($item->photo_path),
@@ -512,6 +679,7 @@ class ItemController extends Controller
             'status_id' => 'nullable|integer|exists:status,id',
             'description' => 'nullable|string|max:255',
             'notes' => 'nullable|string',
+            'owned_by' => 'nullable|string|in:BZ,LANDLORD,B&Z,Landlord',
             'sn' => 'nullable|string|max:255',
             'budget_code' => 'nullable|string|max:255',
             'budget_donor' => 'nullable|string|max:255',
@@ -548,6 +716,8 @@ class ItemController extends Controller
         if (array_key_exists('photo', $validated)) {
             unset($validated['photo']);
         }
+
+        $validated['owned_by'] = $this->normalizeOwnedBy($validated['owned_by'] ?? null);
 
         // Set created_by from authenticated user
         $validated['created_by'] = auth()->id();
@@ -644,6 +814,8 @@ class ItemController extends Controller
             'id' => $itemId,
             'sn' => $validated['sn'],
             'fixed_item_id' => $validated['fixed_item_id'],
+            'owned_by' => $validated['owned_by'],
+            'owned_by_label' => $this->ownedByLabel($validated['owned_by']),
             'created_at' => $validated['created_at'],
             'updated_at' => $validated['updated_at'],
             'photo_path' => $validated['photo_path'] ?? null,
@@ -713,6 +885,7 @@ class ItemController extends Controller
             'budget_donor' => 'nullable|string|max:255',
             'donor_id' => 'nullable|integer|exists:donors,id',
             'notes' => 'nullable|string',
+            'owned_by' => 'nullable|string|in:BZ,LANDLORD,B&Z,Landlord',
             'attributes' => 'nullable|array',
             'attributes.*.att_id' => 'required_with:attributes|integer|exists:attributes,id',
             'attributes.*.att_option_id' => 'required_with:attributes|integer|exists:att_options,id',
@@ -730,6 +903,10 @@ class ItemController extends Controller
         // Extract attributes before updating items table
         $attributes = $validated['attributes'] ?? null;
         unset($validated['attributes']);
+
+        if (array_key_exists('owned_by', $validated)) {
+            $validated['owned_by'] = $this->normalizeOwnedBy($validated['owned_by']);
+        }
 
         // Track PR changes for count adjustment (only if pr_id is explicitly provided)
         $oldPrId = $currentItem->pr_id;
@@ -778,7 +955,8 @@ class ItemController extends Controller
             'warranty_end_date',
             'budget_code',
             'budget_donor',
-            'notes'
+            'notes',
+            'owned_by'
         ];
 
         foreach ($fieldsToCheck as $field) {
@@ -952,6 +1130,25 @@ class ItemController extends Controller
 
         // Return the updated item
         return $this->show($id);
+    }
+
+    private function normalizeOwnedBy(?string $value): string
+    {
+        $normalized = strtoupper(trim((string) $value));
+        if ($normalized === '' || $normalized === 'B&Z') {
+            return 'BZ';
+        }
+
+        if ($normalized === 'LANDLORD') {
+            return 'LANDLORD';
+        }
+
+        return 'BZ';
+    }
+
+    private function ownedByLabel(?string $value): string
+    {
+        return $this->normalizeOwnedBy($value) === 'LANDLORD' ? 'Landlord' : 'B&Z';
     }
 
     private function normalizeArrayPayloads(Request $request): void

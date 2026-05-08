@@ -279,6 +279,7 @@ public function importItemsSheet(Spreadsheet $spreadsheet, string $sheetName, st
         'location' => ['location'],
         'floor' => ['floor'],
         'notes' => ['notes', 'note'],
+        'owned_by' => ['owned by', 'owned_by'],
     ], $attrNames);
 
     // 3) Resolve category id (strict)
@@ -431,6 +432,7 @@ public function importItemsSheet(Spreadsheet $spreadsheet, string $sheetName, st
         $budgetCode = $this->clean($this->cell($r, $H, 'budget_code'));
         $budgetDonor = $this->clean($this->cell($r, $H, 'budget_donor'));
         $notes = $this->clean($this->cell($r, $H, 'notes'));
+        $ownedBy = $this->normalizeOwnedBy($this->clean($this->cell($r, $H, 'owned_by')));
 
         // Process attributes
         $attributeValues = [];
@@ -519,6 +521,7 @@ public function importItemsSheet(Spreadsheet $spreadsheet, string $sheetName, st
             'budget_code' => $budgetCode,
             'budget_donor' => $budgetDonor,
             'Notes' => $notes,
+            'owned_by' => $ownedBy,
             'created_by' => auth()->id(),
             'updated_at' => now(),
         ];
@@ -745,6 +748,21 @@ private function requireIdOrSkip(?int $id, string $what, array $context, &$skips
     {
         $id = DB::table('actions')->where('action', $action)->value('id');
         return $id ?: DB::table('actions')->insertGetId(['action' => $action]);
+    }
+
+    private function normalizeOwnedBy(?string $value): string
+    {
+        $normalized = strtoupper(trim((string) $value));
+
+        if ($normalized === '' || $normalized === 'BZ' || $normalized === 'B&Z') {
+            return 'BZ';
+        }
+
+        if ($normalized === 'LANDLORD') {
+            return 'LANDLORD';
+        }
+
+        return 'BZ';
     }
 
     /**

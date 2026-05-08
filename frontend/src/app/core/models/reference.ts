@@ -31,6 +31,8 @@ export interface AssetListItem {
     holder_name?: string;
     acquisition_date?: string;
     acquisition_cost?: number;
+    owned_by?: 'BZ' | 'LANDLORD';
+    owned_by_label?: 'B&Z' | 'Landlord';
     created_at: string;
     // Dynamic attributes based on category
     attributes?: { [key: string]: any };

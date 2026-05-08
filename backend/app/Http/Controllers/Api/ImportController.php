@@ -8,10 +8,59 @@ use App\Http\Controllers\Controller;
 
 use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class ImportController extends Controller
 {
 // use PhpOffice\PhpSpreadsheet\IOFactory; // <-- not needed in controller now
+
+public function downloadTemplate()
+{
+    $headers = [
+        'Category',
+        'Sub Category',
+        'Item',
+        'SN',
+        'Description',
+        'Brand',
+        'Color',
+        'Supplier',
+        'Status',
+        'Acquisition Date',
+        'Acquisition Cost',
+        'Warranty Start Date',
+        'Warranty End Date',
+        'Budget Code',
+        'Budget Donor',
+        'Location',
+        'Floor',
+        'Notes',
+        'Owned By',
+    ];
+
+    $sheet = (new Spreadsheet())->getActiveSheet();
+    $sheet->setTitle('AssetsTemplate');
+    $sheet->fromArray($headers, null, 'A1');
+    $sheet->fromArray(
+        [['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', 'B&Z']],
+        null,
+        'A2'
+    );
+    $sheet->fromArray(
+        [['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', 'Landlord']],
+        null,
+        'A3'
+    );
+
+    $writer = new Xlsx($sheet->getParent());
+
+    return response()->streamDownload(function () use ($writer) {
+        $writer->save('php://output');
+    }, 'assets-import-template.xlsx', [
+        'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    ]);
+}
 
 public function import(ImportAssetsRequest $request, ImportAssetsService $service)
 {

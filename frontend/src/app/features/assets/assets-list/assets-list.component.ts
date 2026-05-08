@@ -39,12 +39,12 @@ export class AssetsListComponent  implements OnInit, OnDestroy {
   isLoadingFilters = false;
   isLoadingCategories = false;
 
-  displayedColumns = ['id', 'sn', 'fixed_item', 'acquisition_date', 'status', 'location', 'brand'];
+  displayedColumns = ['id', 'sn', 'fixed_item', 'acquisition_date', 'status', 'location', 'brand', 'owned_by'];
   dynamicColumns: string[] = [];
 
   private updateDisplayedColumns() {
     // Start with static columns
-    const staticColumns = ['id', 'sn', 'fixed_item', 'acquisition_date', 'status', 'location', 'brand'];
+    const staticColumns = ['id', 'sn', 'fixed_item', 'acquisition_date', 'status', 'location', 'brand', 'owned_by'];
     
     // Add valid dynamic attribute columns
     const dynamicCols = this.dynamicAttributes

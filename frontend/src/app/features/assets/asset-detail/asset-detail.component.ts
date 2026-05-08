@@ -299,6 +299,7 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
       warranty_end_date: [''],
       budget_code: [''],
       budget_donor: [''],
+      owned_by: ['BZ'],
       donor_id: [null],
       pr_id: [null],
       notes: [''],
@@ -399,6 +400,7 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
       'sn': 'Serial Number',
       'budget_code': 'Budget Code',
       'budget_donor': 'Budget Donor',
+      'owned_by': 'Owned By',
       'notes': 'Notes'
     };
     return fieldMap[fieldName] || fieldName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -621,6 +623,7 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
       warranty_end_date: this.asset.warranty_end_date || '',
       budget_code: this.asset.budget_code || '',
       budget_donor: this.asset.budget_donor || '',
+      owned_by: this.asset.owned_by || 'BZ',
       donor_id: this.asset.donor_id || null,
       pr_id: this.asset.pr_id || null,
       notes: this.asset.notes || ''

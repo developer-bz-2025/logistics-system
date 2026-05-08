@@ -14,6 +14,8 @@ export interface LogAdminAsset {
   location?: { id: number; name: string };
   acquisition_date?: string;
   brand?: string;
+  owned_by?: 'BZ' | 'LANDLORD';
+  owned_by_label?: 'B&Z' | 'Landlord';
 }
 
 export interface Paginated<T> {

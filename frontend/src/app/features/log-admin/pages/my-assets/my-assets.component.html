@@ -146,6 +146,11 @@
           <td mat-cell *matCellDef="let asset">{{ asset.brand_name || '—' }}</td>
         </ng-container>
 
+        <ng-container matColumnDef="owned_by">
+          <th mat-header-cell *matHeaderCellDef>Owned By</th>
+          <td mat-cell *matCellDef="let asset">{{ asset.owned_by_label || (asset.owned_by === 'LANDLORD' ? 'Landlord' : 'B&Z') }}</td>
+        </ng-container>
+
         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
         <tr
           mat-row
