@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'jwt.auth'     => \App\Http\Middleware\JwtMiddleware::class,
             'super.admin'  => \App\Http\Middleware\EnsureSuperAdmin::class,
             'finance.role' => \App\Http\Middleware\EnsureFinanceRole::class,
+            'external.api' => \App\Http\Middleware\ValidateExternalApiKey::class,
             'logistics.admin.pr.access' => \App\Http\Middleware\LogisticsAdminPrAccess::class,
         ]);
 

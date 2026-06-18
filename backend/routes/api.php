@@ -19,6 +19,8 @@ use App\Http\Controllers\Api\LocationChangeRequestController;
 use App\Http\Controllers\Api\FloorController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\DonorController;
+use App\Http\Controllers\Api\DonorDocumentController;
+use App\Http\Controllers\Api\External\DonorExportController;
 
 
 // Group all API routes
@@ -212,6 +214,13 @@ Route::middleware(['jwt.auth', 'finance.role'])->prefix('finance')->group(functi
         ->whereNumber('id');
     Route::delete('/donors/{id}', [DonorController::class, 'destroy'])
         ->whereNumber('id');
+
+    Route::get('/donors/{donorId}/documents', [DonorDocumentController::class, 'index'])
+        ->whereNumber('donorId');
+    Route::post('/donors/{donorId}/documents', [DonorDocumentController::class, 'store'])
+        ->whereNumber('donorId');
+    Route::delete('/donors/{donorId}/documents/{documentId}', [DonorDocumentController::class, 'destroy'])
+        ->whereNumber(['donorId', 'documentId']);
 });
 
 Route::get('/statuses', [StatusController::class, 'index']);
@@ -255,7 +264,10 @@ Route::middleware(['jwt.auth','super.admin'])->group(function () {
 
 
 
-// Route::middleware('auth.jwt')->group(function () {
-//     Route::apiResource('categories', CategoryController::class);
-//     // … add suppliers, brands, items, prs, etc.
-// });
+Route::middleware(['external.api', 'throttle:60,1'])
+    ->prefix('v1/external')
+    ->group(function () {
+        Route::get('/donors', [DonorExportController::class, 'index']);
+        Route::get('/donors/{id}', [DonorExportController::class, 'show'])
+            ->whereNumber('id');
+    });

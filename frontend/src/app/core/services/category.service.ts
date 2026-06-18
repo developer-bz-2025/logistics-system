@@ -1,9 +1,10 @@
 // src/app/core/services/category.service.ts
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Category, SubCategory, FixedItem, PagedResult, AssetListItem } from '../models/reference';
 import { Observable, map } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { AuthService } from './auth.service';
 
 @Injectable({ providedIn: 'root' })
 export class CategoryService {
@@ -46,8 +47,16 @@ export class CategoryService {
 @Injectable({ providedIn: 'root' })
 export class AssetService {
   private readonly apiUrl = `${environment.apiBaseUrl}`;
+  private auth = inject(AuthService);
 
   constructor(private http: HttpClient) {}
+
+  private assetsListUrl(): string {
+    if (this.auth.hasAnyRole(['finance'])) {
+      return `${this.apiUrl}/finance/assets`;
+    }
+    return `${this.apiUrl}/items`;
+  }
 
   listAssets(q: {
     page?: number; pageSize?: number; search?: string;
@@ -62,7 +71,7 @@ export class AssetService {
     Object.entries(q).forEach(([k, v]) => {
       if (v !== undefined && v !== null && v !== '') params = params.set(k, String(v));
     });
-    return this.http.get<PagedResult<AssetListItem>>(`${this.apiUrl}/items`, { params });
+    return this.http.get<PagedResult<AssetListItem>>(this.assetsListUrl(), { params });
   }
 
   // Get dynamic attributes based on category, with options filtered by sub-category

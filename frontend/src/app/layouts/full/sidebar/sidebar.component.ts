@@ -1,8 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { navItems } from './sidebar-data';
+import { portalNavItems } from './portal-sidebar-data';
 import { NavService } from '../../../core/services/nav.service';
 import { AuthService } from 'src/app/core/services/auth.service';
 import { CategoryService } from 'src/app/core/services/category.service';
+import { PortalService } from 'src/app/core/services/portal.service';
 import { NavItem } from './nav-item/nav-item';
 
 @Component({
@@ -16,7 +18,8 @@ export class SidebarComponent implements OnInit {
   constructor(
     public navService: NavService,
     private auth: AuthService,
-    private categoryService: CategoryService
+    private categoryService: CategoryService,
+    public portal: PortalService
   ) {}
 
   // Map category names to appropriate icons
@@ -69,7 +72,8 @@ export class SidebarComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    const allowed = (navItems || []).filter(item => {
+    const sourceItems = this.portal.isDonorsPortal() ? portalNavItems : navItems;
+    const allowed = (sourceItems || []).filter(item => {
       const roles = (item as any).roles as string[] | undefined;
       return !roles || this.auth.hasAnyRole(roles);
     });

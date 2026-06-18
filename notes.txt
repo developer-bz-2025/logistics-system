@@ -1,0 +1,5 @@
+- IT Assets for Finance.
+- Web page for donor management for grants, finance, to link it across the systems.
+- for now link it through api to IT Assets.
+- stakeholder management to get data from many system.
+- 

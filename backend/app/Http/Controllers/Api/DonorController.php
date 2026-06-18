@@ -84,7 +84,7 @@ class DonorController extends Controller
      */
     public function show($id)
     {
-        $donor = Donor::with(['financeOfficer', 'locations'])->findOrFail($id);
+        $donor = Donor::with(['financeOfficer', 'locations', 'documents.uploader'])->findOrFail($id);
         return response()->json($donor);
     }
 

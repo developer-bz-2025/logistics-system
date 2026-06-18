@@ -10,6 +10,8 @@ return [
         'http://127.0.0.1:4200',
         'https://logistic.bzassets.org',
         'https://logistic-backend.bzassets.org',
+        // Add IT assets system origin below if it calls from a browser:
+        // 'https://it-assets.your-domain.org',
     ],
 
     'allowed_origins_patterns' => [],

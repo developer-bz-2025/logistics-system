@@ -19,75 +19,70 @@ export class AuthInterceptor implements HttpInterceptor {
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     const token = this.jwt.getToken();
-    if (token) {
-      console.log('[AuthInterceptor] attaching token');
+    const isAuthRequest = req.url.includes('/login') || req.url.includes('/refresh');
+
+    if (token && !this.jwt.isTokenExpired() && !isAuthRequest) {
       req = req.clone({ setHeaders: { Authorization: `Bearer ${token}` } });
-    } else {
-      console.log('[AuthInterceptor] no token to attach');
     }
 
     return next.handle(req).pipe(
       catchError((err: HttpErrorResponse) => {
-        if (err.status === 401) {
-          console.warn('[AuthInterceptor] 401 received, attempting token refresh');
+        if (err.status !== 401 || isAuthRequest) {
+          return throwError(() => err);
+        }
 
-          // If already refreshing, wait for the refresh to complete
-          if (this.isRefreshing) {
-            return this.refreshTokenSubject.pipe(
-              filter(token => token != null),
-              take(1),
-              switchMap(() => {
-                const newToken = this.jwt.getToken();
-                const newReq = newToken
-                  ? req.clone({ setHeaders: { Authorization: `Bearer ${newToken}` } })
-                  : req;
-                return next.handle(newReq);
-              })
-            );
-          }
-
-          // Start refresh process
-          this.isRefreshing = true;
-          this.refreshTokenSubject.next(null);
-
-          // Check if we have a refresh token
-          const refreshToken = this.jwt.getRefreshToken();
-          if (!refreshToken) {
-            console.warn('[AuthInterceptor] No refresh token available, redirecting to login');
-            this.handleAuthError();
-            return throwError(() => err);
-          }
-
-          // Attempt to refresh token
-          return this.auth.refreshToken().pipe(
-            switchMap((response) => {
-              console.log('[AuthInterceptor] Token refresh successful, retrying request');
-              this.isRefreshing = false;
-              this.refreshTokenSubject.next(response.access_token);
-
-              // Retry the original request with new token
+        if (this.isRefreshing) {
+          return this.refreshTokenSubject.pipe(
+            filter(refreshedToken => refreshedToken != null),
+            take(1),
+            switchMap(() => {
               const newToken = this.jwt.getToken();
-              const newReq = newToken
+              const newReq = newToken && !this.jwt.isTokenExpired()
                 ? req.clone({ setHeaders: { Authorization: `Bearer ${newToken}` } })
                 : req;
               return next.handle(newReq);
-            }),
-            catchError((refreshError) => {
-              console.error('[AuthInterceptor] Token refresh failed, redirecting to login', refreshError);
-              this.isRefreshing = false;
-              this.refreshTokenSubject.next(null);
-              this.handleAuthError();
-              return throwError(() => err);
             })
           );
         }
-        return throwError(() => err);
+
+        this.isRefreshing = true;
+        this.refreshTokenSubject.next(null);
+
+        const refreshToken = this.jwt.getRefreshToken();
+        if (!refreshToken) {
+          this.isRefreshing = false;
+          this.handleAuthError();
+          return throwError(() => err);
+        }
+
+        return this.auth.refreshToken().pipe(
+          switchMap((response) => {
+            this.isRefreshing = false;
+            this.refreshTokenSubject.next(response.access_token);
+
+            const newToken = this.jwt.getToken();
+            const newReq = newToken
+              ? req.clone({ setHeaders: { Authorization: `Bearer ${newToken}` } })
+              : req;
+            return next.handle(newReq);
+          }),
+          catchError((refreshError) => {
+            this.isRefreshing = false;
+            this.refreshTokenSubject.next(null);
+            this.handleAuthError();
+            return throwError(() => refreshError);
+          })
+        );
       })
     );
   }
 
-  private handleAuthError() {
+  private handleAuthError(): void {
     this.auth.logout();
-    this.router.navigate(['/authentication/login']);
+
+    const onLoginPage = this.router.url.startsWith('/authentication/login');
+    if (!onLoginPage) {
+      this.router.navigate(['/authentication/login']);
+    }
   }
 }

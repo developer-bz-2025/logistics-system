@@ -1,0 +1,105 @@
+<div class="container mx-auto px-4 py-6">
+  <div class="mb-4">
+    <button mat-button (click)="backToList()">
+      <mat-icon>arrow_back</mat-icon>
+      Back to Donors
+    </button>
+  </div>
+
+  <div *ngIf="loading" class="flex justify-center items-center py-12">
+    <mat-spinner diameter="50"></mat-spinner>
+  </div>
+
+  <div *ngIf="!loading && donor" class="space-y-6">
+    <div class="app-card">
+      <div class="p-6">
+        <div class="flex justify-between items-start mb-6">
+          <div>
+            <h1 class="text-2xl font-bold text-gray-900">{{ donor.donor }}</h1>
+            <p class="text-gray-500 mt-1">Donor details</p>
+          </div>
+          <button mat-raised-button color="primary" (click)="openEditDialog()">
+            <mat-icon>edit</mat-icon>
+            Edit
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <div class="text-sm text-gray-500">Account No</div>
+            <div class="font-medium">{{ donor.account_no || '—' }}</div>
+          </div>
+          <div>
+            <div class="text-sm text-gray-500">Department</div>
+            <div class="font-medium">{{ getDepartmentLabel(donor.department_name) }}</div>
+          </div>
+          <div>
+            <div class="text-sm text-gray-500">Finance Officer</div>
+            <div class="font-medium">{{ donor.finance_officer?.name || '—' }}</div>
+          </div>
+          <div>
+            <div class="text-sm text-gray-500">End Date</div>
+            <div class="font-medium">{{ donor.end_date ? (donor.end_date | date:'mediumDate') : '—' }}</div>
+          </div>
+          <div class="md:col-span-2">
+            <div class="text-sm text-gray-500">Areas</div>
+            <div class="font-medium">{{ getLocationsDisplay() }}</div>
+          </div>
+          <div class="md:col-span-2">
+            <div class="text-sm text-gray-500">Notes</div>
+            <div class="font-medium whitespace-pre-wrap">{{ donor.notes || '—' }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="app-card">
+      <div class="p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-semibold text-gray-900">Documents</h2>
+          <button mat-raised-button color="primary" (click)="fileInput.click()" [disabled]="uploading">
+            <mat-icon>upload</mat-icon>
+            Upload Document
+          </button>
+          <input #fileInput type="file" class="hidden" accept=".pdf,.doc,.docx" (change)="onFileSelected($event)" [disabled]="uploading">
+        </div>
+
+        <div *ngIf="uploading" class="flex items-center gap-2 text-gray-600 mb-4">
+          <mat-spinner diameter="24"></mat-spinner>
+          Uploading...
+        </div>
+
+        <div *ngIf="documents.length === 0" class="text-center py-8 text-gray-500">
+          No documents uploaded yet.
+        </div>
+
+        <table *ngIf="documents.length > 0" class="w-full">
+          <thead>
+            <tr class="text-sm text-gray-500 border-b">
+              <th class="py-3 text-left">File Name</th>
+              <th class="py-3 text-left">Uploaded By</th>
+              <th class="py-3 text-left">Date</th>
+              <th class="py-3 text-left w-24">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y">
+            <tr *ngFor="let doc of documents" class="hover:bg-gray-50">
+              <td class="py-4">
+                <a [href]="doc.file_url" target="_blank" rel="noopener" class="text-blue-600 hover:underline">
+                  {{ doc.original_name }}
+                </a>
+              </td>
+              <td class="py-4">{{ doc.uploader?.name || '—' }}</td>
+              <td class="py-4">{{ doc.created_at ? (doc.created_at | date:'short') : '—' }}</td>
+              <td class="py-4">
+                <button mat-icon-button color="warn" (click)="deleteDocument(doc)" matTooltip="Delete">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { Router } from '@angular/router';
 import { DonorService } from '../../../../core/services/donor.service';
 import { Donor } from '../../../../core/models/donor.model';
 import { MatDialog } from '@angular/material/dialog';
@@ -22,7 +23,8 @@ export class DonorsComponent implements OnInit, OnDestroy {
   constructor(
     private donorService: DonorService,
     private dialog: MatDialog,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -62,6 +64,10 @@ export class DonorsComponent implements OnInit, OnDestroy {
         this.loadDonors();
       }
     });
+  }
+
+  viewDonor(donor: Donor): void {
+    this.router.navigate(['/finance', donor.id]);
   }
 
   openEditDialog(donor: Donor): void {

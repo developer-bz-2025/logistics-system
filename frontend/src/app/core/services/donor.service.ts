@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
-import { Donor, DonorListItem } from '../models/donor.model';
+import { Donor, DonorListItem, DonorDocument } from '../models/donor.model';
 
 @Injectable({
   providedIn: 'root'
@@ -56,5 +56,21 @@ export class DonorService {
     return this.http.get<{ data: DonorListItem[] }>(`${this.apiUrl}/donors-for-asset-creation`).pipe(
       map(res => res.data || [])
     );
+  }
+
+  getDonorDocuments(donorId: number): Observable<DonorDocument[]> {
+    return this.http.get<{ data: DonorDocument[] }>(`${this.apiUrl}/finance/donors/${donorId}/documents`).pipe(
+      map(res => res.data || [])
+    );
+  }
+
+  uploadDonorDocument(donorId: number, file: File): Observable<DonorDocument> {
+    const formData = new FormData();
+    formData.append('document', file);
+    return this.http.post<DonorDocument>(`${this.apiUrl}/finance/donors/${donorId}/documents`, formData);
+  }
+
+  deleteDonorDocument(donorId: number, documentId: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/finance/donors/${donorId}/documents/${documentId}`);
   }
 }

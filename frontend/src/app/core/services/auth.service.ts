@@ -74,23 +74,38 @@ export class AuthService {
     );
   }
 
+  private userLoadRequest: Observable<AppUser | null> | null = null;
+
   ensureUserLoaded(): Observable<boolean> {
-    console.log('[AuthService] ensureUserLoaded, isLoggedIn=', this.isLoggedIn(), 'have user=', !!this._user$.value);
     if (!this.isLoggedIn()) return of(false);
     if (this._user$.value) return of(true);
     return this.loadUserFromApi().pipe(map(u => !!u));
   }
 
   private loadUserFromApi(): Observable<AppUser | null> {
+    if (this._user$.value) {
+      return of(this._user$.value);
+    }
+
     const id = this.jwt.getUserId();
-    console.log('[AuthService] loadUserFromApi, userId from token =', id);
     if (!id) return of(null);
-    // use /me if you have it: `${this.apiUrl}/me`
-    return this.http.get<AppUser>(`${this.apiUrl}/users/${id}`).pipe(
-      tap(u => { console.log('[AuthService] user loaded from API:', u); this._user$.next(u); }),
-      catchError(() => { this._user$.next(null); return of(null); }),
-      shareReplay(1)
-    );
+
+    if (!this.userLoadRequest) {
+      this.userLoadRequest = this.http.get<AppUser>(`${this.apiUrl}/users/${id}`).pipe(
+        tap(u => {
+          this._user$.next(u);
+          this.userLoadRequest = null;
+        }),
+        catchError(() => {
+          this._user$.next(null);
+          this.userLoadRequest = null;
+          return of(null);
+        }),
+        shareReplay(1)
+      );
+    }
+
+    return this.userLoadRequest;
   }
 
   // ---- compatibility + helpers
@@ -121,18 +136,13 @@ private extractRole(val: any): string | null {
 hasAnyRole(roles: string[]) {
   if (!roles?.length) return true;
 
-  console.log(roles)
-
   const payload: any = this.jwt.getPayload<any>();
-  console.log('[AuthService] hasAnyRole payload:', payload);
-  // Accept a lot of shapes: payload.roles, payload.role, user.roles[], user.role
   const raw =
     payload?.roles ??
     payload?.role ??
     this._user$.value?.roles ??
     this._user$.value?.role ??
     [];
-  console.log('[AuthService] hasAnyRole raw:', raw);
 
   const arr = Array.isArray(raw) ? raw : [raw];
 
@@ -142,8 +152,6 @@ hasAnyRole(roles: string[]) {
     .map(r => r.toLowerCase());
 
   const normalizedRequired = roles.map(r => String(r).toLowerCase());
-
-  console.log('[AuthService] hasAnyRole? userRoles=', normalizedUserRoles, 'required=', normalizedRequired);
 
   return normalizedRequired.some(r => normalizedUserRoles.includes(r));
 }

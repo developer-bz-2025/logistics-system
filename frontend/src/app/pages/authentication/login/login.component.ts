@@ -2,7 +2,8 @@ import { Component } from '@angular/core';
 import { FormBuilder, Validators, FormGroup } from '@angular/forms';
 import { AuthService } from 'src/app/core/services/auth.service';
 import { JwtService } from 'src/app/core/services/jwt.service';
-import { Router } from '@angular/router';
+import { PortalService } from 'src/app/core/services/portal.service';
+import { Router, ActivatedRoute } from '@angular/router';
 import { extractRoles } from '../role.util';
 
 
@@ -15,23 +16,38 @@ export class AppSideLoginComponent {
   loginForm: FormGroup;
   loading = false;
   errorMessage = '';
+  isDonorsPortal = false;
 
 
   constructor(
     private fb: FormBuilder,
     private auth: AuthService,
     private jwt: JwtService,
-    private router: Router
+    private router: Router,
+    private portal: PortalService,
+    private route: ActivatedRoute
   ) {
 
   }
 
   ngOnInit() {
-    console.log('[Login] Component init');
+    this.isDonorsPortal = this.portal.isDonorsPortal();
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', Validators.required],
     });
+
+    if (this.route.snapshot.queryParamMap.get('portal') === 'finance-only') {
+      this.errorMessage = 'This portal is for finance users only.';
+    }
+
+    if (this.isDonorsPortal && this.auth.isLoggedIn()) {
+      if (this.auth.hasAnyRole(['finance'])) {
+        this.router.navigateByUrl('/finance');
+        return;
+      }
+      this.auth.logout();
+    }
   }
 
 
@@ -49,21 +65,24 @@ export class AppSideLoginComponent {
         const prePayload = this.jwt.getPayload<any>();
         console.log('[Login] Decoded payload before hydrate:', prePayload);
         this.auth.initializeFromTokens(res.access_token, res.refresh_token).subscribe((user) => {
-          console.log('[Login] User loaded after hydrate:', user);
           const roles = extractRoles(user);
-          console.log('[Login] roles:', roles);
-          // const payload = this.jwt.getPayload<any>();
-          // const payloadRoles = (payload?.roles ?? payload?.role ?? []) as any;
-          // const rolesRaw = user?.role ?? (user as any)?.role ?? this.auth.user()?.role ?? payloadRoles;
-          // const rolesArr: string[] = Array.isArray(rolesRaw) ? rolesRaw : (rolesRaw ? [rolesRaw] : []);
-          // const roles = rolesArr.map(r => String(r).toLowerCase());
-          console.log('[Login] Computed roles:', roles.includes('pr_admin'));
+
+          if (this.portal.isDonorsPortal()) {
+            if (!roles.includes('finance')) {
+              this.auth.logout();
+              this.errorMessage = 'This portal is for finance users only.';
+              this.loading = false;
+              return;
+            }
+            this.router.navigateByUrl('/finance');
+            return;
+          }
+
           if (roles.includes('super_admin')) this.router.navigateByUrl('/dashboard');
           else if (roles.includes('pr_admin')) this.router.navigateByUrl('/pr');
           else if (roles.includes('log_admin')) this.router.navigateByUrl('/dashboard');
           else if (roles.includes('finance')) this.router.navigateByUrl('/finance');
           else this.router.navigateByUrl('/');
-          console.log('[Login] Navigation attempted based on roles');
         });
         // console.log(res)
         // this.auth.saveToken(res.access_token);

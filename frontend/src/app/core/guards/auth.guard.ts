@@ -1,41 +1,51 @@
 import { Injectable } from '@angular/core';
-import { ActivatedRouteSnapshot, CanActivate, Router,Route, RouterStateSnapshot, UrlSegment, UrlTree } from '@angular/router';
+import { CanActivate, Route, Router, UrlSegment, UrlTree } from '@angular/router';
 import { Observable, of } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 import { AuthService } from '../services/auth.service';
+import { PortalService } from '../services/portal.service';
 
 @Injectable({ providedIn: 'root' })
 export class AuthGuard implements CanActivate {
-  constructor(private auth: AuthService, private router: Router) {}
+  constructor(
+    private auth: AuthService,
+    private router: Router,
+    private portal: PortalService
+  ) {}
 
-  canActivate(): boolean {
-    const isAuth = this.auth.isAuthenticated();
-    console.log('[Guard:canActivate] isAuthenticated =', isAuth);
-    if (!isAuth) {
-       console.log('[Guard:canActivate] redirect -> /authentication/login');
-      this.router.navigate(['/authentication/login']);
-      return false;
+  canActivate(): boolean | UrlTree {
+    if (!this.auth.isLoggedIn()) {
+      return this.router.createUrlTree(['/authentication/login']);
     }
-    console.log('[Guard:canActivate] allow navigation');
     return true;
   }
 
   canMatch(route: Route, _segments: UrlSegment[]): Observable<boolean | UrlTree> {
-    const isLoggedIn = this.auth.isLoggedIn();
     const roles = (route.data?.['roles'] as string[]) ?? [];
-    console.log('[Guard:canMatch] isLoggedIn =', isLoggedIn, 'required roles =', roles);
-    if (!isLoggedIn) {
-      console.log('[Guard:canMatch] not logged in -> /authentication/login');
+
+    if (!this.auth.isLoggedIn()) {
       return of(this.router.createUrlTree(['/authentication/login']));
     }
+
+    if (!roles.length || this.auth.hasAnyRole(roles)) {
+      return of(true);
+    }
+
     return this.auth.ensureUserLoaded().pipe(
+      take(1),
       map(() => {
-        const allowed = this.auth.hasAnyRole(roles);
-        console.log('[Guard:canMatch] hasAnyRole =', allowed);
-        return allowed ? true : this.router.createUrlTree(['/authentication/login']);
+        if (this.auth.hasAnyRole(roles)) {
+          return true;
+        }
+
+        if (this.portal.isDonorsPortal()) {
+          this.auth.logout();
+        }
+
+        return this.router.createUrlTree(['/authentication/login'], {
+          queryParams: this.portal.isDonorsPortal() ? { portal: 'finance-only' } : undefined,
+        });
       })
     );
   }
-
-
 }

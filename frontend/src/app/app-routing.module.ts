@@ -5,11 +5,22 @@ import { FullComponent } from './layouts/full/full.component';
 import { AuthGuard } from './core/guards/auth.guard';
 import { AppDashboardComponent } from './pages/dashboard/dashboard.component';
 import { LandingGuard } from './core/guards/landing.guard';
+import { PortalGuard } from './core/guards/portal.guard';
 
 const routes: Routes = [
   {
+    path: 'authentication',
+    component: BlankComponent,
+    loadChildren: () =>
+      import('./pages/authentication/authentication.module').then(
+        (m) => m.AuthenticationModule
+      ),
+  },
+  {
     path: '',
     component: FullComponent,
+    canActivate: [PortalGuard],
+    canActivateChild: [PortalGuard],
     children: [
       { path: '', pathMatch: 'full', canActivate: [LandingGuard], component: AppDashboardComponent },
 
@@ -46,28 +57,6 @@ const routes: Routes = [
         loadChildren: () =>
           import('./pages/notifications/notifications.module').then(m => m.NotificationsModule),
         canMatch: [AuthGuard],
-      },
-
-
-      // {
-      //   path: 'dashboard',
-      //   loadChildren: () =>
-      //     import('./pages/pages.module').then((m) => m.PagesModule),
-      //   canMatch: [AuthGuard],
-      // },
-
-    ],
-  },
-  {
-    path: '',
-    component: BlankComponent,
-    children: [
-      {
-        path: 'authentication',
-        loadChildren: () =>
-          import('./pages/authentication/authentication.module').then(
-            (m) => m.AuthenticationModule
-          ),
       },
     ],
   },

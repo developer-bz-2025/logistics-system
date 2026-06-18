@@ -40,6 +40,9 @@
             <td class="py-4">{{ donor.end_date ? (donor.end_date | date:'shortDate') : '—' }}</td>
             <td class="py-4">
               <div class="flex gap-2">
+                <button mat-icon-button (click)="viewDonor(donor)" matTooltip="View details">
+                  <mat-icon>visibility</mat-icon>
+                </button>
                 <button mat-icon-button (click)="openEditDialog(donor)" matTooltip="Edit">
                   <mat-icon>edit</mat-icon>
                 </button>

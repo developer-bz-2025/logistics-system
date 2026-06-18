@@ -16,6 +16,7 @@ import { Router } from '@angular/router';
 import { Location } from '@angular/common';
 import { Subject, interval } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { PortalService } from 'src/app/core/services/portal.service';
 
 // import jwt_decode from 'jwt-decode';
 // import {jwtDecode} from 'jwt-decode';
@@ -48,8 +49,18 @@ export class HeaderComponent implements OnInit, OnDestroy {
     private jwtService: JwtService,
     private notificationService: NotificationService,
     private router: Router,
-    private location: Location
+    private location: Location,
+    public portal: PortalService
   ) { }
+
+  get showBackToDonors(): boolean {
+    return this.portal.isDonorsPortal()
+      && (this.router.url.startsWith('/assets') || this.router.url.startsWith('/dashboard'));
+  }
+
+  backToDonors(): void {
+    this.router.navigateByUrl('/finance');
+  }
 
 
   get isEmpty(): boolean {

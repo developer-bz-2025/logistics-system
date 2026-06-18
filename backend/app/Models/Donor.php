@@ -36,4 +36,9 @@ class Donor extends Model
     {
         return $this->hasMany(Item::class);
     }
+
+    public function documents()
+    {
+        return $this->hasMany(DonorDocument::class);
+    }
 }
