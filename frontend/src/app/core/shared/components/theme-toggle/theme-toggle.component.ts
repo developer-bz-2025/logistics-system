@@ -1,12 +1,17 @@
 import { Component } from '@angular/core';
+import { NgIf } from '@angular/common';
 import { ThemeService } from 'src/app/core/services/theme.service';
 
-/** Switches between the classic and BZ designs. Used in both top bars and on the login page. */
+/**
+ * Switches between the classic and BZ designs. Used in both top bars and on the login page.
+ * Renders nothing unless switching is allowed (environment.allowThemeToggle, local development only).
+ */
 @Component({
   selector: 'app-theme-toggle',
   standalone: true,
+  imports: [NgIf],
   template: `
-    <button
+    <button *ngIf="theme.canToggle"
       type="button"
       class="theme-toggle"
       [class.is-bz]="theme.isBz"

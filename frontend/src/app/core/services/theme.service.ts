@@ -24,9 +24,14 @@ const LOGOS = {
  * Classic (Modernize) design vs BZ design. The choice is saved under "app-theme"
  * only when the user clicks the toggle; otherwise the environment default applies.
  * index.html applies the class before Angular boots, to avoid a flash of the other design.
+ *
+ * The toggle exists only where environment.allowThemeToggle is true (local development).
+ * In production everyone gets BZ and any saved choice is ignored.
  */
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
+  readonly canToggle = environment.allowThemeToggle === true;
+
   private readonly modeSubject = new BehaviorSubject<AppTheme>(this.resolveInitial());
   readonly mode$ = this.modeSubject.asObservable();
 
@@ -47,6 +52,7 @@ export class ThemeService {
   }
 
   toggle(): void {
+    if (!this.canToggle) return;
     const next: AppTheme = this.isBz ? 'classic' : 'bz';
     this.apply(next);
     try {
@@ -57,6 +63,7 @@ export class ThemeService {
   }
 
   private resolveInitial(): AppTheme {
+    if (!this.canToggle) return 'bz';
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved === 'bz' || saved === 'classic') {

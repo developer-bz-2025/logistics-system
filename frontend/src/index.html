@@ -4,12 +4,14 @@
   <meta charset="utf-8">
   <title>Logistic Assets</title>
   <!-- Apply the BZ design before Angular boots, to avoid a flash of the classic colours.
-       Mirrors ThemeService: saved "app-theme" wins, then the old "app-theme-mode" key, then the
-       default (environment.defaultTheme = 'bz'). -->
+       Mirrors ThemeService: the Classic design is only reachable in local development
+       (environment.allowThemeToggle), so a saved choice counts only on localhost; there,
+       saved "app-theme" wins, then the old "app-theme-mode" key, then BZ. -->
   <script>
     (function () {
       var bz = true;
-      try {
+      var local = /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname);
+      if (local) try {
         var saved = localStorage.getItem('app-theme');
         if (saved === 'bz' || saved === 'classic') {
           bz = saved === 'bz';
