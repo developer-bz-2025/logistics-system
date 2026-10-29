@@ -15,7 +15,7 @@
 
     <div>
       <label class="text-sm font-medium">Status</label>
-      <select class="w-48 rounded-xl border px-3 py-2"
+      <select class="w-full md:w-48 rounded-xl border px-3 py-2"
               [(ngModel)]="status"
               (ngModelChange)="onFilterChange()">
         <option value="all">All</option>
@@ -28,7 +28,7 @@
 
   <!-- Table -->
   <div class="app-card overflow-x-auto">
-    <table class="min-w-full text-sm">
+    <table class="min-w-full text-sm stack-table">
       <thead class="text-left text-gray-500">
         <tr>
           <th class="py-2 pr-4">#</th>
@@ -52,9 +52,9 @@
         </tr>
 
         <tr *ngFor="let req of requests" class="border-t align-top">
-          <td class="py-2 pr-4 font-medium">{{ req.id }}</td>
+          <td class="py-2 pr-4 font-medium stack-hide">{{ req.id }}</td>
 
-          <td class="py-2 pr-4">
+          <td class="py-2 pr-4" data-label="Item">
             <div class="font-medium">
               <a 
                 (click)="navigateToAsset(req.item.id)" 
@@ -66,36 +66,36 @@
             <div class="text-xs text-gray-500" *ngIf="!req.item.sn">Item ID: {{ req.item.id }}</div>
           </td>
 
-          <td class="py-2 pr-4">
+          <td class="py-2 pr-4" data-label="From">
             <span class="font-medium">{{ req.current_location.name }}</span>
           </td>
 
-          <td class="py-2 pr-4">
+          <td class="py-2 pr-4" data-label="To">
             <span class="font-medium text-indigo-600">{{ req.requested_location.name }}</span>
           </td>
 
-          <td class="py-2 pr-4">
+          <td class="py-2 pr-4" data-label="Requester">
             <div class="font-medium">{{ req.requested_by.name }}</div>
             <div class="text-xs text-gray-500">{{ req.requested_by.email }}</div>
           </td>
 
-          <td class="py-2 pr-4">
+          <td class="py-2 pr-4" data-label="Requested">
             {{ formatDate(req.request_date) }}
           </td>
 
-          <td class="py-2 pr-4">
+          <td class="py-2 pr-4" data-label="Status">
             <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs" [ngClass]="statusClass(req.status)">
               {{ req.status }}
             </span>
           </td>
 
-          <td class="py-2 pr-4">
+          <td class="py-2 pr-4" data-label="Notes">
             <span class="text-gray-500" *ngIf="req.notes">{{ req.notes }}</span>
             <span class="text-gray-400" *ngIf="!req.notes">—</span>
           </td>
 
           <!-- Actions (only for pending requests) -->
-          <td class="py-2 pr-4" *ngIf="status === 'Pending' || status === 'all'">
+          <td class="py-2 pr-4" data-label="Actions" *ngIf="status === 'Pending' || status === 'all'">
             <div class="flex gap-2" *ngIf="req.status === 'Pending'">
               <button
                 class="rounded-xl bg-green-600 text-white px-3 py-1.5 hover:bg-green-700 disabled:opacity-60 text-xs"
@@ -117,7 +117,7 @@
     </table>
 
     <!-- Pagination -->
-    <div class="flex items-center justify-between mt-4 pt-4 border-t">
+    <div class="flex flex-wrap items-center justify-between gap-2 mt-4 pt-4 border-t">
       <div class="text-xs text-gray-500">
         Showing {{ requests.length }} of {{ total }} requests
       </div>

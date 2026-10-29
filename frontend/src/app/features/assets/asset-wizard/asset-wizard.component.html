@@ -1,25 +1,25 @@
-<div class="container mx-auto px-4 py-6">
+<div class="container mx-auto md:px-4 md:py-6">
   <div class="app-card max-w-4xl mx-auto">
-    <div class="p-6">
+    <div class="md:p-6">
       <h1 class="text-2xl font-bold text-gray-900 mb-6">Create New Asset</h1>
 
       <!-- Custom Step Header -->
-      <div class="flex items-center justify-between mb-8">
-        <div class="flex items-center space-x-4 flex-1">
+      <div class="flex items-center justify-between mb-2 md:mb-8">
+        <div class="flex items-center space-x-2 md:space-x-4 flex-1">
           <!-- Step 1: Classification -->
           <div class="flex items-center">
             <div [class]="currentStep >= 0 ? 'bg-teal-500 text-white' : 'bg-gray-200 text-gray-500'"
                  class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium">
               1
             </div>
-            <span class="ml-2 text-sm font-medium"
+            <span class="ml-2 text-sm font-medium hidden md:inline"
                   [class]="currentStep >= 0 ? 'text-teal-600' : 'text-gray-500'">
               Classification
             </span>
           </div>
 
           <!-- Separator -->
-          <div class="flex-1 h-px bg-gray-300 mx-4"></div>
+          <div class="flex-1 h-px bg-gray-300 mx-1 md:mx-4"></div>
 
           <!-- Step 2: General Info -->
           <div class="flex items-center">
@@ -27,14 +27,14 @@
                  class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium">
               2
             </div>
-            <span class="ml-2 text-sm font-medium"
+            <span class="ml-2 text-sm font-medium hidden md:inline"
                   [class]="currentStep >= 1 ? 'text-teal-600' : 'text-gray-500'">
               General Info
             </span>
           </div>
 
           <!-- Separator -->
-          <div class="flex-1 h-px bg-gray-300 mx-4"></div>
+          <div class="flex-1 h-px bg-gray-300 mx-1 md:mx-4"></div>
 
           <!-- Step 3: Assignment -->
           <div class="flex items-center">
@@ -42,14 +42,14 @@
                  class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium">
               3
             </div>
-            <span class="ml-2 text-sm font-medium"
+            <span class="ml-2 text-sm font-medium hidden md:inline"
                   [class]="currentStep >= 2 ? 'text-teal-600' : 'text-gray-500'">
               Assignment
             </span>
           </div>
 
           <!-- Separator -->
-          <div class="flex-1 h-px bg-gray-300 mx-4"></div>
+          <div class="flex-1 h-px bg-gray-300 mx-1 md:mx-4"></div>
 
           <!-- Step 4: Extra Info -->
           <div class="flex items-center">
@@ -57,14 +57,14 @@
                  class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium">
               4
             </div>
-            <span class="ml-2 text-sm font-medium"
+            <span class="ml-2 text-sm font-medium hidden md:inline"
                   [class]="currentStep >= 3 ? 'text-teal-600' : 'text-gray-500'">
               Extra Info
             </span>
           </div>
 
           <!-- Separator -->
-          <div class="flex-1 h-px bg-gray-300 mx-4"></div>
+          <div class="flex-1 h-px bg-gray-300 mx-1 md:mx-4"></div>
 
           <!-- Step 5: Review -->
           <div class="flex items-center">
@@ -72,13 +72,16 @@
                  class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium">
               5
             </div>
-            <span class="ml-2 text-sm font-medium"
+            <span class="ml-2 text-sm font-medium hidden md:inline"
                   [class]="currentStep >= 4 ? 'text-teal-600' : 'text-gray-500'">
               Review
             </span>
           </div>
         </div>
       </div>
+      <p class="md:hidden mb-6 text-sm font-medium text-gray-600">
+        Step {{ currentStep + 1 }} of {{ stepLabels.length }} · {{ stepLabels[currentStep] }}
+      </p>
 
       <!-- Step Content -->
       <div class="min-h-96">

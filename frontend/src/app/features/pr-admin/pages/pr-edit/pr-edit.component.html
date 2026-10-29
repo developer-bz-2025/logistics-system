@@ -1,7 +1,7 @@
-<div class="w-[100%] max-w-[1800px] mx-auto px-6 py-8" *ngIf="!isLoading; else loadingTpl">
-  <div class="w-full max-w-12xl px-8 md:px-6 py-8 app-card">
+<div class="w-[100%] max-w-[1800px] mx-auto md:px-6 md:py-8" *ngIf="!isLoading; else loadingTpl">
+  <div class="w-full max-w-12xl px-4 md:px-6 py-5 md:py-8 app-card">
     <!-- Header -->
-    <div class="flex items-start justify-between gap-4 mb-6">
+    <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
       <div>
         <h1 class="text-2xl md:text-3xl font-semibold tracking-tight">Edit Purchase Request</h1>
         <p class="text-sm text-gray-500 mt-1">
@@ -18,7 +18,7 @@
     </div>
 
     <!-- Main grid -->
-    <div class="w-[100%] max-w-[1800px] mx-auto px-4 md:px-16 py-6">
+    <div class="w-[100%] max-w-[1800px] mx-auto md:px-16 py-6">
       <div class="form-grid grid-cols-1 lg:grid-cols-12 gap-8">
         <!-- Left -->
         <section class="lg:col-span-8 space-y-6">
@@ -125,13 +125,13 @@
             
 
             <!-- Items -->
-            <div class="rounded-2xl p-6 mt-6 mb-8 app-card" formArrayName="items">
-              <div class="flex items-center justify-between mb-5 m-10">
+            <div class="rounded-2xl p-4 md:p-6 mt-6 mb-8 app-card" formArrayName="items">
+              <div class="flex flex-wrap items-center justify-between gap-3 mb-5 md:m-10 md:mb-5">
                 <h2 class="text-lg font-semibold">Items</h2>
                 <button type="button" (click)="addItemRow()" class="btn-primary">＋ Add Item</button>
               </div>
 
-              <div class="space-y-5 m-10">
+              <div class="space-y-5 md:m-10">
                 <div *ngFor="let _ of itemsFA.controls; let i = index" [formGroupName]="i"
                   class="rounded-2xl border border-emerald-200/60 bg-emerald-300/20 p-5">
                   <div class="text-xs text-gray-400 mt-1">
@@ -205,7 +205,7 @@
                   <!-- NEW ROW (editable) -->
                   <ng-template #newRowTpl>
                     <!-- Row 1: category / sub / item -->
-                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 m-10">
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 md:m-10">
                       <div class="col-span-12 md:col-span-4">
                         <label class="label">Category<span class="req">*</span></label>
                         <select class="input input-lg" formControlName="category_id">
@@ -232,7 +232,7 @@
                     </div>
 
                     <!-- Row 2: supplier / price / remove -->
-                    <div class="grid grid-cols-12 gap-4 mt-3 m-10">
+                    <div class="grid grid-cols-12 gap-4 mt-3 md:m-10 md:mt-3">
                       <div class="col-span-12 md:col-span-4">
                         <label class="label">Supplier<span class="req">*</span></label>
                         <div class="relative">

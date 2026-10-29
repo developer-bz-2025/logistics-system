@@ -12,6 +12,7 @@ import * as TablerIcons from 'angular-tabler-icons/icons';
 
 import { HTTP_INTERCEPTORS } from '@angular/common/http';
 import { AuthInterceptor } from './core/interceptors/jwt.interceptor';
+import { MAT_DIALOG_DEFAULT_OPTIONS, MatDialogConfig } from '@angular/material/dialog';
 
 //Import all material modules
 import { MaterialModule } from './material.module';
@@ -60,6 +61,11 @@ import { BzUserMenuComponent } from './layouts/full/bz-user-menu/bz-user-menu.co
       provide: HTTP_INTERCEPTORS,
       useClass: AuthInterceptor,
       multi: true
+    },
+    // Fixed-width dialogs (500px, 600px) may use almost the whole phone screen instead of 80vw
+    {
+      provide: MAT_DIALOG_DEFAULT_OPTIONS,
+      useValue: { ...new MatDialogConfig(), maxWidth: 'calc(100vw - 24px)' }
     }
   ],
   exports: [TablerIconsModule],

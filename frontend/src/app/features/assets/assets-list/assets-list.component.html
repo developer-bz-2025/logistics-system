@@ -1,8 +1,8 @@
 <!-- src/app/features/assets/assets-list/assets-list.component.html -->
-<div class="p-4 md:p-6">
+<div class="md:p-6">
   <div class="app-card mb-6">
     <!-- Page Header -->
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
       <div>
         <h2 class="text-2xl font-semibold">
           {{ currentCategoryId ? (currentCategoryName === 'Loading...' ? 'Loading...' : currentCategoryName + ' Assets') : 'All Assets' }}
@@ -11,17 +11,17 @@
           Manage and track {{ currentCategoryId ? (currentCategoryName ? currentCategoryName.toLowerCase() : 'category') : 'asset' }} inventory
         </p>
       </div>
-      <div class="flex gap-3">
-        <!-- Disabled buttons ignore hover, so the tooltip sits on the wrapper -->
-        <span [title]="importEnabled ? '' : 'Excel import is temporarily disabled'">
-          <button mat-raised-button color="default" [disabled]="!importEnabled" (click)="onPick(fileInput)">
+      <div class="flex flex-wrap gap-3">
+        <!-- Import Excel: hidden in production (environment.enableExcelImport) -->
+        <ng-container *ngIf="importEnabled">
+          <button mat-raised-button color="default" (click)="onPick(fileInput)">
             <mat-icon class="mr-1">upload</mat-icon>
             Import Excel
           </button>
-        </span>
-        <input #fileInput type="file" accept=".xlsx,.xls" (change)="onFileSelected($event)" hidden>
+          <input #fileInput type="file" accept=".xlsx,.xls" (change)="onFileSelected($event)" hidden>
+        </ng-container>
 
-        <div *ngIf="isUploading" style="margin-top:8px;width:320px;height:10px;background:#eee;border-radius:6px;overflow:hidden;">
+        <div *ngIf="isUploading" style="margin-top:8px;width:320px;max-width:100%;height:10px;background:#eee;border-radius:6px;overflow:hidden;">
           <div [style.width.%]="progress" class="bz-progress-fill" style="height:100%;background:var(--app-primary, #0D9185);"></div>
         </div>
 
@@ -155,41 +155,39 @@
       </div>
 
       <!-- Assets table -->
-      <table *ngIf="!isLoadingAssets && data.length > 0" mat-table [dataSource]="data" matSort (matSortChange)="sortChange($event)" class="w-full">
+      <table *ngIf="!isLoadingAssets && data.length > 0" mat-table [dataSource]="data" matSort (matSortChange)="sortChange($event)" class="w-full stack-table">
         <ng-container matColumnDef="id">
           <th mat-header-cell *matHeaderCellDef mat-sort-header="id">ID</th>
-          <td mat-cell *matCellDef="let r">{{ r.id }}</td>
+          <td mat-cell *matCellDef="let r" class="stack-hide">{{ r.id }}</td>
         </ng-container>
 
         <ng-container matColumnDef="sn">
           <th mat-header-cell *matHeaderCellDef mat-sort-header="sn">Serial Number</th>
-          <td mat-cell *matCellDef="let r">{{ r.sn || '—' }}</td>
+          <td mat-cell *matCellDef="let r" data-label="Serial Number">{{ r.sn || '—' }}</td>
         </ng-container>
 
         <ng-container matColumnDef="fixed_item">
           <th mat-header-cell *matHeaderCellDef mat-sort-header="fixed_item_name">Item</th>
-          <td mat-cell *matCellDef="let r">{{ r.fixed_item_name }}</td>
+          <td mat-cell *matCellDef="let r" data-label="Item">{{ r.fixed_item_name }}</td>
         </ng-container>
 
         <ng-container matColumnDef="acquisition_date">
           <th mat-header-cell *matHeaderCellDef mat-sort-header="acquisition_date">Acquisition Date</th>
-          <td mat-cell *matCellDef="let r">{{ r.acquisition_date | date:'yyyy-MM-dd' }}</td>
+          <td mat-cell *matCellDef="let r" data-label="Acquired">{{ r.acquisition_date | date:'yyyy-MM-dd' }}</td>
         </ng-container>
 
         <!-- Dynamic attribute columns -->
         <ng-container *ngFor="let attr of dynamicAttributes" [matColumnDef]="attr.field_name">
           <th mat-header-cell *matHeaderCellDef>{{ attr.name }}</th>
-          <td mat-cell *matCellDef="let r">
-            <span *ngIf="r.attributes && r.attributes[attr.field_name]">
-              {{ r.attributes[attr.field_name] }}
-            </span>
-            <span *ngIf="!r.attributes || !r.attributes[attr.field_name]">—</span>
+          <td mat-cell *matCellDef="let r" [attr.data-label]="attr.name">
+            <!-- The list API keys attributes by their name (e.g. "Size/Capacity"), not field_name -->
+            {{ r.attributes?.[attr.name] || '—' }}
           </td>
         </ng-container>
 
         <ng-container matColumnDef="status">
           <th mat-header-cell *matHeaderCellDef mat-sort-header="status_name">Status</th>
-          <td mat-cell *matCellDef="let r">
+          <td mat-cell *matCellDef="let r" data-label="Status">
             <span *ngIf="r.status_name"
                   class="px-2 py-1 rounded text-xs font-medium"
                   [ngClass]="{
@@ -207,7 +205,7 @@
 
         <ng-container matColumnDef="location">
           <th mat-header-cell *matHeaderCellDef mat-sort-header="location_name">Location</th>
-          <td mat-cell *matCellDef="let r">
+          <td mat-cell *matCellDef="let r" data-label="Location">
             <span *ngIf="r.location_name"
                   class="px-2 py-1 rounded text-xs font-medium"
                   [ngClass]="{
@@ -228,12 +226,12 @@
 
         <ng-container matColumnDef="brand">
           <th mat-header-cell *matHeaderCellDef mat-sort-header="brand_name">Brand</th>
-          <td mat-cell *matCellDef="let r">{{ r.brand_name || '—' }}</td>
+          <td mat-cell *matCellDef="let r" data-label="Brand">{{ r.brand_name || '—' }}</td>
         </ng-container>
 
         <ng-container matColumnDef="donor">
           <th mat-header-cell *matHeaderCellDef>Donor</th>
-          <td mat-cell *matCellDef="let r" class="align-top py-3">
+          <td mat-cell *matCellDef="let r" class="align-top py-3" data-label="Donor">
             <ng-container *ngIf="r.donor_name || r.budget_donor; else noDonor">
               <div class="font-medium">{{ r.donor_name || r.budget_donor }}</div>
               <div *ngIf="r.donor_policies?.length" class="mt-1 space-y-1 max-w-xs">
@@ -249,7 +247,7 @@
 
         <ng-container matColumnDef="owned_by">
           <th mat-header-cell *matHeaderCellDef mat-sort-header="owned_by">Owned By</th>
-          <td mat-cell *matCellDef="let r">{{ r.owned_by_label || (r.owned_by === 'LANDLORD' ? 'Landlord' : 'B&Z') }}</td>
+          <td mat-cell *matCellDef="let r" data-label="Owned By">{{ r.owned_by_label || (r.owned_by === 'LANDLORD' ? 'Landlord' : 'B&Z') }}</td>
         </ng-container>
 
         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
@@ -259,8 +257,9 @@
       </table>
     </div>
 
-    <mat-paginator 
-      [length]="total" 
+    <mat-paginator
+      [length]="total"
+      [pageIndex]="page - 1"
       [pageSize]="form.value.pageSize || 10" 
       [pageSizeOptions]="[10,25,50,100]" 
       (page)="pageChange($event)"

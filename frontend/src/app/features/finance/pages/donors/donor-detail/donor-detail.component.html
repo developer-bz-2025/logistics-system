@@ -1,4 +1,4 @@
-<div class="container mx-auto px-4 py-6">
+<div class="container mx-auto md:px-4 md:py-6">
   <div class="mb-4">
     <button mat-button (click)="backToList()">
       <mat-icon>arrow_back</mat-icon>
@@ -12,8 +12,8 @@
 
   <div *ngIf="!loading && donor" class="space-y-6">
     <div class="app-card">
-      <div class="p-6">
-        <div class="flex justify-between items-start mb-6">
+      <div class="md:p-6">
+        <div class="flex flex-wrap justify-between items-start gap-3 mb-6">
           <div>
             <h1 class="text-2xl font-bold text-gray-900">{{ donor.donor }}</h1>
             <p class="text-gray-500 mt-1">Donor details</p>
@@ -54,7 +54,7 @@
     </div>
 
     <div class="app-card" *ngIf="donor.policies?.length">
-      <div class="p-6">
+      <div class="md:p-6">
         <h2 class="text-xl font-semibold text-gray-900 mb-4">Policies</h2>
         <div class="space-y-4">
           <div *ngFor="let policy of donor.policies; let i = index">
@@ -66,8 +66,8 @@
     </div>
 
     <div class="app-card">
-      <div class="p-6">
-        <div class="flex justify-between items-center mb-4">
+      <div class="md:p-6">
+        <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
           <h2 class="text-xl font-semibold text-gray-900">Documents</h2>
           <button mat-raised-button color="primary" (click)="fileInput.click()" [disabled]="uploading">
             <mat-icon>upload</mat-icon>
@@ -85,7 +85,7 @@
           No documents uploaded yet.
         </div>
 
-        <table *ngIf="documents.length > 0" class="w-full">
+        <table *ngIf="documents.length > 0" class="w-full stack-table">
           <thead>
             <tr class="text-sm text-gray-500 border-b">
               <th class="py-3 text-left">File Name</th>
@@ -96,14 +96,14 @@
           </thead>
           <tbody class="divide-y">
             <tr *ngFor="let doc of documents" class="hover:bg-gray-50">
-              <td class="py-4">
+              <td class="py-4" data-label="File">
                 <a [href]="doc.file_url" target="_blank" rel="noopener" class="text-blue-600 hover:underline">
                   {{ doc.original_name }}
                 </a>
               </td>
-              <td class="py-4">{{ doc.uploader?.name || '—' }}</td>
-              <td class="py-4">{{ doc.created_at ? (doc.created_at | date:'short') : '—' }}</td>
-              <td class="py-4">
+              <td class="py-4" data-label="Uploaded By">{{ doc.uploader?.name || '—' }}</td>
+              <td class="py-4" data-label="Date">{{ doc.created_at ? (doc.created_at | date:'short') : '—' }}</td>
+              <td class="py-4" data-label="Actions">
                 <button mat-icon-button color="warn" (click)="deleteDocument(doc)" matTooltip="Delete">
                   <mat-icon>delete</mat-icon>
                 </button>

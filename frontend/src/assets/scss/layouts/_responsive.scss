@@ -1,0 +1,103 @@
+/*
+ * Phone layout shared by both designs (BZ-only tweaks live in themecolors/_theme_bz.scss).
+ *
+ * .stack-table: a list table that shows one stacked card per row on phones. Give each cell a
+ * data-label (its caption on phones); cells without one span the full width. Add .stack-hide
+ * to a cell or header to drop it on phones.
+ */
+
+$phone-max: 767.98px;
+
+@media (max-width: $phone-max) {
+  html table.stack-table {
+    display: block;
+    width: 100%;
+    min-width: 0;
+
+    thead,
+    tr.mat-mdc-header-row {
+      display: none;
+    }
+
+    tbody,
+    tr,
+    td {
+      display: block !important;
+      width: 100%;
+    }
+
+    // !important: the Material theme fixes rows at 52px with `.mat-mdc-table .mdc-data-table__row`
+    tr {
+      height: auto !important;
+      padding: 0.7rem 0;
+      border-top: 0;
+      border-bottom: 1px solid var(--app-line, #e5eaef);
+
+      &:last-child {
+        border-bottom: 0;
+      }
+    }
+
+    td {
+      position: relative;
+      min-height: 1.6rem;
+      padding: 0.25rem 0 !important;
+      border: 0 !important;
+      text-align: left !important;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    td[data-label] {
+      padding-left: 40% !important;
+
+      &::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 0;
+        top: 0.3rem;
+        width: calc(40% - 0.75rem);
+        font-size: 0.72rem;
+        font-weight: 600;
+        line-height: 1.4;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--app-ink-soft, #6b7280);
+      }
+    }
+
+    .stack-hide {
+      display: none;
+    }
+  }
+
+  // Paginator: range and page-size picker wrap onto their own centred lines
+  .mat-mdc-paginator-container {
+    justify-content: center !important;
+    padding: 0 !important;
+  }
+
+  .mat-mdc-paginator-page-size {
+    margin-right: 0 !important;
+  }
+
+  .mat-mdc-paginator-range-actions {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  // iOS zooms the page into any focused field under 16px
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+// Hover lifts and tints stick after a tap on touch screens
+@media (hover: none) {
+  .cursor-pointer.rounded-2xl:hover,
+  .hover\:shadow-md:hover {
+    transform: none !important;
+  }
+}

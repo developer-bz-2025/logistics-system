@@ -1,7 +1,7 @@
-<div class="container mx-auto px-4 py-6">
+<div class="container mx-auto md:px-4 md:py-6">
   <div class="app-card">
-    <div class="p-6">
-      <div class="flex justify-between items-center mb-6">
+    <div class="md:p-6">
+      <div class="flex flex-wrap justify-between items-center gap-3 mb-6">
         <h1 class="text-2xl font-bold text-gray-900">Donors Management</h1>
         <button mat-raised-button color="primary" (click)="openCreateDialog()">
           <mat-icon>add</mat-icon>
@@ -18,7 +18,7 @@
         <p class="text-gray-500 mt-4">No donors found. Click "Add Donor" to create one.</p>
       </div>
 
-      <table *ngIf="!loading && donors.length > 0" class="w-full">
+      <table *ngIf="!loading && donors.length > 0" class="w-full stack-table">
         <thead>
           <tr class="text-sm text-gray-500 border-b">
             <th class="py-3 text-left">Account No</th>
@@ -32,13 +32,13 @@
         </thead>
         <tbody class="divide-y">
           <tr *ngFor="let donor of donors" class="hover:bg-gray-50">
-            <td class="py-4">{{ donor.account_no || '—' }}</td>
-            <td class="py-4 font-medium">{{ donor.donor }}</td>
-            <td class="py-4">{{ getDepartmentLabel(donor.department_name) }}</td>
-            <td class="py-4">{{ donor.finance_officer?.name || '—' }}</td>
-            <td class="py-4">{{ getLocationsDisplay(donor.locations) }}</td>
-            <td class="py-4">{{ donor.end_date ? (donor.end_date | date:'shortDate') : '—' }}</td>
-            <td class="py-4">
+            <td class="py-4" data-label="Account No">{{ donor.account_no || '—' }}</td>
+            <td class="py-4 font-medium" data-label="Donor">{{ donor.donor }}</td>
+            <td class="py-4" data-label="Department">{{ getDepartmentLabel(donor.department_name) }}</td>
+            <td class="py-4" data-label="Finance Officer">{{ donor.finance_officer?.name || '—' }}</td>
+            <td class="py-4" data-label="Areas">{{ getLocationsDisplay(donor.locations) }}</td>
+            <td class="py-4" data-label="End Date">{{ donor.end_date ? (donor.end_date | date:'shortDate') : '—' }}</td>
+            <td class="py-4" data-label="Actions">
               <div class="flex gap-2">
                 <button mat-icon-button (click)="viewDonor(donor)" matTooltip="View details">
                   <mat-icon>visibility</mat-icon>

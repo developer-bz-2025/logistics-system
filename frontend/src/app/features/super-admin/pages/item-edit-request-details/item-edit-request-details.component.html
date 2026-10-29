@@ -5,7 +5,7 @@
   <div *ngIf="error" class="rounded-xl bg-rose-50 text-rose-700 px-3 py-2">{{ error }}</div>
 
   <ng-container *ngIf="!loading && detail as d">
-    <div class="flex items-center justify-between">
+    <div class="flex flex-wrap items-center justify-between gap-2">
       <h1 class="text-xl font-semibold">Asset Edit Request #{{ d.id }}</h1>
       <span class="inline-flex items-center rounded-full px-3 py-1 text-xs" [ngClass]="statusClass()">
         {{ d.status }}
@@ -36,7 +36,7 @@
       </div>
     </div>
 
-    <div class="app-card" *ngIf="d.field_diffs?.length">
+    <div class="app-card overflow-x-auto" *ngIf="d.field_diffs?.length">
       <h2 class="font-medium mb-3">Field Changes</h2>
       <table class="min-w-full text-sm">
         <thead class="text-left text-gray-500">
@@ -58,7 +58,7 @@
       </table>
     </div>
 
-    <div class="app-card" *ngIf="d.attribute_diffs?.length">
+    <div class="app-card overflow-x-auto" *ngIf="d.attribute_diffs?.length">
       <h2 class="font-medium mb-3">Attribute Changes</h2>
       <table class="min-w-full text-sm">
         <thead class="text-left text-gray-500">

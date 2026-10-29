@@ -1,7 +1,7 @@
-<div class="p-4 md:p-6 min-h-screen bg-gray-50">
+<div class="md:p-6 min-h-screen bg-gray-50">
   <div class="app-card">
     <!-- Header -->
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex flex-wrap justify-between items-center gap-3 mb-6">
       <div class="flex items-center gap-4">
         <button
           *ngIf="isPrAdmin"
@@ -115,7 +115,7 @@
     </div>
 
     <!-- Pagination -->
-    <div *ngIf="!loading && notifications.length > 0" class="flex items-center justify-between mt-6 pt-4 border-t">
+    <div *ngIf="!loading && notifications.length > 0" class="flex flex-wrap items-center justify-between gap-3 mt-6 pt-4 border-t">
       <div class="text-sm text-gray-500">
         Showing {{ notifications.length }} of {{ total }} notifications
       </div>

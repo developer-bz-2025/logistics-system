@@ -1,8 +1,8 @@
 <div class="app-card">
-  <div class="flex items-center justify-between mb-4">
+  <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
     <h2 class="text-xl font-semibold">Purchase Requests</h2>
-    <div class="relative">
-      <input class="border rounded-xl pl-9 pr-3 py-2 w-72" placeholder="Search PRs…" [(ngModel)]="q"
+    <div class="relative order-last w-full sm:order-none sm:w-auto">
+      <input class="border rounded-xl pl-9 pr-3 py-2 w-full sm:w-72" placeholder="Search PRs…" [(ngModel)]="q"
         (keyup.enter)="searchEnter()" />
       <svg class="w-4 h-4 absolute left-3 top-2.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <circle cx="11" cy="11" r="7" stroke-width="2"></circle>
@@ -19,7 +19,7 @@
   <div *ngIf="loading$ | async" class="text-sm text-gray-500 py-8">Loading…</div>
 
   <div *ngIf="!(loading$ | async)">
-    <table class="w-full">
+    <table class="w-full stack-table">
       <thead>
         <tr class="text-sm text-gray-500 border-b">
           <th class="py-3 text-left w-12">#</th>
@@ -34,28 +34,28 @@
       </thead>
       <tbody class="divide-y">
         <tr *ngFor="let r of (rows$ | async); let i = index" class="align-top">
-          <td class="py-4"> {{ ((((currentPage$ | async) || 1) - 1) * per_page) + i + 1 }}
+          <td class="py-4 stack-hide"> {{ ((((currentPage$ | async) || 1) - 1) * per_page) + i + 1 }}
           </td>
-          <td class="py-4">
+          <td class="py-4" data-label="PR Code">
             <div class="font-semibold text-gray-800">{{ r.pr_code }}</div>
           </td>
-          <td class="py-4 text-gray-700">{{ r.pr_date.slice(0, 10) }}</td>
-          <td class="py-4">
+          <td class="py-4 text-gray-700" data-label="PR Date">{{ r.pr_date.slice(0, 10) }}</td>
+          <td class="py-4" data-label="Total Price">
             <div class="text-gray-800">
               {{ r.total_price}} $
             </div>
           </td>
-          <td class="py-4">
+          <td class="py-4" data-label="Location">
             <div class="text-gray-800">
-              {{ r.location.name}} 
+              {{ r.location.name}}
             </div>
           </td>
-          <td class="py-4">
+          <td class="py-4" data-label="Items">
             <button class="text-emerald-600 hover:underline" (click)="openItemsModal(r)">
               View Items
             </button>
           </td>
-          <td class="py-4">
+          <td class="py-4" data-label="PR Document">
             <!-- <a *ngIf="docUrl(r) as url" class="text-emerald-600 hover:underline" [href]="url" target="_blank">
               View Document
             </a> -->
@@ -72,7 +72,7 @@
             </button> -->
             <span *ngIf="!docUrl(r)" class="text-gray-400">—</span>
           </td>
-          <td class="py-4">
+          <td class="py-4" data-label="Actions">
             <button class="p-2 rounded hover:bg-green-100" title="Open" [routerLink]="['/pr', r.id, 'edit']">
               <svg style="width:20px; height:20px" fill="#059669" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="64px" height="64px" viewBox="0 0 494.936 494.936" xml:space="preserve" stroke="#059669" stroke-width="0.00494936"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g> <g> <path d="M389.844,182.85c-6.743,0-12.21,5.467-12.21,12.21v222.968c0,23.562-19.174,42.735-42.736,42.735H67.157 c-23.562,0-42.736-19.174-42.736-42.735V150.285c0-23.562,19.174-42.735,42.736-42.735h267.741c6.743,0,12.21-5.467,12.21-12.21 s-5.467-12.21-12.21-12.21H67.157C30.126,83.13,0,113.255,0,150.285v267.743c0,37.029,30.126,67.155,67.157,67.155h267.741 c37.03,0,67.156-30.126,67.156-67.155V195.061C402.054,188.318,396.587,182.85,389.844,182.85z"></path> <path d="M483.876,20.791c-14.72-14.72-38.669-14.714-53.377,0L221.352,229.944c-0.28,0.28-3.434,3.559-4.251,5.396l-28.963,65.069 c-2.057,4.619-1.056,10.027,2.521,13.6c2.337,2.336,5.461,3.576,8.639,3.576c1.675,0,3.362-0.346,4.96-1.057l65.07-28.963 c1.83-0.815,5.114-3.97,5.396-4.25L483.876,74.169c7.131-7.131,11.06-16.61,11.06-26.692 C494.936,37.396,491.007,27.915,483.876,20.791z M466.61,56.897L257.457,266.05c-0.035,0.036-0.055,0.078-0.089,0.107 l-33.989,15.131L238.51,247.3c0.03-0.036,0.071-0.055,0.107-0.09L447.765,38.058c5.038-5.039,13.819-5.033,18.846,0.005 c2.518,2.51,3.905,5.855,3.905,9.414C470.516,51.036,469.127,54.38,466.61,56.897z"></path> </g> </g> </g></svg>
               <!-- <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -85,7 +85,7 @@
     </table>
 
     <!-- Footer / Pagination -->
-    <div class="mt-4 flex items-center justify-between">
+    <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
       <ng-container *ngIf="(currentPage$ | async) as cp">
         <ng-container *ngIf="(total$ | async) as total">
           <div class="text-sm text-gray-500">
@@ -122,7 +122,7 @@
 <div *ngIf="itemsModalOpen$ | async" class="fixed inset-0 z-50">
   <div class="absolute inset-0 bg-black/40" (click)="closeItemsModal()"></div>
 
-  <div class="absolute inset-x-0 top-20 mx-auto max-w-3xl app-card">
+  <div class="absolute inset-x-3 top-4 sm:inset-x-0 sm:top-20 mx-auto max-w-3xl max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-6rem)] overflow-y-auto app-card">
     <div class="flex items-start justify-between mb-3">
       <div>
         <div class="text-lg font-semibold">PR Items</div>
@@ -135,28 +135,30 @@
 
     <ng-container *ngIf="!(modalLoading$ | async)">
       <ng-container *ngIf="(modalItems$ | async) as items">
-        <table class="w-full" *ngIf="items.length; else noItems">
-          <thead>
-            <tr class="text-sm text-gray-500 border-b">
-              <th class="py-2 text-left w-12">#</th>
-              <th class="py-2 text-left">Item</th>
-              <th class="py-2 text-left">Supplier</th>
-              <th class="py-2 text-right">Qty</th>
-              <th class="py-2 text-right">Unit Cost</th>
-              <th class="py-2 text-right">Total</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y">
-            <tr *ngFor="let it of items; let i = index">
-              <td class="py-3">{{ i + 1 }}</td>
-              <td class="py-3">{{ it.fixed_item || it.fixed_item_id }}</td>
-              <td class="py-3">{{ it.supplier_name || it.supplier_id }}</td>
-              <td class="py-3 text-right">{{ it.qty }}</td>
-              <td class="py-3 text-right">{{ it.unit_cost | number:'1.2-2' }} {{ it.currency }}</td>
-              <td class="py-3 text-right">{{ (it.qty * it.unit_cost) | number:'1.2-2' }} {{ it.currency }}</td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="overflow-x-auto" *ngIf="items.length; else noItems">
+          <table class="w-full whitespace-nowrap">
+            <thead>
+              <tr class="text-sm text-gray-500 border-b">
+                <th class="py-2 text-left w-12">#</th>
+                <th class="py-2 text-left">Item</th>
+                <th class="py-2 text-left">Supplier</th>
+                <th class="py-2 text-right">Qty</th>
+                <th class="py-2 text-right">Unit Cost</th>
+                <th class="py-2 text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y">
+              <tr *ngFor="let it of items; let i = index">
+                <td class="py-3">{{ i + 1 }}</td>
+                <td class="py-3">{{ it.fixed_item || it.fixed_item_id }}</td>
+                <td class="py-3">{{ it.supplier_name || it.supplier_id }}</td>
+                <td class="py-3 text-right">{{ it.qty }}</td>
+                <td class="py-3 text-right">{{ it.unit_cost | number:'1.2-2' }} {{ it.currency }}</td>
+                <td class="py-3 text-right">{{ (it.qty * it.unit_cost) | number:'1.2-2' }} {{ it.currency }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
         <ng-template #noItems>
           <div class="text-sm text-gray-500 py-6">No items for this PR.</div>

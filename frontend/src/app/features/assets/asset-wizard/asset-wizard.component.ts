@@ -25,6 +25,8 @@ export class AssetWizardComponent implements OnInit, OnDestroy {
 
   form: FormGroup;
   currentStep = 0;
+  // Shown under the step circles on small screens, where the per-step labels are hidden
+  readonly stepLabels = ['Classification', 'General Info', 'Assignment', 'Extra Info', 'Review'];
   isLinear = true;
   assetPhoto: File | null = null;
   photoPreviewUrl: string | null = null;

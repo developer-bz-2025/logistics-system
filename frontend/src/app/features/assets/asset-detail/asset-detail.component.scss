@@ -942,8 +942,9 @@
 }
 
 @media (max-width: 768px) {
+  // The page wrapper already pads the sides on phones
   .asset-detail-container {
-    padding: 16px;
+    padding: 0;
   }
 
   .header-section {

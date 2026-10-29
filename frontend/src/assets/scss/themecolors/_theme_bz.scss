@@ -1441,5 +1441,19 @@ html.theme-bz {
     .bz-topbar__title h1 {
       font-size: 1.2rem;
     }
+
+    // The app title above the page title costs a line of height on phones
+    .bz-topbar__kicker {
+      display: none;
+    }
+
+    .pageWrapper {
+      padding: 1rem 0.75rem 2rem;
+    }
+
+    // iOS Safari repaints a fixed background on every scroll frame
+    body {
+      background-attachment: scroll;
+    }
   }
 }

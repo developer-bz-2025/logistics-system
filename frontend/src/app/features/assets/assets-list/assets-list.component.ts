@@ -9,6 +9,7 @@ import { Category, SubCategory, FixedItem, AssetListItem, PagedResult } from 'sr
 import { ImportExcelService } from 'src/app/core/services/import-excel.service';
 import { HttpEventType } from '@angular/common/http';
 import { AuthService } from 'src/app/core/services/auth.service';
+import { environment } from 'src/environments/environment';
 
 
 @Component({
@@ -30,6 +31,7 @@ export class AssetsListComponent  implements OnInit, OnDestroy {
 
   data: AssetListItem[] = [];
   total = 0;
+  page = 1;
   currentCategoryId: number | null = null;
   currentCategoryName: string = '';
   isLoadingCategoryName: boolean = false;
@@ -79,8 +81,8 @@ export class AssetsListComponent  implements OnInit, OnDestroy {
 
   canCreateAsset = false;
 
-  /** Excel import is switched off for now; set to true to enable the Import Excel button again. */
-  readonly importEnabled = false;
+  /** Import Excel is shown only where environment.enableExcelImport is true (local development for now). */
+  readonly importEnabled = environment.enableExcelImport === true;
 
   constructor(
     private fb: FormBuilder,
@@ -171,6 +173,8 @@ export class AssetsListComponent  implements OnInit, OnDestroy {
         dir: (qp.get('dir') as 'asc' | 'desc') ?? 'desc',
       })),
       tap(qp => {
+        this.page = qp.page;
+
         // When category changes from sidebar, reset filters and load related data
         if (qp.category_id !== this.currentCategoryId) {
           this.currentCategoryId = qp.category_id;
@@ -273,6 +277,14 @@ export class AssetsListComponent  implements OnInit, OnDestroy {
           sort: this.sortState.active,
           dir: (this.sortState.direction || 'desc') as 'asc'|'desc'
         };
+        // The API filters attributes as attr_id[<attribute name>]=<option id>
+        this.dynamicAttributes.forEach((attr: any) => {
+          const optionId = params[attr.field_name];
+          delete params[attr.field_name];
+          if (optionId) {
+            params[`attr_id[${attr.name}]`] = optionId;
+          }
+        });
         // Remove null/undefined values
         Object.keys(params).forEach((key: string) => {
           if (params[key] === null || params[key] === undefined || params[key] === '') {
