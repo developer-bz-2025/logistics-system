@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Basmeh &amp; Zeitooneh example</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="components/bundle.css">
+<script src="vendor/react.production.min.js"></script>
+<script src="vendor/react-dom.production.min.js"></script>
+<script src="components/bundle.js"></script>
+<style>
+  .hero{background:var(--surface-brand);color:var(--on-brand);padding:var(--space-12)}
+  .hero .lead{color:var(--on-brand-soft)}
+  main{max-width:var(--container);margin:0 auto;padding:var(--space-12) var(--space-6)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+  var B = window.BZ, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h(React.Fragment, null,
+    h('header', { className: 'hero' },
+      h(B.Logo, { layout: 'horizontal', on: 'dark', height: 56 }),
+      h('h1', { className: 'display', style: { margin: '48px 0 8px' } }, 'Brand Guidelines'),
+      h('p', { className: 'lead' }, 'Your quick guide to our visual identity'),
+      h(B.Button, { variant: 'inverse' }, 'Download our logos')),
+    h('main', null,
+      h(B.SectionRail, { label: 'Introduction to B&Z' },
+        h('h2', null, 'Vision'), h('p', null, 'A Constructive Society that Lives with Dignity.'),
+        h('h2', null, 'Mission'), h('p', null, 'A refugee-led relief and development organization.')),
+      h(B.Note, { title: 'Logo Placement:' }, 'Our logo is always placed on the left side of any layout.'),
+      h('div', { className: 'bz-row' },
+        h(B.TextField, { label: 'Email address', name: 'email', type: 'email', placeholder: 'you@example.org' }),
+        h(B.Button, { variant: 'primary' }, 'Subscribe')))));
+</script>
+</body>
+</html>

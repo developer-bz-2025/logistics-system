@@ -1,0 +1,100 @@
+// Angular Material in BZ colours and fonts, scoped to html.theme-bz.
+// This project is on Material 15 (M2 theming), which has no --mat-sys-* tokens, so the
+// equivalent of the reference's token overrides is a second colour + typography theme.
+
+$bz-mat-primary: (
+  100: #f6dcdf,
+  500: #6f1921, // burgundy
+  700: #531419, // burgundy-dark
+  contrast: (
+    100: #3b0a0f,
+    500: #ffffff,
+    700: #ffffff,
+  ),
+);
+
+$bz-mat-accent: (
+  100: #c4ecc0,
+  500: #2e602f, // olive
+  700: #234a24,
+  contrast: (
+    100: #002106,
+    500: #ffffff,
+    700: #ffffff,
+  ),
+);
+
+$bz-mat-warn: (
+  100: #fbdad6,
+  500: #a52828,
+  700: #8a2020,
+  contrast: (
+    100: #410002,
+    500: #ffffff,
+    700: #ffffff,
+  ),
+);
+
+$bz-font-body: '"Source Sans 3", "Helvetica Neue", Arial, sans-serif';
+$bz-font-display: '"Outfit", "Helvetica Neue", Arial, sans-serif';
+
+$bz-typography: mat.define-typography-config(
+  $font-family: $bz-font-body,
+  $headline-5: mat.define-typography-level(24px, 30px, 700, $bz-font-display),
+  $headline-6: mat.define-typography-level(18px, 26px, 600, $bz-font-display),
+  $subtitle-1: mat.define-typography-level(18px, 26px, 600, $bz-font-display),
+  $subtitle-2: mat.define-typography-level(14px, 20px, 500),
+  $button: mat.define-typography-level(14.5px, 20px, 600),
+  $body-1: mat.define-typography-level(15px, 22px, 400),
+  $body-2: mat.define-typography-level(15.5px, 22px, 400),
+);
+
+$bz-theme: mat.define-light-theme(
+  (
+    color: (
+      primary: mat.define-palette($bz-mat-primary, 500),
+      accent: mat.define-palette($bz-mat-accent, 500),
+      warn: mat.define-palette($bz-mat-warn, 500),
+    ),
+    typography: $bz-typography,
+  )
+);
+
+html.theme-bz {
+  @include mat.all-component-colors($bz-theme);
+
+  // Component fonts only. `all-component-typographies` would also emit the typography
+  // hierarchy (.mat-typography h1-h6, p), which the classic theme doesn't have and which
+  // would override the Tailwind text sizes in page headings.
+  @include mat.core-typography($bz-typography);
+  @include mat.autocomplete-typography($bz-typography);
+  @include mat.badge-typography($bz-typography);
+  @include mat.bottom-sheet-typography($bz-typography);
+  @include mat.button-typography($bz-typography);
+  @include mat.button-toggle-typography($bz-typography);
+  @include mat.card-typography($bz-typography);
+  @include mat.checkbox-typography($bz-typography);
+  @include mat.chips-typography($bz-typography);
+  @include mat.datepicker-typography($bz-typography);
+  @include mat.dialog-typography($bz-typography);
+  @include mat.divider-typography($bz-typography);
+  @include mat.expansion-typography($bz-typography);
+  @include mat.fab-typography($bz-typography);
+  @include mat.form-field-typography($bz-typography);
+  @include mat.icon-button-typography($bz-typography);
+  @include mat.input-typography($bz-typography);
+  @include mat.list-typography($bz-typography);
+  @include mat.menu-typography($bz-typography);
+  @include mat.paginator-typography($bz-typography);
+  @include mat.progress-bar-typography($bz-typography);
+  @include mat.radio-typography($bz-typography);
+  @include mat.select-typography($bz-typography);
+  @include mat.slide-toggle-typography($bz-typography);
+  @include mat.snack-bar-typography($bz-typography);
+  @include mat.sort-typography($bz-typography);
+  @include mat.stepper-typography($bz-typography);
+  @include mat.table-typography($bz-typography);
+  @include mat.tabs-typography($bz-typography);
+  @include mat.toolbar-typography($bz-typography);
+  @include mat.tooltip-typography($bz-typography);
+}

@@ -60,6 +60,31 @@
       <mat-label>Notes</mat-label>
       <textarea matInput formControlName="notes" rows="4"></textarea>
     </mat-form-field>
+
+    <!-- Policies -->
+    <div class="space-y-3">
+      <div class="flex items-center justify-between">
+        <label class="text-sm font-medium text-gray-700">Policies</label>
+        <button mat-stroked-button type="button" (click)="addPolicy()">
+          <mat-icon>add</mat-icon>
+          Add Policy
+        </button>
+      </div>
+
+      <div *ngIf="policies.length === 0" class="text-sm text-gray-500">
+        No policies added yet.
+      </div>
+
+      <div *ngFor="let policy of policies.controls; let i = index" class="flex gap-2 items-start">
+        <mat-form-field appearance="outline" class="flex-1">
+          <mat-label>Policy {{ i + 1 }}</mat-label>
+          <textarea matInput [formControl]="$any(policy)" rows="3"></textarea>
+        </mat-form-field>
+        <button mat-icon-button type="button" color="warn" (click)="removePolicy(i)" matTooltip="Remove policy">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+    </div>
   </form>
 </mat-dialog-content>
 

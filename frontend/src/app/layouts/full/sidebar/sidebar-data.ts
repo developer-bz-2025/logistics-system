@@ -23,6 +23,12 @@ export const navItems: NavItem[] = [
     roles: ['super_admin']
   },
   {
+    displayName: 'Asset Edit Requests',
+    iconName: 'clipboard-check',
+    route: '/dashboard/item-edit-requests',
+    roles: ['super_admin']
+  },
+  {
     displayName: 'Assign Location Admins',
     iconName: 'users',
     route: '/dashboard/pr-edit-requests/log-admin-assignments',

@@ -1,23 +1,41 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, Validators, FormGroup } from '@angular/forms';
 import { AuthService } from 'src/app/core/services/auth.service';
 import { JwtService } from 'src/app/core/services/jwt.service';
 import { PortalService } from 'src/app/core/services/portal.service';
+import { ThemeService } from 'src/app/core/services/theme.service';
 import { Router, ActivatedRoute } from '@angular/router';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { extractRoles } from '../role.util';
+import { environment } from 'src/environments/environment';
 
 
 @Component({
   selector: 'app-login',
   templateUrl: './login.component.html',
+  styles: [`
+    /* Design toggle, top-right corner in both designs */
+    .login-theme-toggle {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 10;
+    }
+  `],
 })
-export class AppSideLoginComponent {
+export class AppSideLoginComponent implements OnInit, OnDestroy {
 
   loginForm: FormGroup;
   loading = false;
   errorMessage = '';
   isDonorsPortal = false;
+  isBzTheme = true;
+  authLogo = './assets/images/logos/bz/bz-logo-horizontal-color.svg';
+  bzLoginLogo = './assets/images/logos/bz/bz-logo-vertical-white.svg';
+  readonly appTitle = environment.appTitle;
 
+  private readonly destroy$ = new Subject<void>();
 
   constructor(
     private fb: FormBuilder,
@@ -25,12 +43,18 @@ export class AppSideLoginComponent {
     private jwt: JwtService,
     private router: Router,
     private portal: PortalService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private theme: ThemeService
   ) {
 
   }
 
   ngOnInit() {
+    this.theme.mode$.pipe(takeUntil(this.destroy$)).subscribe((mode) => {
+      this.isBzTheme = mode === 'bz';
+      this.authLogo = this.theme.logos.auth;
+    });
+
     this.isDonorsPortal = this.portal.isDonorsPortal();
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -50,6 +74,11 @@ export class AppSideLoginComponent {
     }
   }
 
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
 
   onSubmit() {
     if (this.loginForm.invalid) return;

@@ -30,6 +30,8 @@ import { NavService } from '../../../../core/services/nav.service';
 export class AppNavItemComponent implements OnChanges {
   @Input() item: NavItem | any;
   @Input() depth: any;
+  /** 'bz' renders the BZ sidebar markup; anything else the classic Material list item. */
+  @Input() variant: 'classic' | 'bz' = 'classic';
 
   constructor(public navService: NavService, public router: Router) {
     if (this.depth === undefined) {

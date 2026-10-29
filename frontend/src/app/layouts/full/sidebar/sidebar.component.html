@@ -1,5 +1,27 @@
-<div class="flex-layout">
-  <!-- <app-branding></app-branding> -->
+<!-- BZ design: white sidebar with grouped links, user chip and logout -->
+<div class="bz-sidenav" *ngIf="theme.isBz">
+  <a class="bz-sidenav__brand" routerLink="/">
+    <img [src]="theme.logos.header" alt="Basmeh & Zeitooneh" />
+  </a>
+
+  <nav class="bz-sidenav__nav" aria-label="Main navigation">
+    <app-nav-item *ngFor="let item of navItems" [item]="item" variant="bz"></app-nav-item>
+    <div *ngIf="isLoadingCategories" class="bz-sidenav__loading">Loading categories…</div>
+  </nav>
+
+  <div class="bz-sidenav__footer">
+    <!-- Opens the profile popup: email, role, locations, change password, logout -->
+    <app-bz-user-menu *ngIf="user?.name" [user]="user" yPosition="above"></app-bz-user-menu>
+    <a class="bz-btn-logout" [routerLink]="['/authentication/login']">
+      <i-tabler name="logout" class="icon-18 d-flex"></i-tabler>
+      Logout
+    </a>
+  </div>
+</div>
+
+<!-- Classic design -->
+<div class="flex-layout" *ngIf="!theme.isBz">
+  <app-branding></app-branding>
   <mat-nav-list class="sidebar-list">
     <app-nav-item *ngFor="let item of navItems" [item]="item"> </app-nav-item>
 

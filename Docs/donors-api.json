@@ -1,0 +1,63 @@
+{
+    "data": [
+        {
+            "id": 1,
+            "account_no": "024-014",
+            "department_name": "FSL",
+            "donor": "Cafod - SCLR LEB 122",
+            "end_date": "2026-03-14",
+            "notes": null,
+            "finance_officer_id": "213",
+            "finance_officer_name": "Rami Bader",
+            "finance_officer_email": "finance.officer3@basmeh-zeitooneh.org",
+            "locations": [
+                {
+                    "id": 6,
+                    "name": "Bekaa"
+                }
+            ],
+            "policies": [],
+            "created_at": "2026-05-14T14:46:25+03:00",
+            "updated_at": "2026-05-14T14:46:25+03:00"
+        },
+        {
+            "id": 2,
+            "account_no": "024-005",
+            "department_name": "FSL",
+            "donor": "CAFOD - EXIT Hydroponic - LEB 106",
+            "end_date": "2026-02-27",
+            "notes": null,
+            "finance_officer_id": "213",
+            "finance_officer_name": "Rami Bader",
+            "finance_officer_email": "finance.officer3@basmeh-zeitooneh.org",
+            "locations": [
+                {
+                    "id": 4,
+                    "name": "Tripoli"
+                }
+            ],
+            "policies": [],
+            "created_at": "2026-05-18T12:32:11+03:00",
+            "updated_at": "2026-05-18T12:32:11+03:00"
+        },
+        {
+            "id": 4,
+            "account_no": null,
+            "department_name": null,
+            "donor": "NA",
+            "end_date": null,
+            "notes": null,
+            "finance_officer_id": null,
+            "finance_officer_name": null,
+            "finance_officer_email": null,
+            "locations": [],
+            "policies": [
+                "policy 1 text",
+                "policy 2 text"
+            ],
+            "created_at": "2026-06-22T10:00:46+03:00",
+            "updated_at": "2026-06-22T10:00:46+03:00"
+        }
+    ],
+    "count": 3
+}

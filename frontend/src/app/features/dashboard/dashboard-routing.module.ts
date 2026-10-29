@@ -18,6 +18,13 @@ const routes: Routes = [
   },
 
   {
+    path: 'item-edit-requests',
+    loadChildren: () =>
+      import('../super-admin/item-edit-requests.module').then(m => m.ItemEditRequestsModule),
+    data: { roles: ['super_admin'] }
+  },
+
+  {
     path: 'my-assets',
     loadChildren: () =>
       import('../log-admin/log-admin.module').then(m => m.LogAdminModule),

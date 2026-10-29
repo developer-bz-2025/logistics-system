@@ -28,6 +28,8 @@ import { BrandingComponent } from './layouts/full/sidebar/branding.component';
 import { AppNavItemComponent } from './layouts/full/sidebar/nav-item/nav-item.component';
 import { PrAdminModule } from './features/pr-admin/pr-admin.module';
 import { ToastContainerComponent } from './core/shared/components/toast-container/toast-container/toast-container.component';
+import { ThemeToggleComponent } from './core/shared/components/theme-toggle/theme-toggle.component';
+import { BzUserMenuComponent } from './layouts/full/bz-user-menu/bz-user-menu.component';
 
 @NgModule({
   declarations: [
@@ -39,6 +41,7 @@ import { ToastContainerComponent } from './core/shared/components/toast-containe
     BrandingComponent,
     AppNavItemComponent,
     ToastContainerComponent,
+    BzUserMenuComponent,
   ],
   imports: [
     BrowserModule,
@@ -50,6 +53,7 @@ import { ToastContainerComponent } from './core/shared/components/toast-containe
     MaterialModule,
     TablerIconsModule.pick(TablerIcons),
     PrAdminModule,
+    ThemeToggleComponent,
   ],
   providers: [
     {

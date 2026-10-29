@@ -3,17 +3,36 @@
 <head>
   <meta charset="utf-8">
   <title>Logistic Assets</title>
+  <!-- Apply the BZ design before Angular boots, to avoid a flash of the classic colours.
+       Mirrors ThemeService: saved "app-theme" wins, then the old "app-theme-mode" key, then the
+       default (environment.defaultTheme = 'bz'). -->
   <script>
-    if (window.location.hostname === 'donors.bzassets.org') {
-      document.title = 'Donor Management';
-    }
+    (function () {
+      var bz = true;
+      try {
+        var saved = localStorage.getItem('app-theme');
+        if (saved === 'bz' || saved === 'classic') {
+          bz = saved === 'bz';
+        } else if (localStorage.getItem('app-theme-mode') === 'original') {
+          bz = false;
+        }
+      } catch (e) {}
+      if (bz) {
+        document.documentElement.classList.add('theme-bz');
+      }
+      if (window.location.hostname === 'donors.bzassets.org') {
+        document.title = 'Donor Management';
+      }
+    })();
   </script>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="icon" type="image/svg+xml" href="./assets/images/logos/bz/bz-mark-burgundy.svg">
   <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <!-- Fonts for the BZ design (assets/scss/themecolors/_theme_bz.scss) -->
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body class="mat-typography">
   <app-root class="bg-gray-300 text-gray-800"></app-root>

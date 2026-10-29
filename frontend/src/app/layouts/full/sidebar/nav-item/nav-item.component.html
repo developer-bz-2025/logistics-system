@@ -1,3 +1,44 @@
+<!-- BZ design -->
+<ng-container *ngIf="variant === 'bz'">
+  <span class="bz-sidenav__label" *ngIf="item.navCap">{{ item.navCap }}</span>
+
+  <ng-container *ngIf="!item.navCap">
+    <a *ngIf="!item.expandable"
+       class="bz-sidenav__link"
+       [class.is-active]="isActive(item)"
+       [routerLink]="item.route"
+       [queryParams]="item.queryParams || null"
+       >
+      <i-tabler class="bz-sidenav__icon" name="{{ item.iconName }}"></i-tabler>
+      <span class="bz-sidenav__text">{{ item.displayName }}</span>
+    </a>
+
+    <ng-container *ngIf="item.expandable">
+      <button type="button"
+              class="bz-sidenav__link bz-sidenav__group"
+              [attr.aria-expanded]="!!item.expanded"
+              (click)="item.expanded = !item.expanded">
+        <i-tabler class="bz-sidenav__icon" name="{{ item.iconName }}"></i-tabler>
+        <span class="bz-sidenav__text">{{ item.displayName }}</span>
+        <i-tabler class="bz-sidenav__chevron" [name]="item.expanded ? 'chevron-up' : 'chevron-down'"></i-tabler>
+      </button>
+      <div *ngIf="item.expanded" class="bz-sidenav__children">
+        <a *ngFor="let child of item.children"
+           class="bz-sidenav__link bz-sidenav__child"
+           [class.is-active]="isActive(child)"
+           [routerLink]="child.route"
+           [queryParams]="child.queryParams || null"
+           >
+          <i-tabler class="bz-sidenav__icon" name="{{ child.iconName }}"></i-tabler>
+          <span class="bz-sidenav__text">{{ child.displayName }}</span>
+        </a>
+      </div>
+    </ng-container>
+  </ng-container>
+</ng-container>
+
+<!-- Classic design -->
+<ng-container *ngIf="variant !== 'bz'">
 <div mat-subheader *ngIf="item.navCap" class="nav-caption">
   {{ item.navCap }}
 </div>
@@ -46,4 +87,5 @@
       </a>
     </div>
   </div>
+</ng-container>
 </ng-container>

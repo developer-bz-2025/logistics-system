@@ -48,7 +48,8 @@
             color="primary"
             (click)="toggleEdit()"
             class="edit-button"
-            [disabled]="!canEditAsset">
+            [disabled]="!canSubmitEdit"
+            [matTooltip]="pendingEditRequest ? 'A pending edit request awaits Pro Admin review' : ''">
             <mat-icon>edit</mat-icon>
             <span>Edit Asset</span>
           </button>
@@ -68,11 +69,28 @@
             (click)="saveAsset()"
             [disabled]="assetForm.invalid || isSaving"
             class="save-button">
-            <mat-icon *ngIf="!isSaving">save</mat-icon>
+            <mat-icon *ngIf="!isSaving">send</mat-icon>
             <mat-spinner *ngIf="isSaving" diameter="20" color="accent"></mat-spinner>
-            <span>{{ isSaving ? 'Saving...' : 'Save Changes' }}</span>
+            <span>{{ isSaving ? 'Submitting...' : 'Submit for Review' }}</span>
           </button>
         </ng-template>
+      </div>
+    </div>
+
+    <div *ngIf="pendingEditRequest" class="pending-edit-banner">
+      <mat-icon>hourglass_top</mat-icon>
+      <div>
+        <strong>Edit request #{{ pendingEditRequest.id }} is pending Pro Admin review.</strong>
+        <span>
+          Submitted
+          <ng-container *ngIf="pendingEditRequest.submitted_at">
+            {{ pendingEditRequest.submitted_at | date:'medium' }}
+          </ng-container>
+          <ng-container *ngIf="pendingEditRequest.requested_by">
+            by {{ pendingEditRequest.requested_by }}
+          </ng-container>
+          . The live asset will not change until the request is approved.
+        </span>
       </div>
     </div>
 
@@ -216,6 +234,16 @@
                 <div class="detail-item">
                   <label>Donor</label>
                   <span>{{ getDonorDisplay() }}</span>
+                </div>
+                <div class="detail-item md:col-span-2" *ngIf="asset.donor_policies?.length">
+                  <label>Donor Policies</label>
+                  <div class="space-y-2 mt-1">
+                    <div *ngFor="let policy of asset.donor_policies; let i = index"
+                         class="rounded-lg border border-blue-100 bg-blue-50 p-3">
+                      <div class="text-xs font-medium text-blue-800 mb-1">Policy {{ i + 1 }}</div>
+                      <div class="text-sm text-blue-900 whitespace-pre-wrap">{{ policy }}</div>
+                    </div>
+                  </div>
                 </div>
                 <div class="detail-item">
                   <label>Budget Code</label>
@@ -485,6 +513,15 @@
               <input matInput [value]="asset?.donor_name || 'Not specified'" readonly>
               <mat-hint>Donor is set from donor management. Cannot be edited here.</mat-hint>
             </mat-form-field>
+            <div *ngIf="asset?.donor_id && asset?.donor_policies?.length" class="md:col-span-2 rounded-lg border border-blue-100 bg-blue-50 p-4">
+              <div class="text-sm font-medium text-blue-900 mb-2">Donor Policies</div>
+              <div class="space-y-3">
+                <div *ngFor="let policy of asset.donor_policies; let i = index">
+                  <div class="text-xs font-medium text-blue-800">Policy {{ i + 1 }}</div>
+                  <div class="text-sm text-blue-900 whitespace-pre-wrap">{{ policy }}</div>
+                </div>
+              </div>
+            </div>
             <mat-form-field appearance="outline" *ngIf="!asset?.donor_id">
               <mat-label>Budget Donor (Legacy)</mat-label>
               <input matInput formControlName="budget_donor">

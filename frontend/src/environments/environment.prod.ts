@@ -6,4 +6,6 @@ export const environment = {
     portalTitle: 'Donor Management',
     portalDocumentTitle: 'Donor Management',
     appTitle: 'Logistic Assets',
+    /** Design used until the user picks one with the toggle: 'bz' or 'classic'. */
+    defaultTheme: 'bz' as 'bz' | 'classic',
   };

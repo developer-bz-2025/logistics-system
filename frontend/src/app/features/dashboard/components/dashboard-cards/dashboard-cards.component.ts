@@ -4,6 +4,18 @@ import { Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/
 import { Router } from '@angular/router';
 import { AssetService, CategoryService } from 'src/app/core/services/category.service';
 import { Category } from 'src/app/core/models/reference';
+import { ThemeService } from 'src/app/core/services/theme.service';
+
+// B&Z: same tint slots, mapped to the brand palette (see _bz_theme.scss .bz-tile--*)
+const BZ_TINTS: Record<Card['tint'], string> = {
+  indigo: 'burgundy',
+  green: 'olive',
+  violet: 'orchid',
+  orange: 'sun',
+  rose: 'coral',
+  teal: 'mint',
+  cyan: 'sky',
+};
 
 type Card = {
   key: 'furniture' | 'appliances' | 'machine' | 'vehicle' | 'electronics' | 'it' | 'computer';
@@ -39,7 +51,8 @@ export class DashboardCardsComponent implements OnInit, AfterViewInit {
   constructor(
     private assetService: AssetService,
     private categoryService: CategoryService,
-    private router: Router
+    private router: Router,
+    private theme: ThemeService
   ) { }
 
   ngOnInit(): void {
@@ -102,16 +115,10 @@ export class DashboardCardsComponent implements OnInit, AfterViewInit {
   private adjustFontSizes(): void {
     this.countElements.forEach((elementRef, index) => {
       const element = elementRef.nativeElement;
-      const container = element.closest('.flex');
+      const container = element.parentElement; // the number's own full-width row
       if (!container || !element) return;
 
-      const containerWidth = container.offsetWidth;
-      const iconWidth = 56; // icon width
-      const gap = 16; // gap-4 = 16px
-      const margin = 8; // ml-2 = 8px
-      const padding = 48; // card padding (24px each side for md:p-6)
-      const safetyMargin = 5; // minimal safety margin to prevent overlap
-      const availableWidth = containerWidth - iconWidth - gap - margin - padding - safetyMargin;
+      const availableWidth = container.clientWidth;
 
       // Start with max font size
       let fontSize = 30; // 1.875rem
@@ -201,6 +208,10 @@ export class DashboardCardsComponent implements OnInit, AfterViewInit {
 
   // Tailwind color classes for the icon pill
   tintClass(t: 'indigo' | 'green' | 'violet' | 'orange' | 'rose' | 'teal' | 'cyan') {
+    if (this.theme.isBz) {
+      const tile = `bz-tile bz-tile--${BZ_TINTS[t]}`;
+      return { bg: tile, ring: '', text: '' };
+    }
     return {
       indigo: { bg: 'bg-indigo-50', ring: 'ring-indigo-100', text: 'text-indigo-600' },
       green: { bg: 'bg-green-50', ring: 'ring-green-100', text: 'text-green-600' },

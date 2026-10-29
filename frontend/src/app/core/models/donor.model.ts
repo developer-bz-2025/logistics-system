@@ -1,3 +1,9 @@
+export interface DonorPolicy {
+  id: number;
+  content: string;
+  sort_order: number;
+}
+
 export interface DonorDocument {
   id: number;
   donor_id: number;
@@ -32,6 +38,7 @@ export interface Donor {
     name: string;
   }>;
   documents?: DonorDocument[];
+  policies?: DonorPolicy[];
   created_at?: string;
   updated_at?: string;
 }
@@ -41,4 +48,5 @@ export interface DonorListItem {
   donor: string;
   account_no?: string;
   department_name?: string;
+  policies?: string[];
 }

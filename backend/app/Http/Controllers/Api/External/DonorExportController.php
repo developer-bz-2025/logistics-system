@@ -18,6 +18,7 @@ class DonorExportController extends Controller
         $query = Donor::with([
             'financeOfficer:id,name,email',
             'locations:id,name',
+            'policies',
         ]);
 
         if ($request->has('updated_since')) {
@@ -42,6 +43,7 @@ class DonorExportController extends Controller
                     'id'   => $loc->id,
                     'name' => $loc->name,
                 ]),
+                'policies'             => $donor->policies->pluck('content')->values()->all(),
                 'created_at'           => $donor->created_at?->toIso8601String(),
                 'updated_at'           => $donor->updated_at?->toIso8601String(),
             ];
@@ -61,6 +63,7 @@ class DonorExportController extends Controller
         $donor = Donor::with([
             'financeOfficer:id,name,email',
             'locations:id,name',
+            'policies',
         ])->findOrFail($id);
 
         return response()->json([
@@ -78,6 +81,7 @@ class DonorExportController extends Controller
                     'id'   => $loc->id,
                     'name' => $loc->name,
                 ]),
+                'policies'             => $donor->policies->pluck('content')->values()->all(),
                 'created_at'           => $donor->created_at?->toIso8601String(),
                 'updated_at'           => $donor->updated_at?->toIso8601String(),
             ],

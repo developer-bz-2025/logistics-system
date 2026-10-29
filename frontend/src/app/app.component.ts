@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { PortalService } from './core/services/portal.service';
+import { ThemeService } from './core/services/theme.service';
 import { environment } from '../environments/environment';
 
 @Component({
@@ -10,10 +11,13 @@ import { environment } from '../environments/environment';
 export class AppComponent implements OnInit {
   constructor(
     private title: Title,
-    private portal: PortalService
+    private portal: PortalService,
+    private theme: ThemeService
   ) {}
 
   ngOnInit(): void {
+    void this.theme.mode;
+
     if (this.portal.isDonorsPortal()) {
       this.title.setTitle(environment.portalDocumentTitle ?? 'Donor Management');
     } else {

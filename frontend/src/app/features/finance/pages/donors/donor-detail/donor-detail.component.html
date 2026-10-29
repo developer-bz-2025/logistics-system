@@ -53,6 +53,18 @@
       </div>
     </div>
 
+    <div class="app-card" *ngIf="donor.policies?.length">
+      <div class="p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Policies</h2>
+        <div class="space-y-4">
+          <div *ngFor="let policy of donor.policies; let i = index">
+            <div class="text-sm text-gray-500">Policy {{ i + 1 }}</div>
+            <div class="font-medium whitespace-pre-wrap">{{ policy.content }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="app-card">
       <div class="p-6">
         <div class="flex justify-between items-center mb-4">

@@ -1,5 +1,5 @@
 import { Component, OnInit, Inject, OnDestroy } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -69,8 +69,21 @@ export class DonorFormComponent implements OnInit, OnDestroy {
       donor: ['', Validators.required],
       end_date: [null],
       notes: [''],
-      location_ids: [[]]
+      location_ids: [[]],
+      policies: this.fb.array([])
     });
+  }
+
+  get policies(): FormArray {
+    return this.form.get('policies') as FormArray;
+  }
+
+  addPolicy(content = ''): void {
+    this.policies.push(this.fb.control(content));
+  }
+
+  removePolicy(index: number): void {
+    this.policies.removeAt(index);
   }
 
   private populateForm(): void {
@@ -87,6 +100,12 @@ export class DonorFormComponent implements OnInit, OnDestroy {
       notes: this.data.notes || '',
       location_ids: locationIds
     });
+
+    this.policies.clear();
+    const sortedPolicies = [...(this.data.policies || [])].sort(
+      (a, b) => a.sort_order - b.sort_order
+    );
+    sortedPolicies.forEach(policy => this.addPolicy(policy.content));
   }
 
   private loadLocations(): void {
@@ -128,14 +147,17 @@ export class DonorFormComponent implements OnInit, OnDestroy {
     this.loading = true;
     const formValue = this.form.value;
 
-    const donorData: Partial<Donor> & { location_ids?: number[] } = {
+    const donorData: Partial<Donor> & { location_ids?: number[]; policies?: string[] } = {
       account_no: formValue.account_no || null,
       department_name: formValue.department_name || null,
       finance_officer_id: formValue.finance_officer_id || null,
       donor: formValue.donor,
       end_date: formValue.end_date || null,
       notes: formValue.notes || null,
-      location_ids: formValue.location_ids || []
+      location_ids: formValue.location_ids || [],
+      policies: (formValue.policies || [])
+        .map((policy: string) => (policy || '').trim())
+        .filter((policy: string) => policy !== '')
     };
 
     const operation = this.isEdit

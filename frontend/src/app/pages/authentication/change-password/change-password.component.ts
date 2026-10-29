@@ -1,24 +1,32 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AuthService } from 'src/app/core/services/auth.service';
 import { Router } from '@angular/router';
 import { ToastService } from 'src/app/core/services/toast.service';
+import { ThemeService } from 'src/app/core/services/theme.service';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-change-password',
   templateUrl: './change-password.component.html',
 })
-export class ChangePasswordComponent implements OnInit {
+export class ChangePasswordComponent implements OnInit, OnDestroy {
   changePasswordForm: FormGroup;
   loading = false;
   errorMessage = '';
   successMessage = '';
+  isBzTheme = true;
+  authLogo = './assets/images/logos/bz/bz-logo-horizontal-color.svg';
+
+  private readonly destroy$ = new Subject<void>();
 
   constructor(
     private fb: FormBuilder,
     private auth: AuthService,
     private router: Router,
-    private toast: ToastService
+    private toast: ToastService,
+    private theme: ThemeService
   ) {
     this.changePasswordForm = this.fb.group({
       current_password: ['', [Validators.required]],
@@ -27,7 +35,17 @@ export class ChangePasswordComponent implements OnInit {
     }, { validators: this.passwordMatchValidator });
   }
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.theme.mode$.pipe(takeUntil(this.destroy$)).subscribe((mode) => {
+      this.isBzTheme = mode === 'bz';
+      this.authLogo = this.theme.logos.auth;
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
 
   passwordMatchValidator(form: FormGroup) {
     const newPassword = form.get('new_password');

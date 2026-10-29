@@ -35,7 +35,7 @@ input[readonly] { background: #f9fafb; }
 .file input[type=file] { border: 1px dashed #cbd5e1; padding: 10px; }
 
 .btn { background: #f3f4f6; border: 1px solid #e5e7eb; padding: 8px 12px; border-radius: 8px; cursor: pointer; }
-.btn.primary { background: #2563eb; border-color: #1d4ed8; color: #fff; }
+.btn.primary { background: var(--app-brand, #2563eb); border-color: var(--app-brand-dark, #1d4ed8); color: #fff; }
 .btn:disabled { opacity: 0.6; cursor: not-allowed; }
 .icon { background: transparent; border: none; font-size: 18px; }
 .error { color: #dc2626; font-size: 12px; }

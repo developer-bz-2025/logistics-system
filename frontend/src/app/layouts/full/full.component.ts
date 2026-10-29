@@ -1,13 +1,18 @@
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { Component, OnInit, ViewChild } from '@angular/core';
+import { NavigationEnd, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
+import { filter } from 'rxjs/operators';
 import { MatSidenav } from '@angular/material/sidenav';
 import { AuthService } from '../../core/services/auth.service';
+import { ThemeService } from '../../core/services/theme.service';
 
 
 const MOBILE_VIEW = 'screen and (max-width: 768px)';
 const TABLET_VIEW = 'screen and (min-width: 769px) and (max-width: 1024px)';
 const MONITOR_VIEW = 'screen and (min-width: 1024px)';
+// BZ design: the sidebar slides in over the page below 992px
+const BZ_COMPACT_VIEW = 'screen and (max-width: 991.98px)';
 
 @Component({
   selector: 'app-full',
@@ -24,25 +29,42 @@ export class FullComponent implements OnInit {
 
   //get options from service
   private layoutChangesSubscription = Subscription.EMPTY;
+  private navigationSubscription = Subscription.EMPTY;
   private isMobileScreen = false;
+  private isBzCompactScreen = false;
   private isContentWidthFixed = true;
   private isCollapsedWidthFixed = false;
   private htmlElement!: HTMLHtmlElement;
 
   get isOver(): boolean {
-    return this.isMobileScreen;
+    return this.theme.isBz ? this.isBzCompactScreen : this.isMobileScreen;
   }
 
-  constructor(private breakpointObserver: BreakpointObserver,private auth: AuthService) {
+  constructor(
+    private breakpointObserver: BreakpointObserver,
+    private auth: AuthService,
+    private theme: ThemeService,
+    private router: Router
+  ) {
     this.htmlElement = document.querySelector('html')!;
     this.layoutChangesSubscription = this.breakpointObserver
-      .observe([MOBILE_VIEW, TABLET_VIEW, MONITOR_VIEW])
+      .observe([MOBILE_VIEW, TABLET_VIEW, MONITOR_VIEW, BZ_COMPACT_VIEW])
       .subscribe((state) => {
         // SidenavOpened must be reset true when layout changes
 
         this.isMobileScreen = state.breakpoints[MOBILE_VIEW];
+        this.isBzCompactScreen = state.breakpoints[BZ_COMPACT_VIEW];
 
         this.isContentWidthFixed = state.breakpoints[MONITOR_VIEW];
+      });
+
+    // BZ design: close the slide-in sidebar after a link is tapped
+    this.navigationSubscription = this.router.events
+      .pipe(filter((e) => e instanceof NavigationEnd))
+      .subscribe(() => {
+        if (this.theme.isBz && this.isOver) {
+          this.sidenav?.close();
+        }
       });
   }
 
@@ -54,6 +76,7 @@ export class FullComponent implements OnInit {
 
   ngOnDestroy() {
     this.layoutChangesSubscription.unsubscribe();
+    this.navigationSubscription.unsubscribe();
   }
 
   toggleCollapsed() {

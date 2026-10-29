@@ -1,0 +1,94 @@
+/* Basmeh & Zeitooneh design tokens. Generated from tokens.json. */
+:root {
+  --burgundy: #6f1921;
+  --burgundy-dark: #531419;
+  --blush: #e2d9da;
+  --mauve: #c8afb1;
+  --grey-100: #efefef;
+  --charcoal: #262626;
+  --grey-dark: #363336;
+  --olive: #2e602f;
+  --sun: #fac02f;
+  --sky: #417db0;
+  --mint: #5bb182;
+  --coral: #ce4d4d;
+  --orchid: #c680b0;
+  --surface: #ffffff;
+  --surface-alt: #efefef;
+  --surface-tint: #e2d9da;
+  --surface-brand: #6f1921;
+  --ink: #000000;
+  --ink-soft: #4d4b4d;
+  --ink-faint: #7f7f7f;
+  --heading: #6f1921;
+  --heading-secondary: #2e602f;
+  --link: #6f1921;
+  --link-hover: #531419;
+  --input-bg: rgba(255, 255, 255, 0.73);
+  --input-border: #c8afb1;
+  --selection: #6f1921;
+  --on-brand: #ffffff;
+  --on-brand-soft: #e2d9da;
+  --line: #d6cfd0;
+  --line-strong: #7f7f7f;
+  --focus-ring: #6f1921;
+  --font-display: "Helvetica Neue Condensed", "HelveticaNeue-CondensedBold", "Helvetica Neue LT Std", "Roboto Condensed", "Arial Narrow", Arial, sans-serif;
+  --font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-arabic: "DIN Next LT Arabic", "Noto Kufi Arabic", Tahoma, sans-serif;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-15: 60px;
+  --space-16: 64px;
+  --radius-none: 0px;
+  --radius-sm: 3px;
+  --radius-slider: 15px;
+  --radius-full: 9999px;
+  --container: 1290px;
+  --container-narrow: 750px;
+  --control-height: 42px;
+  --field-height: 40px;
+}
+
+[data-theme="dark"] {
+  --surface: #1c1a1b;
+  --surface-alt: #262324;
+  --surface-tint: #33262a;
+  --surface-brand: #6f1921;
+  --ink: #f2eded;
+  --ink-soft: #b3aaab;
+  --ink-faint: #9a9293;
+  --heading: #c8afb1;
+  --heading-secondary: #5bb182;
+  --link: #c8afb1;
+  --link-hover: #e2d9da;
+  --input-bg: #262324;
+  --input-border: #8f8889;
+  --selection: #6f1921;
+  --on-brand: #ffffff;
+  --on-brand-soft: #e2d9da;
+  --line: #3d3537;
+  --line-strong: #8f8889;
+  --focus-ring: #c8afb1;
+}
+
+/* Type styles */
+.display { font-family: var(--font-display); font-size: 64px; line-height: 64px; font-weight: 700; }
+.title { font-family: var(--font-display); font-size: 40px; line-height: 44px; font-weight: 700; }
+.label { font-family: var(--font-display); font-size: 14px; line-height: 18px; font-weight: 700; letter-spacing: 0.02em; }
+.heading { font-family: var(--font-sans); font-size: 26px; line-height: 32px; font-weight: 400; }
+.card-title { font-family: var(--font-sans); font-size: 20px; line-height: 28px; font-weight: 600; }
+.lead { font-family: var(--font-sans); font-size: 20px; line-height: 28px; font-weight: 300; }
+.body { font-family: var(--font-sans); font-size: 16px; line-height: 1.65; font-weight: 300; }
+.body-strong { font-family: var(--font-sans); font-size: 16px; line-height: 24px; font-weight: 500; }
+.caption { font-family: var(--font-sans); font-size: 13px; line-height: 18px; font-weight: 300; }
+.rail { font-family: var(--font-sans); font-size: 12px; line-height: 16px; font-weight: 300; }
+.button { font-family: var(--font-sans); font-size: 15px; line-height: 24px; font-weight: 600; }
+.button-caps { font-family: var(--font-sans); font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.02em; }
+.arabic-heading { font-family: var(--font-arabic); font-size: 26px; line-height: 40px; font-weight: 700; }
+.arabic-body { font-family: var(--font-arabic); font-size: 16px; line-height: 28px; font-weight: 400; }

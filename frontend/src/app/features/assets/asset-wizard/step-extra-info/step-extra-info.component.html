@@ -43,6 +43,19 @@
     </mat-form-field>
   </div>
 
+  <div *ngIf="form.get('donor_id')?.value" class="rounded-lg border border-blue-100 bg-blue-50 p-4">
+    <div class="text-sm font-medium text-blue-900 mb-2">Donor Policies</div>
+    <div *ngIf="selectedDonorPolicies.length > 0; else noPolicies" class="space-y-3">
+      <div *ngFor="let policy of selectedDonorPolicies; let i = index">
+        <div class="text-xs font-medium text-blue-800">Policy {{ i + 1 }}</div>
+        <div class="text-sm text-blue-900 whitespace-pre-wrap">{{ policy }}</div>
+      </div>
+    </div>
+    <ng-template #noPolicies>
+      <div class="text-sm text-blue-800">No policies for this donor.</div>
+    </ng-template>
+  </div>
+
   <!-- Photo Upload -->
   <div class="photo-upload">
     <label class="text-sm font-medium text-gray-700 mb-2 block">Asset Photo (optional)</label>

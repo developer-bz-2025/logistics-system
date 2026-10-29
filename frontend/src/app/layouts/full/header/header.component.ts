@@ -12,11 +12,34 @@ import { UserService } from 'src/app/core/services/user.service';
 import { JwtService } from 'src/app/core/services/jwt.service';
 import { NotificationService } from 'src/app/core/services/notification.service';
 import { FormControl } from '@angular/forms';
-import { Router } from '@angular/router';
+import { NavigationEnd, Router } from '@angular/router';
 import { Location } from '@angular/common';
 import { Subject, interval } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { filter, takeUntil } from 'rxjs/operators';
 import { PortalService } from 'src/app/core/services/portal.service';
+import { ThemeService } from 'src/app/core/services/theme.service';
+import { environment } from 'src/environments/environment';
+
+// BZ top bar title: longest matching path prefix wins.
+const PAGE_TITLES: Array<[string, string]> = [
+  ['/dashboard/pr-edit-requests/log-admin-assignments', 'Assign Location Admins'],
+  ['/dashboard/pr-edit-requests', 'PR Edit Requests'],
+  ['/dashboard/item-edit-requests', 'Asset Edit Requests'],
+  ['/dashboard/my-assets/location-change-requests', 'Location Change Requests'],
+  ['/dashboard/my-assets', 'My Assets'],
+  ['/dashboard/references', 'References'],
+  ['/dashboard', 'Dashboard'],
+  ['/assets/new', 'New Asset'],
+  ['/assets/', 'Asset Details'],
+  ['/assets', 'Assets'],
+  ['/pr/create', 'New Purchase Request'],
+  ['/pr/list', 'Purchase Requests'],
+  ['/pr/', 'Purchase Request'],
+  ['/finance/', 'Donor Details'],
+  ['/finance', 'Donors'],
+  ['/notifications', 'Notifications'],
+  ['/search', 'Search'],
+];
 
 // import jwt_decode from 'jwt-decode';
 // import {jwtDecode} from 'jwt-decode';
@@ -30,6 +53,8 @@ import { PortalService } from 'src/app/core/services/portal.service';
 })
 export class HeaderComponent implements OnInit, OnDestroy {
   @Input() showToggle = true;
+  /** False when the layout renders no sidebar (e.g. PR admin). */
+  @Input() hasSidebar = true;
   @Input() toggleChecked = false;
   @Output() toggleMobileNav = new EventEmitter<void>();
   @Output() toggleMobileFilterNav = new EventEmitter<void>();
@@ -40,6 +65,10 @@ export class HeaderComponent implements OnInit, OnDestroy {
   showFiller = false;
   user: any = null;
   unreadCount = 0;
+  isBzTheme = false;
+  headerLogo: string | null = null;
+  readonly appTitle = environment.appTitle;
+  pageTitle = 'Dashboard';
 
   q = new FormControl('');
 
@@ -50,7 +79,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
     private notificationService: NotificationService,
     private router: Router,
     private location: Location,
-    public portal: PortalService
+    public portal: PortalService,
+    public theme: ThemeService
   ) { }
 
   get showBackToDonors(): boolean {
@@ -102,6 +132,21 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.theme.mode$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((mode) => {
+        this.isBzTheme = mode === 'bz';
+        this.headerLogo = this.theme.logos.header;
+      });
+
+    this.updatePageTitle(this.router.url);
+    this.router.events
+      .pipe(
+        filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+        takeUntil(this.destroy$)
+      )
+      .subscribe((e) => this.updatePageTitle(e.urlAfterRedirects));
+
     // console.log(this.jwtService.decodeToken())
     const userId = this.jwtService.getUserId();
     console.log(userId)
@@ -126,6 +171,12 @@ export class HeaderComponent implements OnInit, OnDestroy {
       .subscribe(() => {
         this.loadUnreadCount();
       });
+  }
+
+  private updatePageTitle(url: string): void {
+    const path = (url || '/').split('?')[0];
+    const match = PAGE_TITLES.find(([prefix]) => path === prefix || path.startsWith(prefix));
+    this.pageTitle = match ? match[1] : 'Dashboard';
   }
 
   ngOnDestroy(): void {
@@ -156,7 +207,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   roleGradientMap: { [key: string]: string } = {
     super_admin: 'from-[#F2709C] to-[#FF9400]',
-    log_admin: 'from-[#72C6EF] to-[#0D9488]',    // Cyan to Teal bg-gradient-to-br from-[#72C6EF] to-[#004E8F]
+    log_admin: 'from-[#c8afb1] to-[#6f1921]',    // B&Z blush → burgundy
     pr_admin: 'from-[#00416A] to-[#E4E5E6]',      // Orange bg-gradient-to-br from-[#00416A] to-[#E4E5E6]
     unit_admin: 'from-[#215F00] to-[#E4E4D9]',          // Blue bg-gradient-to-br from-[#215F00] to-[#E4E4D9]
     finance: 'from-[#4C1D95] to-[#22C55E]',             // Purple to Green for finance

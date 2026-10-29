@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\BrandController;
 use App\Http\Controllers\Api\SupplierController;
 use App\Http\Controllers\Api\PrController;
 use App\Http\Controllers\Api\PrEditRequestController;
+use App\Http\Controllers\Api\ItemEditRequestController;
 use App\Http\Controllers\Api\AttributeController;
 use App\Http\Controllers\Api\ItemController;
 use App\Http\Controllers\Api\StatusController;
@@ -61,6 +62,14 @@ Route::middleware(['jwt.auth'])->group(function () { //to add super admin middle
 
     Route::post('/pr-edit-requests/{id}/approve', [PrEditRequestController::class, 'approve']);
     Route::post('/pr-edit-requests/{id}/reject', [PrEditRequestController::class, 'reject']);
+
+    Route::get('/item-edit-requests', [ItemEditRequestController::class, 'index']);
+    Route::get('/item-edit-requests/{id}', [ItemEditRequestController::class, 'show'])
+        ->whereNumber('id');
+    Route::post('/item-edit-requests/{id}/approve', [ItemEditRequestController::class, 'approve'])
+        ->whereNumber('id');
+    Route::post('/item-edit-requests/{id}/reject', [ItemEditRequestController::class, 'reject'])
+        ->whereNumber('id');
 
 Route::post('/import/assets', [\App\Http\Controllers\Api\ImportController::class, 'import']);
 

@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Item;
+use App\Models\ItemEditRequest;
 use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Services\ItemHistoryService;
 use App\Services\ActivityLogService;
+use App\Services\NotificationService;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
@@ -218,6 +220,12 @@ class ItemController extends Controller
         // Collect item ids on this page
         $itemIds = array_map(fn($r) => $r->id, $result->items());
 
+        $donorIds = array_values(array_unique(array_filter(array_map(
+            fn($r) => $r->donor_id,
+            $result->items()
+        ))));
+        $donorPoliciesMap = $this->donorPoliciesByDonorIds($donorIds);
+
         // Fetch attributes for these items (single roundtrip)
         $attrRows = DB::table('item_attribute_values as iav')
             ->join('attributes as a', 'iav.att_id', '=', 'a.id')
@@ -235,7 +243,7 @@ class ItemController extends Controller
             ->groupBy('item_id');
 
         // Map response
-        $data = collect($result->items())->map(function ($row) use ($attrRows) {
+        $data = collect($result->items())->map(function ($row) use ($attrRows, $donorPoliciesMap) {
             $attrs = [];
             foreach ($attrRows->get($row->id, collect()) as $ar) {
                 $attrs[$ar->attribute] = $ar->option_value;
@@ -278,6 +286,9 @@ class ItemController extends Controller
                 'budget_donor' => $row->budget_donor,
                 'donor_id' => $row->donor_id !== null ? (int) $row->donor_id : null,
                 'donor_name' => $row->donor_name,
+                'donor_policies' => $row->donor_id
+                    ? ($donorPoliciesMap[(int) $row->donor_id] ?? [])
+                    : [],
                 'pr_id' => $row->pr_id !== null ? (int) $row->pr_id : null,
                 'notes' => $row->notes,
                 'owned_by' => $this->normalizeOwnedBy($row->owned_by),
@@ -580,6 +591,9 @@ class ItemController extends Controller
             'budget_donor' => $item->budget_donor,
             'donor_id' => $item->donor_id !== null ? (int) $item->donor_id : null,
             'donor_name' => $item->donor_name ?? null,
+            'donor_policies' => $item->donor_id
+                ? ($this->donorPoliciesByDonorIds([(int) $item->donor_id])[(int) $item->donor_id] ?? [])
+                : [],
             'pr_id' => $item->pr_id !== null ? (int) $item->pr_id : null,
             'notes' => $item->notes,
             'owned_by' => $this->normalizeOwnedBy($item->owned_by),
@@ -592,6 +606,7 @@ class ItemController extends Controller
             'updated_at' => $item->updated_at,
 
             'attributes' => (object) $attrs,
+            'pending_edit_request' => $this->pendingEditRequestSummary((int) $id),
         ];
 
         return response()->json($result);
@@ -846,26 +861,24 @@ class ItemController extends Controller
     }
 
     /**
-     * PUT /api/items/{id} - Update asset information
+     * PUT /api/items/{id} - Submit asset edit for Pro Admin review
      */
     public function update(Request $request, $id)
     {
         $user = $request->user();
-        
-        // Only log_admin can update assets
+
+        // Only log_admin can request asset edits
         if (!$user || $user->role?->name !== Role::LOG_ADMIN) {
             return response()->json([
                 'message' => 'This action is authorized for log admins only.',
             ], 403);
         }
 
-        // Get the current item data for comparison
         $currentItem = DB::table('items')->where('id', $id)->first();
         if (!$currentItem) {
             return response()->json(['error' => 'Item not found'], 404);
         }
 
-        // Validate the request
         $validated = $request->validate([
             'description' => 'nullable|string|max:255',
             'sn' => 'nullable|string|max:255',
@@ -891,16 +904,16 @@ class ItemController extends Controller
             'attributes.*.att_option_id' => 'required_with:attributes|integer|exists:att_options,id',
         ]);
 
-        // Format dates for MySQL compatibility
+        // Location moves use location_change_requests — ignore if sent here
+        unset($validated['location_id']);
+
         $dateFields = ['acquisition_date', 'warranty_start_date', 'warranty_end_date'];
         foreach ($dateFields as $field) {
             if (!empty($validated[$field])) {
-                // Parse the date and format it for MySQL
                 $validated[$field] = \Carbon\Carbon::parse($validated[$field])->format('Y-m-d H:i:s');
             }
         }
 
-        // Extract attributes before updating items table
         $attributes = $validated['attributes'] ?? null;
         unset($validated['attributes']);
 
@@ -908,37 +921,36 @@ class ItemController extends Controller
             $validated['owned_by'] = $this->normalizeOwnedBy($validated['owned_by']);
         }
 
-        // Track PR changes for count adjustment (only if pr_id is explicitly provided)
-        $oldPrId = $currentItem->pr_id;
-        $prIdChanged = false;
+        $pendingStatusIds = DB::table('change_status')
+            ->whereIn('value', ['Pending', 'Pending Approval'])
+            ->pluck('id')
+            ->all();
 
-        if (isset($validated['pr_id'])) {
-            $newPrId = $validated['pr_id'] !== null ? (int) $validated['pr_id'] : null;
-            $oldPrId = $oldPrId !== null ? (int) $oldPrId : null;
-            $prIdChanged = ($oldPrId !== $newPrId);
-        } else {
-            // pr_id not provided in request, keep old value
-            $newPrId = $oldPrId;
+        $existingPending = DB::table('item_edit_requests')
+            ->where('item_id', $id)
+            ->whereIn('status_id', $pendingStatusIds)
+            ->orderByDesc('id')
+            ->first();
+
+        if ($existingPending) {
+            $requester = DB::table('users')->where('id', $existingPending->requested_by_admin_id)->first();
+            $statusValue = DB::table('change_status')->where('id', $existingPending->status_id)->value('value');
+
+            return response()->json([
+                'message' => 'There is already a pending edit request for this asset. Please wait for approval or rejection before submitting another request.',
+                'errors' => [
+                    'item_id' => ['Active edit request exists for this item.']
+                ],
+                'existing_request' => [
+                    'id' => $existingPending->id,
+                    'status' => $statusValue,
+                    'submitted_at' => $existingPending->submitted_at,
+                    'requested_by' => $requester->name ?? null,
+                ],
+            ], 409);
         }
 
-        // Fetch PR codes for history logging if pr_id changed
-        $oldPrCode = null;
-        $newPrCode = null;
-        if (isset($validated['pr_id']) && ($oldPrId !== $newPrId)) {
-            if ($oldPrId !== null) {
-                $oldPrCode = DB::table('prs')->where('id', $oldPrId)->value('pr_code');
-            }
-            if ($newPrId !== null) {
-                $newPrCode = DB::table('prs')->where('id', $newPrId)->value('pr_code');
-            }
-        }
-
-        // Track changes for history logging
-        $changes = [];
-        $oldValues = [];
-        $newValues = [];
-
-        // Compare each field and track changes
+        $fieldDiffs = [];
         $fieldsToCheck = [
             'description',
             'sn',
@@ -946,7 +958,6 @@ class ItemController extends Controller
             'brand_id',
             'supplier_id',
             'status_id',
-            'location_id',
             'floor_id',
             'holder_user_id',
             'acquisition_date',
@@ -955,86 +966,69 @@ class ItemController extends Controller
             'warranty_end_date',
             'budget_code',
             'budget_donor',
+            'donor_id',
             'notes',
-            'owned_by'
+            'owned_by',
         ];
 
         foreach ($fieldsToCheck as $field) {
-            if (!isset($validated[$field])) {
+            if (!array_key_exists($field, $validated)) {
                 continue;
             }
 
-            $oldValue = $currentItem->$field;
+            $oldValue = $currentItem->$field ?? null;
+            // Some DBs expose notes as Notes
+            if ($field === 'notes' && $oldValue === null && isset($currentItem->Notes)) {
+                $oldValue = $currentItem->Notes;
+            }
+
             $newValue = $validated[$field];
 
-            // For date fields, compare as dates, not strings
-            if (in_array($field, $dateFields)) {
+            // Treat empty strings as null so clearing SN/notes is detected
+            if ($oldValue === '') {
+                $oldValue = null;
+            }
+            if ($newValue === '') {
+                $newValue = null;
+                $validated[$field] = null;
+            }
+
+            if (in_array($field, $dateFields, true)) {
                 $oldDate = $oldValue ? \Carbon\Carbon::parse($oldValue)->format('Y-m-d') : null;
                 $newDate = $newValue ? \Carbon\Carbon::parse($newValue)->format('Y-m-d') : null;
-
-                // Only mark as changed if dates are actually different
                 if ($oldDate !== $newDate) {
-                    $changes[] = $field;
-                    $oldValues[$field] = $oldValue;
-                    $newValues[$field] = $validated[$field];
+                    $fieldDiffs[$field] = [
+                        'old' => $oldValue,
+                        'new' => $validated[$field],
+                    ];
                 }
-            } else {
-                // For non-date fields, use regular comparison
-                if ($oldValue != $newValue) {
-                    $changes[] = $field;
-                    $oldValues[$field] = $oldValue;
-                    $newValues[$field] = $newValue;
-                }
+            } elseif ($oldValue != $newValue) {
+                $fieldDiffs[$field] = [
+                    'old' => $oldValue,
+                    'new' => $newValue,
+                ];
             }
         }
 
-        // Handle pr_id separately to store PR codes instead of IDs
-        if (isset($validated['pr_id']) && ($oldPrId !== $newPrId)) {
-            $changes[] = 'pr_id';
-            // Store PR codes (or null if PR doesn't exist)
-            $oldValues['pr_id'] = $oldPrCode ?? null;
-            $newValues['pr_id'] = $newPrCode ?? null;
-            // Also store IDs for reference
-            $oldValues['pr_id_id'] = $oldPrId;
-            $newValues['pr_id_id'] = $newPrId;
-        }
-
-        // Update the item
-        DB::table('items')
-            ->where('id', $id)
-            ->update(array_merge($validated, [
-                'updated_at' => now(),
-            ]));
-
-        // Adjust PR counts if pr_id changed
-        if ($prIdChanged) {
-            // If item was linked to a PR, increment that PR's remaining count
-            if ($oldPrId !== null) {
-                DB::table('prs')
-                    ->where('id', $oldPrId)
-                    ->increment('remaining_items_count');
-
-                // Log PR unlinking
-                $oldPrCode = DB::table('prs')->where('id', $oldPrId)->value('pr_code') ?? 'Unknown';
-                ActivityLogService::logAssetUnlinkedFromPr(auth()->id(), $id, $oldPrId, $oldPrCode);
-            }
-
-            // If item is now linked to a new PR, decrement that PR's remaining count
-            if ($newPrId !== null) {
-                DB::table('prs')
-                    ->where('id', $newPrId)
-                    ->where('remaining_items_count', '>', 0)
-                    ->decrement('remaining_items_count');
-
-                // Log PR linking
-                $newPrCode = DB::table('prs')->where('id', $newPrId)->value('pr_code') ?? 'Unknown';
-                ActivityLogService::logAssetLinkedToPr(auth()->id(), $id, $newPrId, $newPrCode);
+        if (array_key_exists('pr_id', $validated)) {
+            $oldPrId = $currentItem->pr_id !== null ? (int) $currentItem->pr_id : null;
+            $newPrId = $validated['pr_id'] !== null ? (int) $validated['pr_id'] : null;
+            if ($oldPrId !== $newPrId) {
+                $fieldDiffs['pr_id'] = [
+                    'old' => $oldPrId,
+                    'new' => $newPrId,
+                    'old_label' => $oldPrId
+                        ? (DB::table('prs')->where('id', $oldPrId)->value('pr_code') ?? (string) $oldPrId)
+                        : null,
+                    'new_label' => $newPrId
+                        ? (DB::table('prs')->where('id', $newPrId)->value('pr_code') ?? (string) $newPrId)
+                        : null,
+                ];
             }
         }
 
-        // Handle attributes update
+        $attributeDiffs = [];
         if (isset($attributes) && is_array($attributes)) {
-            // Get current category to validate attributes
             $categoryId = DB::table('items')
                 ->join('fixed_items', 'items.fixed_item_id', '=', 'fixed_items.id')
                 ->join('sub_category', 'fixed_items.sub_id', '=', 'sub_category.id')
@@ -1042,94 +1036,141 @@ class ItemController extends Controller
                 ->value('sub_category.cat_id');
 
             foreach ($attributes as $attribute) {
-                $attId = $attribute['att_id'];
-                $attOptionId = $attribute['att_option_id'];
+                $attId = (int) $attribute['att_id'];
+                $attOptionId = (int) $attribute['att_option_id'];
 
-                // Validate that attribute exists
                 $attr = DB::table('attributes')->where('id', $attId)->first();
-                if (!$attr)
+                if (!$attr) {
                     continue;
+                }
 
-                // Check if attribute is allowed for category
                 $allowed = DB::table('category_attributes')
                     ->where('category_id', $categoryId)
                     ->where('att_id', $attId)
                     ->exists();
-
-                if (!$allowed)
+                if (!$allowed) {
                     continue;
+                }
 
-                // Validate that option exists for this attribute
                 $option = DB::table('att_options')
                     ->where('id', $attOptionId)
                     ->where('att_id', $attId)
                     ->first();
-
-                if (!$option)
+                if (!$option) {
                     continue;
+                }
 
-                // Get current attribute value for change tracking
-                $currentAttrValue = DB::table('item_attribute_values as iav')
-                    ->join('att_options as ao', 'iav.att_option_id', '=', 'ao.id')
+                $currentOption = DB::table('item_attribute_values as iav')
+                    ->leftJoin('att_options as ao', 'iav.att_option_id', '=', 'ao.id')
                     ->where('iav.item_id', $id)
                     ->where('iav.att_id', $attId)
-                    ->value('ao.value');
+                    ->select(['iav.att_option_id', 'ao.value'])
+                    ->first();
 
-                // Update or insert attribute value
-                DB::table('item_attribute_values')->updateOrInsert(
-                    ['item_id' => $id, 'att_id' => $attId],
-                    ['att_option_id' => $attOptionId]
-                );
+                $currentOptionId = $currentOption?->att_option_id !== null
+                    ? (int) $currentOption->att_option_id
+                    : null;
+                $currentAttrValue = $currentOption?->value;
 
-                // Track attribute changes
-                $newAttrValue = $option->value;
-                if ($currentAttrValue != $newAttrValue) {
-                    $attrName = $attr->name;
-                    $changes[] = "attribute:{$attrName}";
-                    $oldValues["attribute:{$attrName}"] = $currentAttrValue;
-                    $newValues["attribute:{$attrName}"] = $newAttrValue;
+                if ($currentOptionId !== $attOptionId) {
+                    $attributeDiffs[] = [
+                        'att_id' => $attId,
+                        'att_option_id' => $attOptionId,
+                        'name' => $attr->name,
+                        'old_value' => $currentAttrValue,
+                        'new_value' => $option->value,
+                    ];
                 }
             }
         }
 
-        // Log the update if there were changes
-        if (!empty($changes)) {
-            ItemHistoryService::logItemUpdated(
-                $id,
-                [
-                    'changes' => $changes,
-                    'old_values' => $oldValues,
-                    'new_values' => $newValues
-                ],
-                auth()->id() // Pass authenticated user ID
-            );
-
-            // Log activity
-            ActivityLogService::logAssetUpdated(auth()->id(), $id, [
-                'changes' => $changes,
-                'changed_fields' => count($changes),
-            ]);
-
-            // Log status change if applicable
-            if (in_array('status_id', $changes)) {
-                $oldStatus = DB::table('status')->where('id', $oldValues['status_id'])->value('name') ?? 'Unknown';
-                $newStatus = DB::table('status')->where('id', $newValues['status_id'])->value('name') ?? 'Unknown';
-                ActivityLogService::logAssetStatusChanged(auth()->id(), $id, $oldStatus, $newStatus);
-            }
-
-            // Log holder assignment if applicable
-            if (in_array('holder_user_id', $changes)) {
-                ActivityLogService::logAssetHolderAssigned(
-                    auth()->id(),
-                    $id,
-                    $oldValues['holder_user_id'] ?? null,
-                    $newValues['holder_user_id'] ?? null
-                );
-            }
+        if (empty($fieldDiffs) && empty($attributeDiffs)) {
+            return response()->json([
+                'message' => 'No changes detected.',
+                'item' => json_decode($this->show($id)->getContent(), true),
+            ], 422);
         }
 
-        // Return the updated item
-        return $this->show($id);
+        $pendingStatusId = DB::table('change_status')
+            ->whereIn('value', ['Pending', 'Pending Approval'])
+            ->value('id');
+
+        if (!$pendingStatusId) {
+            $pendingStatusId = DB::table('change_status')->insertGetId(['value' => 'Pending']);
+        }
+
+        $editRequest = ItemEditRequest::create([
+            'item_id' => $id,
+            'requested_by_admin_id' => $user->id,
+            'status_id' => $pendingStatusId,
+            'requested_changes' => [
+                'fields' => $fieldDiffs,
+                'attributes' => $attributeDiffs,
+            ],
+            'submitted_at' => now(),
+        ]);
+
+        ItemHistoryService::logEditRequestSubmitted((int) $id, $editRequest->id);
+
+        $itemDescription = $currentItem->description
+            ?? DB::table('fixed_items')->where('id', $currentItem->fixed_item_id)->value('name')
+            ?? ('Item #' . $id);
+
+        NotificationService::notifyItemEditRequestSubmitted(
+            $editRequest->id,
+            (int) $id,
+            (string) $itemDescription,
+            $user->id,
+            $user->name ?? 'Unknown'
+        );
+
+        return response()->json([
+            'message' => 'Edit request submitted for Pro Admin review. Changes will apply after approval.',
+            'edit_request' => [
+                'id' => $editRequest->id,
+                'status' => 'Pending',
+                'submitted_at' => optional($editRequest->submitted_at)->toDateTimeString(),
+                'changed_fields_count' => count($fieldDiffs) + count($attributeDiffs),
+            ],
+            'item' => json_decode($this->show($id)->getContent(), true),
+        ], 202);
+    }
+
+    private function pendingEditRequestSummary(int $itemId): ?array
+    {
+        $pendingStatusIds = DB::table('change_status')
+            ->whereIn('value', ['Pending', 'Pending Approval'])
+            ->pluck('id')
+            ->all();
+
+        if (empty($pendingStatusIds)) {
+            return null;
+        }
+
+        $pending = DB::table('item_edit_requests as ier')
+            ->leftJoin('users as u', 'ier.requested_by_admin_id', '=', 'u.id')
+            ->leftJoin('change_status as cs', 'ier.status_id', '=', 'cs.id')
+            ->where('ier.item_id', $itemId)
+            ->whereIn('ier.status_id', $pendingStatusIds)
+            ->orderByDesc('ier.id')
+            ->select([
+                'ier.id',
+                'ier.submitted_at',
+                'cs.value as status',
+                'u.name as requested_by',
+            ])
+            ->first();
+
+        if (!$pending) {
+            return null;
+        }
+
+        return [
+            'id' => (int) $pending->id,
+            'status' => $pending->status,
+            'submitted_at' => $pending->submitted_at,
+            'requested_by' => $pending->requested_by,
+        ];
     }
 
     private function normalizeOwnedBy(?string $value): string
@@ -1307,5 +1348,29 @@ class ItemController extends Controller
         unlink($tempPath);
 
         return $path;
+    }
+
+    /**
+     * @param  array<int, int>  $donorIds
+     * @return array<int, array<int, string>>
+     */
+    private function donorPoliciesByDonorIds(array $donorIds): array
+    {
+        $donorIds = array_values(array_unique(array_filter(array_map('intval', $donorIds))));
+        if (empty($donorIds)) {
+            return [];
+        }
+
+        $rows = DB::table('donor_policies')
+            ->whereIn('donor_id', $donorIds)
+            ->orderBy('sort_order')
+            ->get(['donor_id', 'content']);
+
+        $map = [];
+        foreach ($rows as $row) {
+            $map[(int) $row->donor_id][] = $row->content;
+        }
+
+        return $map;
     }
 }

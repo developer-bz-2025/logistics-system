@@ -1,8 +1,56 @@
-<mat-toolbar class="topbar" style="background-color: #F9FAFB; border-bottom: 1px solid #E5E7EB;">
+<!-- BZ design: slim top bar. The sidebar carries the logo, user and logout. -->
+<header class="bz-topbar" *ngIf="isBzTheme">
+  <div class="bz-topbar__title">
+    <button *ngIf="hasSidebar" type="button" class="bz-icon-btn bz-topbar__menu" aria-label="Open menu"
+            (click)="toggleMobileNav.emit()">
+      <i-tabler name="menu-2" class="icon-20 d-flex"></i-tabler>
+    </button>
+    <img *ngIf="!hasSidebar" class="bz-topbar__logo" [src]="headerLogo" alt="Basmeh & Zeitooneh" />
+    <div class="bz-topbar__heading">
+      <p class="bz-topbar__kicker">{{ portal.isDonorsPortal() ? portal.portalTitle : appTitle }}</p>
+      <h1>{{ pageTitle }}</h1>
+    </div>
+  </div>
+
+  <div class="bz-topbar__actions">
+    <button *ngIf="showBackToDonors" type="button" class="bz-btn-ghost" (click)="backToDonors()">
+      Back to Donors
+    </button>
+
+    <app-theme-toggle></app-theme-toggle>
+
+    <button type="button" class="bz-icon-btn" aria-label="Notifications" (click)="navigateToNotifications()">
+      <i-tabler name="bell" class="icon-20 d-flex"></i-tabler>
+      <span class="bz-bell__count" *ngIf="unreadCount > 0">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
+    </button>
+
+    <!-- No sidebar (PR admin): user and logout live here instead -->
+    <ng-container *ngIf="!hasSidebar">
+      <app-bz-user-menu *ngIf="user?.name" [user]="user" xPosition="before" yPosition="below"
+                        class="bz-topbar__user"></app-bz-user-menu>
+      <a class="bz-btn-ghost" [routerLink]="['/authentication/login']">
+        <i-tabler name="logout" class="icon-18 d-flex"></i-tabler>
+        <span class="bz-hide-sm">Logout</span>
+      </a>
+    </ng-container>
+  </div>
+</header>
+
+<!-- Classic design -->
+<mat-toolbar *ngIf="!isBzTheme" class="topbar" style="background-color: #F9FAFB; border-bottom: 1px solid #E5E7EB;">
   <!-- Mobile Menu -->
   <button mat-icon-button (click)="toggleMobileNav.emit()" *ngIf="!showToggle">
     <i-tabler name="menu-2" class="icon-20 d-flex"></i-tabler>
   </button>
+
+  <!-- Only when the sidebar (which carries the logo) isn't showing: one logo per view -->
+  <img
+    *ngIf="headerLogo && (!hasSidebar || !showToggle)"
+    [src]="headerLogo"
+    alt="Basmeh & Zeitooneh"
+    class="ml-2 hidden sm:block"
+    style="height: 32px; width: auto;"
+  />
 
   <span *ngIf="portal.isDonorsPortal()" class="font-semibold text-gray-800 ml-2 hidden sm:inline">
     {{ portal.portalTitle }}
@@ -18,6 +66,9 @@
   </button>
 
   <span class="flex-1-auto"></span>
+
+  <!-- Switch to the BZ design -->
+  <app-theme-toggle class="mr-2"></app-theme-toggle>
 
   <!-- Notification Bell -->
   <button

@@ -1,17 +1,66 @@
-<div class="blank-layout-container justify-content-center align-items-center bg-light-primary">
+<div class="login-theme-toggle">
+  <app-theme-toggle></app-theme-toggle>
+</div>
+
+<!-- BZ design -->
+<div class="bz-login" *ngIf="isBzTheme">
+  <div class="bz-login__backdrop" aria-hidden="true"></div>
+
+  <div class="bz-login__stage">
+    <div class="bz-login__copy">
+      <img class="bz-login__logo" [src]="bzLoginLogo" alt="Basmeh & Zeitooneh" />
+      <div class="bz-login__kicker">{{ isDonorsPortal ? 'Finance' : 'Logistics' }}</div>
+      <h1>{{ isDonorsPortal ? 'Donors Portal' : appTitle }}</h1>
+      <p *ngIf="!isDonorsPortal">
+        Track furniture, appliances, vehicles and IT equipment across every location, from purchase
+        request to location changes, in one place.
+      </p>
+      <p *ngIf="isDonorsPortal">
+        Manage donors, their policies and the assets they fund, in one place.
+      </p>
+    </div>
+
+    <div class="bz-login__card">
+      <div class="bz-login__card-header">
+        <h2>Sign in</h2>
+        <p>Enter your email and password</p>
+      </div>
+
+      <form (ngSubmit)="onSubmit()" [formGroup]="loginForm">
+        <div class="bz-field">
+          <label class="bz-field__label" for="bz-email">Email</label>
+          <input id="bz-email" type="email" class="bz-input" formControlName="email"
+                 autocomplete="username" placeholder="name@basmeh-zeitooneh.org" />
+        </div>
+        <div class="bz-field">
+          <label class="bz-field__label" for="bz-password">Password</label>
+          <input id="bz-password" type="password" class="bz-input" formControlName="password"
+                 autocomplete="current-password" placeholder="••••••••" />
+        </div>
+        <div *ngIf="errorMessage" class="bz-login__error">{{ errorMessage }}</div>
+        <button type="submit" class="bz-btn bz-btn--primary bz-btn--block" [disabled]="loginForm.invalid || loading">
+          {{ loading ? 'Signing in…' : 'Continue' }}
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Classic design -->
+<div *ngIf="!isBzTheme" class="blank-layout-container justify-content-center align-items-center bg-light-primary">
   <div class="position-relative row w-100 h-100 bg-gredient justify-content-center">
     <div class="col-lg-4 d-flex align-items-center">
       <mat-card class="cardWithShadow boxed-auth">
         <mat-card-content class="p-32">
-          
+
           <div class="text-center flex items-center justify-center">
                 <a>
                   <img
-                  height="120"
-                  width="120"
-                    src="./assets/images/logos/logo.png"
+                    height="56"
+                    [src]="authLogo"
                     class="m-2"
-                    alt="logo"
+                    alt="Basmeh & Zeitooneh"
+                    style="max-height: 56px; width: auto;"
                   />
                 </a>
           </div>
@@ -41,8 +90,8 @@
             </div>
             <button mat-flat-button color="primary" type="submit" class="w-100" [disabled]="loginForm.invalid || loading"
             [class.spinner]="loading">Sign In
-              
-              
+
+
             </button>
 
           </form>

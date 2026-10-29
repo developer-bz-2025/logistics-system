@@ -33,6 +33,10 @@ export interface AssetListItem {
     acquisition_cost?: number;
     owned_by?: 'BZ' | 'LANDLORD';
     owned_by_label?: 'B&Z' | 'Landlord';
+    donor_id?: number;
+    donor_name?: string;
+    budget_donor?: string;
+    donor_policies?: string[];
     created_at: string;
     // Dynamic attributes based on category
     attributes?: { [key: string]: any };

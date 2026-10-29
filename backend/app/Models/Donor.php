@@ -41,4 +41,9 @@ class Donor extends Model
     {
         return $this->hasMany(DonorDocument::class);
     }
+
+    public function policies()
+    {
+        return $this->hasMany(DonorPolicy::class)->orderBy('sort_order');
+    }
 }

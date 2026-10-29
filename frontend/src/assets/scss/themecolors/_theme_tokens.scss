@@ -1,0 +1,27 @@
+// Shared app color tokens for the classic (Modernize) design.
+// Components should prefer these over hardcoded hex.
+// The BZ design redefines them, plus a few BZ-only ones, under html.theme-bz in _theme_bz.scss.
+//
+// Tokens that only the BZ design defines (--app-link, --app-brand, --app-surface-tint ...)
+// are used with the component's original hex as fallback, e.g. `var(--app-link, #6366f1)`,
+// so the classic design keeps its exact look.
+
+:root {
+  --app-primary: #0d9488;
+  --app-primary-hover: #0f766e;
+  --app-primary-active: #0d9185;
+  --app-primary-muted: #ecf2ff;
+  --app-accent: #49beff;
+  --app-success: #13deb9;
+  --app-sidebar: #1e293b;
+  --app-ink: #2a3547;
+  --app-ink-soft: #7c8fac;
+  --app-line: #e5eaef;
+  --app-surface: #ffffff;
+  --app-surface-alt: #f2f6fa;
+  --app-radius-control: 7px;
+  --app-radius-card: 7px;
+  --app-card-shadow: rgb(145 158 171 / 30%) 0px 0px 2px 0px,
+    rgb(145 158 171 / 12%) 0px 12px 24px -4px;
+  --app-font: "Plus Jakarta Sans", Helvetica, Arial, sans-serif;
+}

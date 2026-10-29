@@ -1,4 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+import { ThemeService } from 'src/app/core/services/theme.service';
 import { navItems } from './sidebar-data';
 import { portalNavItems } from './portal-sidebar-data';
 import { NavService } from '../../../core/services/nav.service';
@@ -11,16 +14,27 @@ import { NavItem } from './nav-item/nav-item';
   selector: 'app-sidebar',
   templateUrl: './sidebar.component.html',
 })
-export class SidebarComponent implements OnInit {
+export class SidebarComponent implements OnInit, OnDestroy {
   navItems = navItems;
   isLoadingCategories = false;
+
+  // BZ sidebar footer (the /users/{id} record)
+  user: any = null;
+
+  private readonly destroy$ = new Subject<void>();
 
   constructor(
     public navService: NavService,
     private auth: AuthService,
     private categoryService: CategoryService,
-    public portal: PortalService
+    public portal: PortalService,
+    public theme: ThemeService
   ) {}
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
 
   // Map category names to appropriate icons
   private getCategoryIcon(categoryName: string): string {
@@ -72,6 +86,10 @@ export class SidebarComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.auth.user$.pipe(takeUntil(this.destroy$)).subscribe((user: any) => {
+      this.user = user;
+    });
+
     const sourceItems = this.portal.isDonorsPortal() ? portalNavItems : navItems;
     const allowed = (sourceItems || []).filter(item => {
       const roles = (item as any).roles as string[] | undefined;

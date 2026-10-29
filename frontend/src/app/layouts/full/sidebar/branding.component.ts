@@ -1,19 +1,21 @@
 import { Component } from '@angular/core';
+import { ThemeService } from 'src/app/core/services/theme.service';
 
 @Component({
   selector: 'app-branding',
   template: `
     <div class="branding">
       <a href="/">
-        <img
-          src="./assets/images/logos/dark-logo.svg"
-          class="align-middle m-2"
-          alt="logo"
-        />
+        <img [src]="logoSrc" class="align-middle" alt="Basmeh & Zeitooneh" />
       </a>
     </div>
   `,
 })
 export class BrandingComponent {
-  constructor() {}
+  // White B&Z lockup on the dark sidebar, in both themes
+  readonly logoSrc: string;
+
+  constructor(theme: ThemeService) {
+    this.logoSrc = theme.logos.sidebar;
+  }
 }

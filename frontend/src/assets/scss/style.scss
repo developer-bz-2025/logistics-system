@@ -11,6 +11,9 @@
 @import "themecolors/default_theme";
 @include mat.all-component-themes($bluetheme);
 
+// Classic design tokens (the BZ design is imported last, below)
+@import "themecolors/theme_tokens";
+
 //container layout
 @import "overrides/materialoverrides";
 @import "container";
@@ -24,3 +27,6 @@
 @import "pages/dashboards";
 @import "pages/auth";
 
+
+// BZ design: every rule under html.theme-bz, imported last so it wins ties with the classic layers
+@import "themecolors/theme_bz";

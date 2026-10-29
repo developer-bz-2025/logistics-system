@@ -19,6 +19,7 @@ class ItemEditRequest extends Model
     protected $casts = [
         'submitted_at' => 'datetime',
         'reviewed_at'  => 'datetime',
+        'requested_changes' => 'array',
     ];
 
     public function item()      { return $this->belongsTo(Item::class); }

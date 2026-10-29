@@ -72,7 +72,7 @@ class User extends Authenticatable implements JWTSubject
     }
 
     public function itemEditRequestsApproval(){
-        return $this->hasMany(ItemEditRequest::class,'approved_by_admin_id');
+        return $this->hasMany(ItemEditRequest::class,'reviewed_by_admin_id');
     }
 
 

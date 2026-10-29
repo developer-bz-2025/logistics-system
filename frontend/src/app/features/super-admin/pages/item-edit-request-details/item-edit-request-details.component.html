@@ -1,0 +1,114 @@
+<div class="space-y-4">
+  <a routerLink="/dashboard/item-edit-requests" class="text-sm text-indigo-600 hover:underline">← Back to list</a>
+
+  <div *ngIf="loading" class="text-gray-500">Loading…</div>
+  <div *ngIf="error" class="rounded-xl bg-rose-50 text-rose-700 px-3 py-2">{{ error }}</div>
+
+  <ng-container *ngIf="!loading && detail as d">
+    <div class="flex items-center justify-between">
+      <h1 class="text-xl font-semibold">Asset Edit Request #{{ d.id }}</h1>
+      <span class="inline-flex items-center rounded-full px-3 py-1 text-xs" [ngClass]="statusClass()">
+        {{ d.status }}
+      </span>
+    </div>
+
+    <div class="app-card grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+      <div>
+        <div class="text-gray-500">Requested By</div>
+        <div class="font-medium">{{ d.requested_by?.name || '—' }}</div>
+        <div class="text-xs text-gray-500">{{ d.requested_by?.email }}</div>
+      </div>
+
+      <div>
+        <div class="text-gray-500">Submitted At</div>
+        <div class="font-medium">{{ d.submitted_at | date:'medium' }}</div>
+      </div>
+
+      <div>
+        <div class="text-gray-500">Asset</div>
+        <div class="font-medium">{{ d.item?.description || ('Asset #' + d.item_id) }}</div>
+        <div class="text-xs text-gray-500">{{ d.item?.sn || ('ID ' + d.item_id) }}</div>
+        <a
+          class="text-indigo-600 hover:underline text-xs"
+          [routerLink]="['/assets', d.item_id]">
+          Open asset
+        </a>
+      </div>
+    </div>
+
+    <div class="app-card" *ngIf="d.field_diffs?.length">
+      <h2 class="font-medium mb-3">Field Changes</h2>
+      <table class="min-w-full text-sm">
+        <thead class="text-left text-gray-500">
+          <tr>
+            <th class="py-2 pr-4">Field</th>
+            <th class="py-2 pr-4">Current</th>
+            <th class="py-2 pr-4">Proposed</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let diff of d.field_diffs; trackBy: trackField" class="border-t">
+            <td class="py-2 pr-4 font-medium">{{ diff.label }}</td>
+            <td class="py-2 pr-4">
+              <span class="line-through text-gray-500">{{ displayValue(diff, 'old') }}</span>
+            </td>
+            <td class="py-2 pr-4 font-medium">{{ displayValue(diff, 'new') }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="app-card" *ngIf="d.attribute_diffs?.length">
+      <h2 class="font-medium mb-3">Attribute Changes</h2>
+      <table class="min-w-full text-sm">
+        <thead class="text-left text-gray-500">
+          <tr>
+            <th class="py-2 pr-4">Attribute</th>
+            <th class="py-2 pr-4">Current</th>
+            <th class="py-2 pr-4">Proposed</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let diff of d.attribute_diffs; trackBy: trackAttr" class="border-t">
+            <td class="py-2 pr-4 font-medium">{{ diff.name }}</td>
+            <td class="py-2 pr-4">
+              <span class="line-through text-gray-500">{{ diff.old_value || '—' }}</span>
+            </td>
+            <td class="py-2 pr-4 font-medium">{{ diff.new_value || '—' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="app-card" *ngIf="d.rejection_reason">
+      <h2 class="font-medium mb-2">Rejection Reason</h2>
+      <div class="text-sm text-rose-700">{{ d.rejection_reason }}</div>
+    </div>
+
+    <div class="app-card space-y-3" *ngIf="isPending()">
+      <h2 class="font-medium">Review Decision</h2>
+      <div>
+        <label class="text-sm text-gray-500">Rejection reason (optional)</label>
+        <textarea
+          class="w-full rounded-xl border px-3 py-2 mt-1"
+          rows="3"
+          [(ngModel)]="reason"
+          placeholder="Explain why this request is rejected..."></textarea>
+      </div>
+      <div class="flex gap-3">
+        <button
+          class="rounded-xl bg-green-600 text-white px-4 py-2 hover:bg-green-700 disabled:opacity-50"
+          [disabled]="saving"
+          (click)="approve()">
+          Approve &amp; Apply
+        </button>
+        <button
+          class="rounded-xl bg-rose-600 text-white px-4 py-2 hover:bg-rose-700 disabled:opacity-50"
+          [disabled]="saving"
+          (click)="reject()">
+          Reject
+        </button>
+      </div>
+    </div>
+  </ng-container>
+</div>

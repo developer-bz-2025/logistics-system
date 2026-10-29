@@ -23,7 +23,7 @@ class DonorController extends Controller
             ], 403);
         }
 
-        $donors = Donor::with(['financeOfficer', 'locations'])
+        $donors = Donor::with(['financeOfficer', 'locations', 'policies'])
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -52,10 +52,13 @@ class DonorController extends Controller
             'notes' => 'nullable|string',
             'location_ids' => 'nullable|array',
             'location_ids.*' => 'integer|exists:locations,id',
+            'policies' => 'nullable|array',
+            'policies.*' => 'required|string|max:5000',
         ]);
 
         $locationIds = $validated['location_ids'] ?? [];
-        unset($validated['location_ids']);
+        $policies = $this->normalizePolicies($validated['policies'] ?? null);
+        unset($validated['location_ids'], $validated['policies']);
 
         DB::beginTransaction();
         try {
@@ -65,9 +68,13 @@ class DonorController extends Controller
                 $donor->locations()->sync($locationIds);
             }
 
+            if ($policies !== null) {
+                $this->syncPolicies($donor, $policies);
+            }
+
             DB::commit();
 
-            $donor->load(['financeOfficer', 'locations']);
+            $donor->load(['financeOfficer', 'locations', 'policies']);
 
             return response()->json($donor, 201);
         } catch (\Exception $e) {
@@ -84,7 +91,7 @@ class DonorController extends Controller
      */
     public function show($id)
     {
-        $donor = Donor::with(['financeOfficer', 'locations', 'documents.uploader'])->findOrFail($id);
+        $donor = Donor::with(['financeOfficer', 'locations', 'documents.uploader', 'policies'])->findOrFail($id);
         return response()->json($donor);
     }
 
@@ -112,10 +119,15 @@ class DonorController extends Controller
             'notes' => 'nullable|string',
             'location_ids' => 'nullable|array',
             'location_ids.*' => 'integer|exists:locations,id',
+            'policies' => 'nullable|array',
+            'policies.*' => 'required|string|max:5000',
         ]);
 
         $locationIds = $validated['location_ids'] ?? null;
-        unset($validated['location_ids']);
+        $policies = array_key_exists('policies', $validated)
+            ? $this->normalizePolicies($validated['policies'])
+            : null;
+        unset($validated['location_ids'], $validated['policies']);
 
         DB::beginTransaction();
         try {
@@ -125,9 +137,13 @@ class DonorController extends Controller
                 $donor->locations()->sync($locationIds);
             }
 
+            if ($policies !== null) {
+                $this->syncPolicies($donor, $policies);
+            }
+
             DB::commit();
 
-            $donor->load(['financeOfficer', 'locations']);
+            $donor->load(['financeOfficer', 'locations', 'policies']);
 
             return response()->json($donor);
         } catch (\Exception $e) {
@@ -173,10 +189,51 @@ class DonorController extends Controller
      */
     public function getDonorsForAssetCreation(Request $request)
     {
-        $donors = Donor::select(['id', 'donor', 'account_no', 'department_name'])
+        $donors = Donor::with('policies')
+            ->select(['id', 'donor', 'account_no', 'department_name'])
             ->orderBy('donor', 'asc')
-            ->get();
+            ->get()
+            ->map(function (Donor $donor) {
+                return [
+                    'id' => $donor->id,
+                    'donor' => $donor->donor,
+                    'account_no' => $donor->account_no,
+                    'department_name' => $donor->department_name,
+                    'policies' => $donor->policies->pluck('content')->values()->all(),
+                ];
+            });
 
         return response()->json(['data' => $donors]);
+    }
+
+    /**
+     * @param  array<int, string>|null  $policies
+     * @return array<int, string>|null
+     */
+    private function normalizePolicies(?array $policies): ?array
+    {
+        if ($policies === null) {
+            return null;
+        }
+
+        return array_values(array_filter(
+            array_map('trim', $policies),
+            fn (string $policy) => $policy !== ''
+        ));
+    }
+
+    /**
+     * @param  array<int, string>  $policies
+     */
+    private function syncPolicies(Donor $donor, array $policies): void
+    {
+        $donor->policies()->delete();
+
+        foreach ($policies as $index => $content) {
+            $donor->policies()->create([
+                'content' => $content,
+                'sort_order' => $index,
+            ]);
+        }
     }
 }

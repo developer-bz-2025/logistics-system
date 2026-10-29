@@ -39,12 +39,12 @@ export class AssetsListComponent  implements OnInit, OnDestroy {
   isLoadingFilters = false;
   isLoadingCategories = false;
 
-  displayedColumns = ['id', 'sn', 'fixed_item', 'acquisition_date', 'status', 'location', 'brand', 'owned_by'];
+  displayedColumns = ['id', 'sn', 'fixed_item', 'acquisition_date', 'status', 'location', 'brand', 'donor', 'owned_by'];
   dynamicColumns: string[] = [];
 
   private updateDisplayedColumns() {
     // Start with static columns
-    const staticColumns = ['id', 'sn', 'fixed_item', 'acquisition_date', 'status', 'location', 'brand', 'owned_by'];
+    const staticColumns = ['id', 'sn', 'fixed_item', 'acquisition_date', 'status', 'location', 'brand', 'donor', 'owned_by'];
     
     // Add valid dynamic attribute columns
     const dynamicCols = this.dynamicAttributes
@@ -78,6 +78,9 @@ export class AssetsListComponent  implements OnInit, OnDestroy {
 
 
   canCreateAsset = false;
+
+  /** Excel import is switched off for now; set to true to enable the Import Excel button again. */
+  readonly importEnabled = false;
 
   constructor(
     private fb: FormBuilder,
@@ -307,10 +310,12 @@ export class AssetsListComponent  implements OnInit, OnDestroy {
 
   
   onPick(fileInput: HTMLInputElement) {
+    if (!this.importEnabled) return;
     fileInput.click();
   }
 
   onFileSelected(ev: Event) {
+    if (!this.importEnabled) return;
     const input = ev.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;

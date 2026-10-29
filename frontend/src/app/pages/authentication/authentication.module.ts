@@ -14,6 +14,7 @@ import { TablerIconsModule } from 'angular-tabler-icons';
 import * as TablerIcons from 'angular-tabler-icons/icons';
 
 import { AuthenticationRoutes } from './authentication.routing';
+import { ThemeToggleComponent } from 'src/app/core/shared/components/theme-toggle/theme-toggle.component';
 
 import { AppSideLoginComponent } from './login/login.component';
 import { AppSideRegisterComponent } from './register/register.component';
@@ -32,6 +33,7 @@ import { ChangePasswordComponent } from './change-password/change-password.compo
     FormsModule,
     ReactiveFormsModule,
     TablerIconsModule.pick(TablerIcons),
+    ThemeToggleComponent,
   ],
   declarations: [
     AppSideLoginComponent,

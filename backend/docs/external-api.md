@@ -68,6 +68,10 @@ X-API-Key: <your-api-key>
         { "id": 1, "name": "Beirut Office" },
         { "id": 3, "name": "Tripoli Office" }
       ],
+      "policies": [
+        "Only IT equipment allowed",
+        "Max $500 per item"
+      ],
       "created_at": "2026-02-15T10:30:00+00:00",
       "updated_at": "2026-05-10T14:22:00+00:00"
     }
@@ -90,6 +94,7 @@ X-API-Key: <your-api-key>
 | `finance_officer_name` | string/null  | Full name of the finance officer.                                                                 |
 | `finance_officer_email`| string/null  | Email of the finance officer.                                                                     |
 | `locations`            | array        | List of associated areas/locations, each with `id` (integer) and `name` (string).                 |
+| `policies`             | array        | Ordered list of donor policy texts (Policy 1, Policy 2, …). Empty array if none.                  |
 | `created_at`           | string       | ISO 8601 creation timestamp.                                                                      |
 | `updated_at`           | string       | ISO 8601 last-update timestamp.                                                                   |
 | `count`                | integer      | Total number of donors in the response (top-level field).                                         |
@@ -132,6 +137,10 @@ X-API-Key: <your-api-key>
     "locations": [
       { "id": 1, "name": "Beirut Office" },
       { "id": 3, "name": "Tripoli Office" }
+    ],
+    "policies": [
+      "Only IT equipment allowed",
+      "Max $500 per item"
     ],
     "created_at": "2026-02-15T10:30:00+00:00",
     "updated_at": "2026-05-10T14:22:00+00:00"

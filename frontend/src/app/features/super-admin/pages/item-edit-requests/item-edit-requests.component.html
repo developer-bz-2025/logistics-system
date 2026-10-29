@@ -1,0 +1,106 @@
+<div class="space-y-4">
+  <h1 class="text-xl font-semibold">Asset Edit Requests</h1>
+
+  <div class="app-card flex flex-col md:flex-row md:items-end gap-3">
+    <div class="flex-1">
+      <label class="text-sm font-medium">Quick Search</label>
+      <input
+        class="w-full rounded-xl border px-3 py-2"
+        [(ngModel)]="search"
+        (ngModelChange)="onSearchInput($event)"
+        (keyup.enter)="onSearchEnter()"
+        placeholder="Search by asset, SN, or requester..." />
+    </div>
+
+    <div>
+      <label class="text-sm font-medium">Status</label>
+      <select
+        class="w-48 rounded-xl border px-3 py-2"
+        [(ngModel)]="status"
+        (ngModelChange)="onFilterChange()">
+        <option value="all">All</option>
+        <option value="pending">Pending</option>
+        <option value="approved">Approved</option>
+        <option value="rejected">Rejected</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="app-card overflow-x-auto">
+    <table class="min-w-full text-sm">
+      <thead class="text-left text-gray-500">
+        <tr>
+          <th class="py-2 pr-4">#</th>
+          <th class="py-2 pr-4">Requester</th>
+          <th class="py-2 pr-4">Submitted</th>
+          <th class="py-2 pr-4">Status</th>
+          <th class="py-2 pr-4">Asset</th>
+          <th class="py-2 pr-4">Changes</th>
+          <th class="py-2 pr-4"></th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr *ngIf="loading" class="text-gray-500">
+          <td class="py-6" colspan="7">Loading…</td>
+        </tr>
+        <tr *ngIf="!loading && rows.length === 0" class="text-gray-500">
+          <td class="py-6" colspan="7">No results.</td>
+        </tr>
+
+        <tr *ngFor="let r of rows" class="border-t align-top">
+          <td class="py-2 pr-4 font-medium">{{ r.id }}</td>
+
+          <td class="py-2 pr-4">
+            <div class="font-medium">{{ r.requested_by?.name || '—' }}</div>
+            <div class="text-xs text-gray-500">{{ r.requested_by?.email }}</div>
+          </td>
+
+          <td class="py-2 pr-4">
+            {{ r.submitted_at | date:'medium' }}
+          </td>
+
+          <td class="py-2 pr-4">
+            <span
+              class="inline-flex items-center rounded-full px-2 py-0.5 text-xs"
+              [ngClass]="statusClass(r.status)">
+              {{ toLcStatus(r.status) | titlecase }}
+            </span>
+          </td>
+
+          <td class="py-2 pr-4">
+            <div class="font-medium">{{ r.item_description || ('Asset #' + r.item_id) }}</div>
+            <div class="text-xs text-gray-500">{{ r.item_sn || ('ID ' + r.item_id) }}</div>
+          </td>
+
+          <td class="py-2 pr-4">{{ r.changed_fields_count }}</td>
+
+          <td class="py-2 pr-4">
+            <button
+              class="rounded-xl bg-indigo-600 text-white px-3 py-1.5 hover:bg-indigo-700"
+              (click)="onReview(r)">
+              Review
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="flex items-center justify-between mt-3">
+      <div class="text-xs text-gray-500">Total: {{ total }}</div>
+      <div class="flex gap-2">
+        <button class="rounded-lg border px-3 py-1" [disabled]="page===1" (click)="onPageChange(page-1)">Prev</button>
+        <button
+          class="rounded-lg border px-3 py-1"
+          (click)="onPageChange(page+1)"
+          [disabled]="rows.length < perPage">
+          Next
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="error" class="mt-3 rounded-xl bg-rose-50 text-rose-700 px-3 py-2">
+      {{ error }}
+    </div>
+  </div>
+</div>

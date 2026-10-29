@@ -53,6 +53,12 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
   currentUser: any = null;
   userLocationIds: number[] = [];
   userRole: string | null = null;
+  pendingEditRequest: {
+    id: number;
+    status?: string;
+    submitted_at?: string;
+    requested_by?: string;
+  } | null = null;
 
   // History/Lifecycle
   history: any[] = [];
@@ -312,6 +318,7 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
     this.assets.getAsset(this.assetId).pipe(takeUntil(this.destroy$)).subscribe({
       next: (asset) => {
         this.asset = asset.data || asset;
+        this.pendingEditRequest = this.asset?.pending_edit_request || null;
         this.populateForm();
         this.loadCategoryAttributes();
         this.loadPrDetails();
@@ -325,6 +332,10 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
         this.toast.error('Failed to load asset details.', 'Error');
       }
     });
+  }
+
+  get canSubmitEdit(): boolean {
+    return this.canEditAsset && !this.pendingEditRequest;
   }
 
   getDonorDisplay(): string {
@@ -363,6 +374,9 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
       'location_change_request_submitted': 'send',
       'location_change_request_approved': 'check_circle',
       'location_change_request_rejected': 'cancel',
+      'edit_request_submitted': 'rate_review',
+      'edit_request_approved': 'check_circle',
+      'edit_request_rejected': 'cancel',
       'status_changed': 'update',
       'holder_changed': 'person',
       'created': 'add_circle',
@@ -633,7 +647,13 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
   }
 
   toggleEdit() {
-    if (!this.isEditing && !this.canEditAsset) {
+    if (!this.isEditing && !this.canSubmitEdit) {
+      if (this.pendingEditRequest) {
+        this.toast.error(
+          'There is already a pending edit request awaiting Pro Admin review.',
+          'Edit Pending'
+        );
+      }
       return;
     }
     this.isEditing = !this.isEditing;
@@ -676,26 +696,82 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
         }));
     }
 
-    // Remove empty values
+    // Fields that can be cleared to null — keep them in the payload so the
+    // backend can detect "value removed" as a real change.
+    const clearableFields = new Set([
+      'sn',
+      'notes',
+      'description',
+      'budget_code',
+      'budget_donor',
+      'supplier_id',
+      'brand_id',
+      'color_id',
+      'floor_id',
+      'holder_user_id',
+      'donor_id',
+      'pr_id',
+      'acquisition_date',
+      'acquisition_cost',
+      'warranty_start_date',
+      'warranty_end_date',
+    ]);
+
     Object.keys(formData).forEach(key => {
-      if (formData[key] === '' || formData[key] === null || 
-          (Array.isArray(formData[key]) && formData[key].length === 0)) {
+      const value = formData[key];
+
+      if (Array.isArray(value) && value.length === 0) {
+        delete formData[key];
+        return;
+      }
+
+      // Convert empty strings to null for clearable fields (e.g. clearing SN/notes)
+      if (clearableFields.has(key) && (value === '' || value === undefined)) {
+        formData[key] = null;
+        return;
+      }
+
+      // Drop other empty/null values that were not deliberately cleared
+      if (value === '' || value === null || value === undefined) {
         delete formData[key];
       }
     });
 
     this.assets.updateAsset(this.assetId, formData).pipe(takeUntil(this.destroy$)).subscribe({
-      next: (updatedAsset) => {
+      next: (response) => {
         this.isEditing = false;
         this.isSaving = false;
-        this.toast.success('Asset updated successfully.', 'Update Asset');
-        // Reload asset (which also reloads history) to get updated data and new history entry
+        const message = response?.message
+          || 'Edit request submitted for Pro Admin review.';
+        this.toast.success(message, 'Edit Request Submitted');
         this.loadAsset();
       },
       error: (error) => {
         console.error('Error updating asset:', error);
         this.isSaving = false;
-        this.toast.error('Failed to update asset. Please try again.', 'Update Asset Failed');
+
+        const existingRequest = error?.error?.existing_request;
+        if (error?.status === 409 && existingRequest) {
+          this.pendingEditRequest = existingRequest;
+          this.toast.error(
+            error?.error?.message
+              || 'There is already a pending edit request for this asset.',
+            'Edit Pending'
+          );
+          this.isEditing = false;
+          this.loadAsset();
+          return;
+        }
+
+        if (error?.status === 422 && error?.error?.message === 'No changes detected.') {
+          this.toast.error('No changes detected.', 'Update Asset');
+          return;
+        }
+
+        this.toast.error(
+          error?.error?.message || 'Failed to submit edit request. Please try again.',
+          'Update Asset Failed'
+        );
       }
     });
   }
